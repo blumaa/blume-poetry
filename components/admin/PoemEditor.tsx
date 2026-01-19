@@ -96,6 +96,14 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
         };
         const { error: insertError } = await supabase.from('poems').insert(newPoemData);
         if (insertError) throw insertError;
+
+        // Revalidate pages so new poem shows up
+        await fetch('/api/admin/revalidate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paths: [`/poem/${slug}`] }),
+        });
+
         sessionStorage.setItem('toast', JSON.stringify({ message: `"${title.trim()}" created`, type: 'success' }));
         router.push('/admin/poems');
       } else {
@@ -110,6 +118,14 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
         };
         const { error: updateError } = await supabase.from('poems').update(updateData).eq('id', poem!.id);
         if (updateError) throw updateError;
+
+        // Revalidate pages so changes show up
+        await fetch('/api/admin/revalidate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paths: [`/poem/${slug}`] }),
+        });
+
         sessionStorage.setItem('toast', JSON.stringify({ message: 'Changes saved', type: 'success' }));
         router.push('/admin/poems');
       }
