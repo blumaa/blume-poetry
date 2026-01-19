@@ -26,8 +26,76 @@ export function NotificationBell() {
   const [isLoading, setIsLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Fetch notifications on mount
   useEffect(() => {
-    fetchNotifications();
+    let cancelled = false;
+
+    async function loadNotifications() {
+      const supabase = createClient();
+      const lastSeen = localStorage.getItem(LAST_SEEN_KEY) || '1970-01-01T00:00:00Z';
+
+      // Fetch recent comments
+      const { data: comments } = await supabase
+        .from('comments')
+        .select(`
+          id,
+          author_name,
+          content,
+          created_at,
+          poem:poems(slug, title)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      // Fetch recent likes
+      const { data: likes } = await supabase
+        .from('likes')
+        .select(`
+          id,
+          created_at,
+          poem:poems(slug, title)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (cancelled) return;
+
+      // Transform and combine
+      const commentNotifs: Notification[] = (comments || []).map((c) => ({
+        id: `comment-${c.id}`,
+        type: 'comment' as const,
+        created_at: c.created_at,
+        poem: Array.isArray(c.poem) ? c.poem[0] : c.poem,
+        author_name: c.author_name,
+        content: c.content,
+      }));
+
+      const likeNotifs: Notification[] = (likes || []).map((l) => ({
+        id: `like-${l.id}`,
+        type: 'like' as const,
+        created_at: l.created_at,
+        poem: Array.isArray(l.poem) ? l.poem[0] : l.poem,
+      }));
+
+      // Combine and sort by date
+      const allNotifs = [...commentNotifs, ...likeNotifs]
+        .filter((n) => n.poem) // Filter out any with missing poem data
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 20);
+
+      setNotifications(allNotifs);
+
+      // Count unread
+      const unread = allNotifs.filter((n) => new Date(n.created_at) > new Date(lastSeen)).length;
+      setUnreadCount(unread);
+      setIsLoading(false);
+    }
+
+    loadNotifications();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Close dropdown when clicking outside
@@ -41,65 +109,6 @@ export function NotificationBell() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const fetchNotifications = async () => {
-    const supabase = createClient();
-    const lastSeen = localStorage.getItem(LAST_SEEN_KEY) || '1970-01-01T00:00:00Z';
-
-    // Fetch recent comments
-    const { data: comments } = await supabase
-      .from('comments')
-      .select(`
-        id,
-        author_name,
-        content,
-        created_at,
-        poem:poems(slug, title)
-      `)
-      .order('created_at', { ascending: false })
-      .limit(20);
-
-    // Fetch recent likes
-    const { data: likes } = await supabase
-      .from('likes')
-      .select(`
-        id,
-        created_at,
-        poem:poems(slug, title)
-      `)
-      .order('created_at', { ascending: false })
-      .limit(20);
-
-    // Transform and combine
-    const commentNotifs: Notification[] = (comments || []).map((c) => ({
-      id: `comment-${c.id}`,
-      type: 'comment' as const,
-      created_at: c.created_at,
-      poem: Array.isArray(c.poem) ? c.poem[0] : c.poem,
-      author_name: c.author_name,
-      content: c.content,
-    }));
-
-    const likeNotifs: Notification[] = (likes || []).map((l) => ({
-      id: `like-${l.id}`,
-      type: 'like' as const,
-      created_at: l.created_at,
-      poem: Array.isArray(l.poem) ? l.poem[0] : l.poem,
-    }));
-
-    // Combine and sort by date
-    const allNotifs = [...commentNotifs, ...likeNotifs]
-      .filter((n) => n.poem) // Filter out any with missing poem data
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 20);
-
-    setNotifications(allNotifs);
-
-    // Count unread
-    const unread = allNotifs.filter((n) => new Date(n.created_at) > new Date(lastSeen)).length;
-    setUnreadCount(unread);
-    setIsLoading(false);
-  };
 
   const handleOpen = () => {
     setIsOpen(!isOpen);

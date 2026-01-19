@@ -11,10 +11,16 @@ interface SidebarWrapperProps {
 
 const COLLAPSED_KEY = 'sidebar_collapsed';
 
+// Lazy initializer for collapsed state
+function getInitialCollapsed(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(COLLAPSED_KEY) === 'true';
+}
+
 export function SidebarWrapper({ tree }: SidebarWrapperProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(getInitialCollapsed);
 
   // Detect mobile viewport
   useEffect(() => {
@@ -25,14 +31,6 @@ export function SidebarWrapper({ tree }: SidebarWrapperProps) {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Load collapsed state from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem(COLLAPSED_KEY);
-    if (stored === 'true') {
-      setIsCollapsed(true);
-    }
   }, []);
 
   // Prevent body scroll when mobile menu is open

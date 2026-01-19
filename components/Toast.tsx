@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useSyncExternalStore, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 type ToastType = 'success' | 'error' | 'info';
@@ -29,13 +29,15 @@ interface ToastProviderProps {
   children: ReactNode;
 }
 
+const emptySubscribe = () => () => {};
+
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
   const showToast = useCallback((message: string, type: ToastType = 'success') => {
     console.log('🔔 Toast triggered:', message, type);

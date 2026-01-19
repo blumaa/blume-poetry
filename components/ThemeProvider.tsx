@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useSyncExternalStore, useCallback } from 'react';
 
 type Theme = 'light' | 'dark';
 
@@ -24,27 +24,29 @@ interface ThemeProviderProps {
   children: React.ReactNode;
 }
 
+const emptySubscribe = () => () => {};
+
+// Lazy initializer for theme state - runs only on client
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return 'light';
+  const stored = localStorage.getItem('theme') as Theme | null;
+  if (stored) return stored;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>('light');
-  const [mounted, setMounted] = useState(false);
+  // Use lazy initialization - the function only runs on first render
+  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
+  // Sync theme to DOM when it changes
   useEffect(() => {
-    setMounted(true);
-
-    // Check localStorage first
-    const stored = localStorage.getItem('theme') as Theme | null;
-    if (stored) {
-      setThemeState(stored);
-      document.documentElement.setAttribute('data-theme', stored);
-      return;
-    }
-
-    // Fall back to system preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = prefersDark ? 'dark' : 'light';
-    setThemeState(initialTheme);
-    document.documentElement.setAttribute('data-theme', initialTheme);
-  }, []);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   // Listen for system preference changes
   useEffect(() => {
@@ -55,7 +57,6 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       if (!localStorage.getItem('theme')) {
         const newTheme = e.matches ? 'dark' : 'light';
         setThemeState(newTheme);
-        document.documentElement.setAttribute('data-theme', newTheme);
       }
     };
 
@@ -63,15 +64,18 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  const setTheme = (newTheme: Theme) => {
+  const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem('theme', newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
-  };
+  }, []);
 
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-  };
+  const toggleTheme = useCallback(() => {
+    setThemeState((current) => {
+      const newTheme = current === 'light' ? 'dark' : 'light';
+      localStorage.setItem('theme', newTheme);
+      return newTheme;
+    });
+  }, []);
 
   // Prevent flash of wrong theme
   if (!mounted) {
