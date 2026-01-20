@@ -107,6 +107,8 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
         sessionStorage.setItem('toast', JSON.stringify({ message: `"${title.trim()}" created`, type: 'success' }));
         router.push('/admin/poems');
       } else {
+        // Only set published_at if publishing for the first time (was draft, now published)
+        const isFirstPublish = status === 'published' && poem?.status === 'draft';
         const updateData: UpdatePoem = {
           title: title.trim(),
           subtitle: subtitle.trim() || null,
@@ -114,7 +116,7 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
           content: contentHtml,
           plain_text: contentText,
           status,
-          published_at: status === 'published' ? new Date().toISOString() : poem?.published_at,
+          published_at: isFirstPublish ? new Date().toISOString() : poem?.published_at,
         };
         const { error: updateError } = await supabase.from('poems').update(updateData).eq('id', poem!.id);
         if (updateError) throw updateError;
