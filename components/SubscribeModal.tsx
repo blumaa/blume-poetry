@@ -98,8 +98,8 @@ export function SubscribeModal({ isOpen, onClose }: SubscribeModalProps) {
         focusTrapOptions={{
           initialFocus: false,
           allowOutsideClick: true,
-          escapeDeactivates: true,
-          onDeactivate: onClose,
+          escapeDeactivates: false,
+          returnFocusOnDeactivate: false,
         }}
       >
         <div

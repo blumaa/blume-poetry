@@ -66,7 +66,8 @@ export function ConfirmModal({
       focusTrapOptions={{
         initialFocus: () => cancelButtonRef.current,
         allowOutsideClick: true,
-        escapeDeactivates: !isLoading,
+        escapeDeactivates: false,
+        returnFocusOnDeactivate: false,
       }}
     >
       <div

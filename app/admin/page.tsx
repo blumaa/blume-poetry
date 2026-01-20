@@ -3,12 +3,10 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useToast } from '@/components/Toast';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({ poems: 0, subscribers: 0, drafts: 0 });
   const [isLoading, setIsLoading] = useState(true);
-  const { showToast } = useToast();
 
   useEffect(() => {
     const supabase = createClient();
@@ -81,18 +79,6 @@ export default function AdminDashboard() {
           >
             Send Newsletter
           </Link>
-          <Link
-            href="/admin/analytics"
-            className="px-4 py-2 border border-[var(--border)] rounded hover:border-[var(--accent)] transition-colors text-[var(--text-primary)]"
-          >
-            Email Analytics
-          </Link>
-          <button
-            onClick={() => showToast('Test toast - this should be visible!', 'success')}
-            className="px-4 py-2 border border-green-500 rounded hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors text-green-600"
-          >
-            Test Toast
-          </button>
         </div>
       </div>
     </div>

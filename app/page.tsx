@@ -1,5 +1,6 @@
 import { SidebarServer } from '@/components/SidebarServer';
 import { PoemDisplay } from '@/components/PoemDisplay';
+import { Footer } from '@/components/Footer';
 import { getRecentPoems, getAdjacentPoems } from '@/lib/poems';
 
 export default async function Home() {
@@ -13,10 +14,13 @@ export default async function Home() {
   return (
     <div className="min-h-screen has-sidebar">
       <SidebarServer />
-      <main id="main-content" className="flex-1">
-        {latestPoem && (
-          <PoemDisplay poem={latestPoem} prevPoem={prev} nextPoem={next} />
-        )}
+      <main id="main-content" className="flex-1 flex flex-col">
+        <div className="flex-1">
+          {latestPoem && (
+            <PoemDisplay poem={latestPoem} prevPoem={prev} nextPoem={next} />
+          )}
+        </div>
+        <Footer />
       </main>
     </div>
   );
