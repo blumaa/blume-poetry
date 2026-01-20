@@ -66,7 +66,7 @@ interface NewsletterEmailData {
 }
 
 export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, customMessage }: PoemEmailData): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blumenouspoetry.com';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blumenous-poetry.vercel.app';
   const poemUrl = `${siteUrl}/poem/${slug}`;
   const unsubscribeUrl = `${siteUrl}/api/unsubscribe?email=${encodeURIComponent(unsubscribeEmail)}`;
 
@@ -137,7 +137,7 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
 }
 
 export function generatePoemEmailText({ title, content, slug, unsubscribeEmail, customMessage }: PoemEmailData): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blumenouspoetry.com';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blumenous-poetry.vercel.app';
   const poemUrl = `${siteUrl}/poem/${slug}`;
   const unsubscribeUrl = `${siteUrl}/api/unsubscribe?email=${encodeURIComponent(unsubscribeEmail)}`;
 
@@ -159,7 +159,7 @@ Unsubscribe: ${unsubscribeUrl}
 }
 
 export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEmail }: NewsletterEmailData): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blumenouspoetry.com';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blumenous-poetry.vercel.app';
   const unsubscribeUrl = `${siteUrl}/api/unsubscribe?email=${encodeURIComponent(unsubscribeEmail)}`;
 
   const poemSection = poem ? `
@@ -226,7 +226,7 @@ export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEma
 }
 
 export function generateNewsletterText({ subject, bodyText, poem, unsubscribeEmail }: NewsletterEmailData): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blumenouspoetry.com';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blumenous-poetry.vercel.app';
   const unsubscribeUrl = `${siteUrl}/api/unsubscribe?email=${encodeURIComponent(unsubscribeEmail)}`;
 
   const poemSection = poem ? `
