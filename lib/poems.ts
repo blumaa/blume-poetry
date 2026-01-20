@@ -96,19 +96,24 @@ export async function searchPoems(query: string): Promise<Poem[]> {
   );
 }
 
-// Detect series from poem titles
+// Detect series from poem titles or subtitles
 function detectSeries(poems: Poem[]): Map<string, Poem[]> {
   const series = new Map<string, Poem[]>();
 
   const patterns = [
     { regex: /^Diary of a Programmer/i, name: 'Diary of a Programmer' },
+    { regex: /^Poems from the Pit/i, name: 'Poems from the Pit' },
     { regex: /^Moon (Over|Poem|Meditation)/i, name: 'Moon Poems' },
     { regex: /^Sun Over/i, name: 'Sun Poems' },
   ];
 
   for (const poem of poems) {
     for (const pattern of patterns) {
-      if (pattern.regex.test(poem.title)) {
+      // Check both title and subtitle for series membership
+      const matchesTitle = pattern.regex.test(poem.title);
+      const matchesSubtitle = poem.subtitle && pattern.regex.test(poem.subtitle);
+
+      if (matchesTitle || matchesSubtitle) {
         if (!series.has(pattern.name)) {
           series.set(pattern.name, []);
         }

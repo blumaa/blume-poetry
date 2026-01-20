@@ -1,38 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
+import { isRateLimited, getClientIp, RATE_LIMITS } from '@/lib/rateLimit';
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('Missing Supabase environment variables');
   }
 
   return createClient<Database>(supabaseUrl, supabaseKey);
-}
-
-// Simple in-memory rate limiting (resets on server restart)
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT = 30; // max requests per window
-const RATE_WINDOW = 60 * 1000; // 1 minute window
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const record = rateLimitMap.get(ip);
-
-  if (!record || now > record.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
-    return false;
-  }
-
-  if (record.count >= RATE_LIMIT) {
-    return true;
-  }
-
-  record.count++;
-  return false;
 }
 
 // GET - Get like count and whether current visitor has liked
@@ -86,8 +65,8 @@ export async function POST(
   const { slug } = await params;
 
   // Rate limiting
-  const ip = request.headers.get('x-forwarded-for') || 'unknown';
-  if (isRateLimited(ip)) {
+  const ip = getClientIp(request);
+  if (isRateLimited(ip, RATE_LIMITS.likes)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 

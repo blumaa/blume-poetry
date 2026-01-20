@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { escapeHtml, sanitizeNewsletterHtml } from './sanitize';
 
 let transporter: nodemailer.Transporter | null = null;
 
@@ -70,15 +71,18 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
   const poemUrl = `${siteUrl}/poem/${slug}`;
   const unsubscribeUrl = `${siteUrl}/api/unsubscribe?email=${encodeURIComponent(unsubscribeEmail)}`;
 
+  // Escape HTML entities to prevent injection
+  const safeTitle = escapeHtml(title);
+
   const formattedContent = content
     .split('\n')
-    .map((line) => (line.trim() === '' ? '<br>' : `<p style="margin: 0; line-height: 1.8;">${line}</p>`))
+    .map((line) => (line.trim() === '' ? '<br>' : `<p style="margin: 0; line-height: 1.8;">${escapeHtml(line)}</p>`))
     .join('\n');
 
   const formattedMessage = customMessage
     ? customMessage
         .split('\n')
-        .map((line) => (line.trim() === '' ? '<br>' : `<p style="margin: 0; line-height: 1.6;">${line}</p>`))
+        .map((line) => (line.trim() === '' ? '<br>' : `<p style="margin: 0; line-height: 1.6;">${escapeHtml(line)}</p>`))
         .join('\n')
     : '';
 
@@ -90,7 +94,7 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${title}</title>
+  <title>${safeTitle}</title>
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
@@ -100,7 +104,7 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
   <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
     <div style="background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
       <h1 style="color: #09090b; font-size: 24px; font-weight: normal; margin: 0 0 24px 0; border-bottom: 1px solid #e4e4e7; padding-bottom: 16px;">
-        ${title}
+        ${safeTitle}
       </h1>
 
       ${formattedMessage ? `
@@ -162,15 +166,19 @@ export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEma
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blumenous-poetry.vercel.app';
   const unsubscribeUrl = `${siteUrl}/api/unsubscribe?email=${encodeURIComponent(unsubscribeEmail)}`;
 
+  // Escape subject and sanitize body HTML to prevent injection
+  const safeSubject = escapeHtml(subject);
+  const safeBodyHtml = sanitizeNewsletterHtml(bodyHtml);
+
   const poemSection = poem ? `
       <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e4e4e7;">
         <h2 style="color: #09090b; font-size: 20px; font-weight: normal; margin: 0 0 16px 0;">
-          ${poem.title}
+          ${escapeHtml(poem.title)}
         </h2>
         <div style="color: #09090b; font-size: 16px; line-height: 1.8;">
           ${poem.content
             .split('\n')
-            .map((line) => (line.trim() === '' ? '<br>' : `<p style="margin: 0; line-height: 1.8;">${line}</p>`))
+            .map((line) => (line.trim() === '' ? '<br>' : `<p style="margin: 0; line-height: 1.8;">${escapeHtml(line)}</p>`))
             .join('\n')}
         </div>
         <div style="margin-top: 24px;">
@@ -189,7 +197,7 @@ export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEma
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${subject}</title>
+  <title>${safeSubject}</title>
   <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
@@ -199,11 +207,11 @@ export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEma
   <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
     <div style="background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
       <h1 style="color: #09090b; font-size: 24px; font-weight: normal; margin: 0 0 24px 0; border-bottom: 1px solid #e4e4e7; padding-bottom: 16px;">
-        ${subject}
+        ${safeSubject}
       </h1>
 
       <div style="color: #09090b; font-size: 16px; line-height: 1.6;">
-        ${bodyHtml}
+        ${safeBodyHtml}
       </div>
 
       ${poemSection}

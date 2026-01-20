@@ -26,7 +26,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'desmond.blume@gmail.com';
+  // No fallback - admin email must be configured via environment variable
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
   useEffect(() => {
     const supabase = createClient();
@@ -53,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
-  const isAdmin = user?.email === adminEmail;
+  const isAdmin = Boolean(adminEmail && user?.email === adminEmail);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, isAdmin, signOut }}>

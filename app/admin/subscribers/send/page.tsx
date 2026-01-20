@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { RichTextEditor, RichTextEditorRef } from '@/components/admin/RichTextEditor';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { useToast } from '@/components/Toast';
+import { sanitizeNewsletterHtml } from '@/lib/sanitize';
 import type { Poem } from '@/lib/supabase/types';
 
 export default function SendNewsletterPage() {
@@ -142,6 +143,9 @@ export default function SendNewsletterPage() {
 
   const selectedPoem = poems.find((p) => p.id === selectedPoemId);
 
+  // Sanitize HTML before rendering to prevent XSS
+  const sanitizedBodyHtml = useMemo(() => sanitizeNewsletterHtml(bodyHtml), [bodyHtml]);
+
   if (isLoading) {
     return <div className="text-[var(--text-tertiary)]">Loading...</div>;
   }
@@ -257,7 +261,7 @@ export default function SendNewsletterPage() {
         <div>
           <h3 className="text-sm font-medium mb-3 text-[var(--text-primary)]">Preview</h3>
           <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg p-6 min-h-[400px]">
-            {subject || bodyHtml || selectedPoem ? (
+            {subject || sanitizedBodyHtml || selectedPoem ? (
               <div>
                 {/* Subject Preview */}
                 {subject && (
@@ -267,11 +271,11 @@ export default function SendNewsletterPage() {
                 )}
 
                 {/* Body Preview */}
-                {bodyHtml && (
+                {sanitizedBodyHtml && (
                   <div
                     className="prose prose-lg max-w-none text-[var(--text-primary)] [&_p]:mb-0 [&_p]:min-h-[1.5em] leading-relaxed"
                     style={{ fontFamily: 'var(--font-serif)' }}
-                    dangerouslySetInnerHTML={{ __html: bodyHtml }}
+                    dangerouslySetInnerHTML={{ __html: sanitizedBodyHtml }}
                   />
                 )}
 

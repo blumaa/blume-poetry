@@ -79,6 +79,8 @@ function TreeItem({
         onClick={() => toggleNode(node.id)}
         className="w-full flex items-center gap-1 py-2 px-3 rounded text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors min-h-[44px]"
         style={{ paddingLeft: `${depth * 12 + 12}px` }}
+        aria-expanded={isExpanded}
+        aria-controls={hasChildren ? `tree-children-${node.id}` : undefined}
       >
         <ChevronIcon expanded={isExpanded} />
         <span className="truncate">{node.label}</span>
@@ -87,7 +89,7 @@ function TreeItem({
         )}
       </button>
       {isExpanded && hasChildren && (
-        <div>
+        <div id={`tree-children-${node.id}`} role="group">
           {node.children!.map((child) => (
             <TreeItem
               key={child.id}

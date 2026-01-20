@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import FocusTrap from 'focus-trap-react';
 import { Portal } from './Portal';
 
 interface SubscribeModalProps {
@@ -12,12 +13,20 @@ export function SubscribeModal({ isOpen, onClose }: SubscribeModalProps) {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const previousActiveElement = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (isOpen) {
+      // Store the currently focused element to restore focus on close
+      previousActiveElement.current = document.activeElement as HTMLElement;
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
+      // Restore focus to the previously focused element
+      if (previousActiveElement.current) {
+        previousActiveElement.current.focus();
+        previousActiveElement.current = null;
+      }
     }
     return () => {
       document.body.style.overflow = '';
@@ -84,11 +93,23 @@ export function SubscribeModal({ isOpen, onClose }: SubscribeModalProps) {
 
   return (
     <Portal>
-      <div
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-        onClick={handleBackdropClick}
+      <FocusTrap
+        active={isOpen}
+        focusTrapOptions={{
+          initialFocus: false,
+          allowOutsideClick: true,
+          escapeDeactivates: true,
+          onDeactivate: onClose,
+        }}
       >
-      <div className="relative w-full max-w-md bg-[var(--bg-primary)] rounded-lg shadow-xl border border-[var(--border)]">
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={handleBackdropClick}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="subscribe-modal-title"
+        >
+        <div className="relative w-full max-w-md bg-[var(--bg-primary)] rounded-lg shadow-xl border border-[var(--border)]">
         <button
           onClick={resetAndClose}
           className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -111,6 +132,7 @@ export function SubscribeModal({ isOpen, onClose }: SubscribeModalProps) {
         </button>
 
         <div className="p-6 md:p-8">
+          <h2 id="subscribe-modal-title" className="sr-only">Subscribe to newsletter</h2>
           <p className="text-[var(--text-secondary)] mb-6">
             Get notified when new poetry is published.
           </p>
@@ -172,8 +194,9 @@ export function SubscribeModal({ isOpen, onClose }: SubscribeModalProps) {
             </form>
           )}
         </div>
-      </div>
-      </div>
+        </div>
+        </div>
+      </FocusTrap>
     </Portal>
   );
 }

@@ -40,12 +40,8 @@ export function ToastProvider({ children }: ToastProviderProps) {
   );
 
   const showToast = useCallback((message: string, type: ToastType = 'success') => {
-    console.log('🔔 Toast triggered:', message, type);
     const id = crypto.randomUUID();
-    setToasts((prev) => {
-      console.log('🔔 Toasts after add:', [...prev, { id, message, type }]);
-      return [...prev, { id, message, type }];
-    });
+    setToasts((prev) => [...prev, { id, message, type }]);
 
     // Auto-dismiss after 4 seconds
     setTimeout(() => {
@@ -104,16 +100,16 @@ interface ToastItemProps {
 }
 
 function ToastItem({ toast, onDismiss }: ToastItemProps) {
-  const bgColor = {
-    success: '#16a34a',
-    error: '#dc2626',
-    info: '#2563eb',
+  const bgColorVar = {
+    success: 'var(--color-success)',
+    error: 'var(--color-error)',
+    info: 'var(--color-info)',
   }[toast.type];
 
   return (
     <div
       style={{
-        backgroundColor: bgColor,
+        backgroundColor: bgColorVar,
         color: 'white',
         padding: '12px 16px',
         borderRadius: '8px',
