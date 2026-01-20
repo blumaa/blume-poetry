@@ -49,10 +49,18 @@ function generateSlug(title: string): string {
     .slice(0, 80);
 }
 
+// Format date for datetime-local input (YYYY-MM-DDTHH:mm)
+function formatDateForInput(dateString: string | undefined): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toISOString().slice(0, 16);
+}
+
 export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
   const [title, setTitle] = useState(poem?.title || '');
   const [subtitle, setSubtitle] = useState(poem?.subtitle || '');
   const [status, setStatus] = useState<'draft' | 'published'>(poem?.status || 'draft');
+  const [publishedAt, setPublishedAt] = useState(formatDateForInput(poem?.published_at));
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState(false);
@@ -84,6 +92,11 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
     const supabase = createClient();
 
     try {
+      // Use the date from input, or default to now if empty
+      const finalPublishedAt = publishedAt
+        ? new Date(publishedAt).toISOString()
+        : new Date().toISOString();
+
       if (isNew) {
         const newPoemData: NewPoem = {
           title: title.trim(),
@@ -92,7 +105,7 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
           content: contentHtml,
           plain_text: contentText,
           status,
-          published_at: new Date().toISOString(),
+          published_at: finalPublishedAt,
         };
         const { error: insertError } = await supabase.from('poems').insert(newPoemData);
         if (insertError) throw insertError;
@@ -107,8 +120,6 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
         sessionStorage.setItem('toast', JSON.stringify({ message: `"${title.trim()}" created`, type: 'success' }));
         router.push('/admin/poems');
       } else {
-        // Only set published_at if publishing for the first time (was draft, now published)
-        const isFirstPublish = status === 'published' && poem?.status === 'draft';
         const updateData: UpdatePoem = {
           title: title.trim(),
           subtitle: subtitle.trim() || null,
@@ -116,7 +127,7 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
           content: contentHtml,
           plain_text: contentText,
           status,
-          published_at: isFirstPublish ? new Date().toISOString() : poem?.published_at,
+          published_at: finalPublishedAt,
         };
         const { error: updateError } = await supabase.from('poems').update(updateData).eq('id', poem!.id);
         if (updateError) throw updateError;
@@ -170,32 +181,49 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
         />
       </div>
 
-      {/* Status */}
-      <div>
-        <label className="block text-sm font-medium mb-2 text-[var(--text-primary)]">Status</label>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2 cursor-pointer text-[var(--text-primary)]">
-            <input
-              type="radio"
-              name="status"
-              value="draft"
-              checked={status === 'draft'}
-              onChange={() => setStatus('draft')}
-              className="accent-[var(--accent)]"
-            />
-            <span>Draft</span>
+      {/* Status and Date Row */}
+      <div className="flex flex-col sm:flex-row gap-6">
+        {/* Status */}
+        <div>
+          <label className="block text-sm font-medium mb-2 text-[var(--text-primary)]">Status</label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer text-[var(--text-primary)]">
+              <input
+                type="radio"
+                name="status"
+                value="draft"
+                checked={status === 'draft'}
+                onChange={() => setStatus('draft')}
+                className="accent-[var(--accent)]"
+              />
+              <span>Draft</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer text-[var(--text-primary)]">
+              <input
+                type="radio"
+                name="status"
+                value="published"
+                checked={status === 'published'}
+                onChange={() => setStatus('published')}
+                className="accent-[var(--accent)]"
+              />
+              <span>Published</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Published Date */}
+        <div className="flex-1">
+          <label htmlFor="published-date" className="block text-sm font-medium mb-2 text-[var(--text-primary)]">
+            Published Date
           </label>
-          <label className="flex items-center gap-2 cursor-pointer text-[var(--text-primary)]">
-            <input
-              type="radio"
-              name="status"
-              value="published"
-              checked={status === 'published'}
-              onChange={() => setStatus('published')}
-              className="accent-[var(--accent)]"
-            />
-            <span>Published</span>
-          </label>
+          <input
+            id="published-date"
+            type="datetime-local"
+            value={publishedAt}
+            onChange={(e) => setPublishedAt(e.target.value)}
+            className="px-4 py-2 border border-[var(--border)] rounded bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+          />
         </div>
       </div>
 
