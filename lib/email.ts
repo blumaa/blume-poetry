@@ -82,6 +82,8 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
         .join('\n')
     : '';
 
+  const fontStack = "'Crimson Text', Georgia, 'Times New Roman', serif";
+
   return `
 <!DOCTYPE html>
 <html>
@@ -89,8 +91,12 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${title}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
+  </style>
 </head>
-<body style="font-family: Georgia, 'Times New Roman', serif; background-color: #f8f8f8; margin: 0; padding: 0;">
+<body style="font-family: ${fontStack}; background-color: #f8f8f8; margin: 0; padding: 0;">
   <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
     <div style="background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
       <h1 style="color: #09090b; font-size: 24px; font-weight: normal; margin: 0 0 24px 0; border-bottom: 1px solid #e4e4e7; padding-bottom: 16px;">
@@ -175,6 +181,8 @@ export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEma
       </div>
     ` : '';
 
+  const fontStack = "'Crimson Text', Georgia, 'Times New Roman', serif";
+
   return `
 <!DOCTYPE html>
 <html>
@@ -182,8 +190,12 @@ export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEma
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${subject}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
+  </style>
 </head>
-<body style="font-family: Georgia, 'Times New Roman', serif; background-color: #f8f8f8; margin: 0; padding: 0;">
+<body style="font-family: ${fontStack}; background-color: #f8f8f8; margin: 0; padding: 0;">
   <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
     <div style="background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
       <h1 style="color: #09090b; font-size: 24px; font-weight: normal; margin: 0 0 24px 0; border-bottom: 1px solid #e4e4e7; padding-bottom: 16px;">
