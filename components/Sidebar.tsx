@@ -206,7 +206,7 @@ export function Sidebar({
   // Mobile sidebar classes
   if (isMobile) {
     return (
-      <aside className={`sidebar-mobile ${isOpen ? 'open' : ''} w-full h-screen flex flex-col bg-[var(--bg-sidebar)] fixed left-0 top-0 z-50`}>
+      <aside className={`sidebar-mobile ${isOpen ? 'open' : ''} w-full flex flex-col bg-[var(--bg-sidebar)] fixed left-0 top-0 z-50`}>
         {/* Header */}
         <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
           <Link

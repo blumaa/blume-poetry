@@ -291,6 +291,9 @@ input[type="button"]:disabled {
 .sidebar-mobile {
   transform: translateX(-100%);
   transition: transform 0.3s ease;
+  /* Fallback for browsers that don't support dvh */
+  height: 100vh;
+  height: 100dvh;
 }
 
 .sidebar-mobile.open {
