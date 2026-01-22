@@ -122,10 +122,7 @@ export function CommentSection({ slug, isModalOpen = false, onModalClose }: Comm
   return (
     <div className="mt-8 pt-8 border-t border-border">
       {isLoading ? (
-        <div className="space-y-4">
-          <SkeletonComment />
-          <SkeletonComment />
-        </div>
+        <SkeletonComment />
       ) : error ? (
         <p className="text-red-600">{error}</p>
       ) : comments.length === 0 ? (
