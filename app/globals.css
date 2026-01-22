@@ -94,6 +94,10 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-heart: var(--color-heart);
+  --color-success: var(--color-success);
+  --color-error: var(--color-error);
+  --color-warning: var(--color-warning);
+  --color-info: var(--color-info);
   --font-serif: var(--font-serif);
   --width-sidebar: var(--sidebar-width);
 }

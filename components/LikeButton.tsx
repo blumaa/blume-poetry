@@ -79,7 +79,7 @@ export function LikeButton({ slug }: LikeButtonProps) {
   return (
     <button
       onClick={handleClick}
-      className="flex items-center gap-2 px-4 py-3 border border-border rounded transition-colors min-h-[44px] text-secondary hover:border-tertiary"
+      className="flex items-center gap-2 px-4 h-[44px] border border-border rounded transition-colors text-secondary hover:border-tertiary"
       aria-label={hasLiked ? 'Unlike this poem' : 'Like this poem'}
       aria-pressed={hasLiked}
     >

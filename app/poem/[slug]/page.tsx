@@ -1,7 +1,5 @@
 import { notFound } from 'next/navigation';
-import { SidebarServer } from '@/components/SidebarServer';
 import { PoemDisplay } from '@/components/PoemDisplay';
-import { Footer } from '@/components/Footer';
 import { getPoemBySlug, getAllPoemSlugs, getAdjacentPoems } from '@/lib/poems';
 
 interface PoemPageProps {
@@ -37,15 +35,5 @@ export default async function PoemPage({ params }: PoemPageProps) {
 
   const { prev, next } = await getAdjacentPoems(slug);
 
-  return (
-    <div className="min-h-screen has-sidebar">
-      <SidebarServer />
-      <main id="main-content" className="flex-1 flex flex-col">
-        <div className="flex-1">
-          <PoemDisplay poem={poem} prevPoem={prev} nextPoem={next} />
-        </div>
-        <Footer />
-      </main>
-    </div>
-  );
+  return <PoemDisplay poem={poem} prevPoem={prev} nextPoem={next} />;
 }

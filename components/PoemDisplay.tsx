@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Poem } from '@/lib/poems';
 import { LikeButton } from './LikeButton';
-import { CommentSection } from './CommentSection';
+import { CommentSection, CommentIcon } from './CommentSection';
 import { PoemContent } from './PoemContent';
 
 interface PoemDisplayProps {
@@ -19,6 +19,7 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
   const router = useRouter();
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
 
   // Keyboard navigation
   const handleKeyDown = useCallback(
@@ -104,9 +105,16 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
       {/* Poem body - uses shared PoemContent component */}
       <PoemContent html={poem.content} />
 
-      {/* Like Button */}
-      <div className="mt-8">
+      {/* Like & Comment Buttons */}
+      <div className="mt-8 flex items-center justify-between">
         <LikeButton slug={poem.slug} />
+        <button
+          onClick={() => setIsCommentModalOpen(true)}
+          className="flex items-center gap-2 px-4 h-[44px] text-sm bg-accent text-white hover:bg-accent-hover rounded transition-colors"
+        >
+          <CommentIcon />
+          <span>add comment</span>
+        </button>
       </div>
 
       {/* Navigation */}
@@ -144,7 +152,11 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
       )}
 
       {/* Comments */}
-      <CommentSection slug={poem.slug} />
+      <CommentSection
+        slug={poem.slug}
+        isModalOpen={isCommentModalOpen}
+        onModalClose={() => setIsCommentModalOpen(false)}
+      />
     </article>
   );
 }

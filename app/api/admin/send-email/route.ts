@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { sendEmail, generateNewsletterHtml, generateNewsletterText } from '@/lib/email';
+import { isAdminEmail } from '@/lib/config';
 import { z } from 'zod';
 import type { Poem, Subscriber } from '@/lib/supabase/types';
 
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user || user.email !== (process.env.ADMIN_EMAIL || 'desmond.blume@gmail.com')) {
+    if (!user || !isAdminEmail(user.email)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

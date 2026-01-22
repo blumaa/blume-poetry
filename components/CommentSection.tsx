@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/components/Toast';
 import { createClient } from '@/lib/supabase/client';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import { Modal } from '@/components/Modal';
 import { SkeletonComment } from '@/components/Skeleton';
+import { isAdminEmail } from '@/lib/config';
 
 interface Comment {
   id: string;
@@ -15,6 +17,8 @@ interface Comment {
 
 interface CommentSectionProps {
   slug: string;
+  isModalOpen?: boolean;
+  onModalClose?: () => void;
 }
 
 function getVisitorId(): string {
@@ -37,7 +41,25 @@ function formatDate(dateString: string): string {
   });
 }
 
-export function CommentSection({ slug }: CommentSectionProps) {
+export function CommentIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+export function CommentSection({ slug, isModalOpen = false, onModalClose }: CommentSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,12 +69,10 @@ export function CommentSection({ slug }: CommentSectionProps) {
   const { showToast } = useToast();
 
   useEffect(() => {
-    // Check if user is admin
     const supabase = createClient();
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'desmond.blume@gmail.com';
 
     supabase.auth.getUser().then(({ data: { user } }) => {
-      setIsAdmin(user?.email === adminEmail);
+      setIsAdmin(isAdminEmail(user?.email));
     });
   }, []);
 
@@ -71,6 +91,7 @@ export function CommentSection({ slug }: CommentSectionProps) {
 
   const handleNewComment = (comment: Comment) => {
     setComments((prev) => [comment, ...prev]);
+    onModalClose?.();
   };
 
   const handleDeleteConfirm = async () => {
@@ -100,21 +121,17 @@ export function CommentSection({ slug }: CommentSectionProps) {
 
   return (
     <div className="mt-8 pt-8 border-t border-border">
-      <h2 className="text-lg font-medium mb-6 text-primary">Comments</h2>
-
-      <CommentForm slug={slug} onCommentAdded={handleNewComment} />
-
       {isLoading ? (
-        <div className="mt-6 space-y-4">
+        <div className="space-y-4">
           <SkeletonComment />
           <SkeletonComment />
         </div>
       ) : error ? (
-        <p className="text-red-600 mt-6">{error}</p>
+        <p className="text-red-600">{error}</p>
       ) : comments.length === 0 ? (
-        <p className="text-secondary mt-6">No comments yet. Be the first to share your thoughts!</p>
+        <p className="text-secondary text-center py-8">No comments yet. Be the first to share your thoughts!</p>
       ) : (
-        <div className="space-y-6 mt-8">
+        <div className="space-y-6">
           {comments.map((comment) => (
             <div key={comment.id} className="border-b border-border pb-6 last:border-b-0">
               <div className="flex items-center justify-between mb-2">
@@ -138,6 +155,13 @@ export function CommentSection({ slug }: CommentSectionProps) {
         </div>
       )}
 
+      <CommentModal
+        isOpen={isModalOpen}
+        onClose={() => onModalClose?.()}
+        slug={slug}
+        onCommentAdded={handleNewComment}
+      />
+
       <ConfirmModal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
@@ -152,12 +176,14 @@ export function CommentSection({ slug }: CommentSectionProps) {
   );
 }
 
-interface CommentFormProps {
+interface CommentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
   slug: string;
   onCommentAdded: (comment: Comment) => void;
 }
 
-function CommentForm({ slug, onCommentAdded }: CommentFormProps) {
+function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalProps) {
   const [name, setName] = useState('');
   const [content, setContent] = useState('');
   const [honeypot, setHoneypot] = useState('');
@@ -165,13 +191,18 @@ function CommentForm({ slug, onCommentAdded }: CommentFormProps) {
   const formLoadTime = useRef(Date.now());
   const { showToast } = useToast();
 
-  // Remember name for returning visitors
   useEffect(() => {
     const savedName = localStorage.getItem('comment_name');
     if (savedName) {
       setName(savedName);
     }
   }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      formLoadTime.current = Date.now();
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,8 +213,6 @@ function CommentForm({ slug, onCommentAdded }: CommentFormProps) {
     }
 
     setIsSubmitting(true);
-
-    // Save name for next time
     localStorage.setItem('comment_name', name.trim());
 
     const visitorId = getVisitorId();
@@ -211,7 +240,6 @@ function CommentForm({ slug, onCommentAdded }: CommentFormProps) {
       if (data.comment) {
         onCommentAdded(data.comment);
         setContent('');
-        formLoadTime.current = Date.now(); // Reset for next comment
         showToast('Comment posted!', 'success');
       }
     } catch {
@@ -222,58 +250,70 @@ function CommentForm({ slug, onCommentAdded }: CommentFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="comment-name" className="block text-sm font-medium mb-1 text-primary">
-          Name
-        </label>
-        <input
-          id="comment-name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Your name"
-          maxLength={100}
-          className="w-full px-4 py-3 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 min-h-[44px]"
-        />
-      </div>
+    <Modal isOpen={isOpen} onClose={onClose} title="Add a Comment">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="comment-name" className="block text-sm font-medium mb-1 text-primary">
+            Name
+          </label>
+          <input
+            id="comment-name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            maxLength={100}
+            className="w-full px-3 py-2 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent min-h-[44px]"
+          />
+        </div>
 
-      <div>
-        <label htmlFor="comment-content" className="block text-sm font-medium mb-1 text-primary">
-          Comment
-        </label>
-        <textarea
-          id="comment-content"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Share your thoughts..."
-          rows={4}
-          maxLength={2000}
-          className="w-full px-4 py-3 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 resize-y min-h-[100px]"
-        />
-      </div>
+        <div>
+          <label htmlFor="comment-content" className="block text-sm font-medium mb-1 text-primary">
+            Comment
+          </label>
+          <textarea
+            id="comment-content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Share your thoughts..."
+            rows={4}
+            maxLength={2000}
+            className="w-full px-3 py-2 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent resize-y min-h-[100px]"
+          />
+        </div>
 
-      {/* Honeypot field - hidden from users, bots fill it out */}
-      <div className="sr-only" aria-hidden="true">
-        <label htmlFor="website">Website</label>
-        <input
-          id="website"
-          type="text"
-          name="website"
-          value={honeypot}
-          onChange={(e) => setHoneypot(e.target.value)}
-          tabIndex={-1}
-          autoComplete="off"
-        />
-      </div>
+        {/* Honeypot field */}
+        <div className="sr-only" aria-hidden="true">
+          <label htmlFor="website">Website</label>
+          <input
+            id="website"
+            type="text"
+            name="website"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+          />
+        </div>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="px-6 py-3 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 min-h-[44px] font-medium"
-      >
-        {isSubmitting ? 'Posting...' : 'Post Comment'}
-      </button>
-    </form>
+        <div className="flex gap-3 justify-end pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="px-4 py-2 border border-border rounded hover:bg-hover transition-colors text-primary min-h-[44px]"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 min-h-[44px]"
+          >
+            {isSubmitting ? 'Posting...' : 'Post Comment'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

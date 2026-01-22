@@ -214,12 +214,12 @@ export function Sidebar({
           <Link
             href="/"
             onClick={handleNavigate}
-            className="text-lg font-medium text-primary hover:text-secondary transition-colors"
+            className="text-lg font-medium text-primary hover:text-secondary transition-colors h-[44px] flex items-center"
           >
             Blumenous Poetry
           </Link>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center">
             <InfoButton className="text-secondary" />
             <SubscribeButton className="text-secondary" />
             <ThemeToggle />
