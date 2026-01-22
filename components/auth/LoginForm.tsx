@@ -51,7 +51,7 @@ export function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full px-3 py-2 border border-[var(--border)] rounded bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+          className="w-full px-3 py-2 border border-border rounded bg-surface text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
       </div>
 
@@ -65,14 +65,14 @@ export function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="w-full px-3 py-2 border border-[var(--border)] rounded bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+          className="w-full px-3 py-2 border border-border rounded bg-surface text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
       </div>
 
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full py-2 px-4 bg-[var(--accent)] text-white rounded hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50 cursor-pointer"
+        className="w-full py-2 px-4 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 cursor-pointer"
       >
         {isLoading ? 'Signing in...' : 'Sign In'}
       </button>

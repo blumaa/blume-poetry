@@ -21,7 +21,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-[var(--text-secondary)]">Loading...</div>
+        <div className="text-secondary">Loading...</div>
       </div>
     );
   }
@@ -35,7 +35,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-xl mb-2">Access Denied</h1>
-          <p className="text-[var(--text-secondary)]">
+          <p className="text-secondary">
             You don&apos;t have permission to access this area.
           </p>
         </div>

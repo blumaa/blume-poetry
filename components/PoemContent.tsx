@@ -35,7 +35,7 @@ export function PoemContent({ html, className = '' }: PoemContentProps) {
 
   return (
     <div
-      className={`poem-content text-base md:text-lg leading-relaxed text-[var(--text-primary)] ${className}`}
+      className={`poem-content text-base md:text-lg leading-relaxed text-primary ${className}`}
       style={{
         lineHeight: '1.8',
         fontFamily: 'var(--font-serif)',

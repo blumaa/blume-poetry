@@ -84,15 +84,15 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
     <article key={poem.slug} className="page-content max-w-2xl mx-auto px-4 py-8 md:px-6 md:py-12 overflow-x-hidden">
       {/* Title */}
       <header className="mb-8">
-        <h1 className="text-xl md:text-2xl font-normal text-[var(--text-primary)] leading-tight">
+        <h1 className="text-xl md:text-2xl font-normal text-primary leading-tight">
           {poem.title}
         </h1>
         {poem.subtitle && (
-          <p className="text-base md:text-lg text-[var(--text-secondary)] mt-1 italic">
+          <p className="text-base md:text-lg text-secondary mt-1 italic">
             {poem.subtitle}
           </p>
         )}
-        <time className="text-sm text-[var(--text-tertiary)] mt-2 block">
+        <time className="text-sm text-tertiary mt-2 block">
           {new Date(poem.publishedAt).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -111,13 +111,13 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
 
       {/* Navigation */}
       {showNavigation && (
-        <footer className="mt-8 md:mt-12 pt-8 border-t border-[var(--border)] flex justify-between text-sm gap-4">
+        <footer className="mt-8 md:mt-12 pt-8 border-t border-border flex justify-between text-sm gap-4">
           {prevPoem ? (
             <Link
               href={`/poem/${prevPoem.slug}`}
-              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors min-h-[44px] flex items-center"
+              className="text-secondary hover:text-primary transition-colors min-h-[44px] flex items-center"
             >
-              <span className="text-[var(--text-tertiary)] mr-1">←</span>
+              <span className="text-tertiary mr-1">←</span>
               <span className="truncate max-w-[120px] md:max-w-none">
                 {prevPoem.title.slice(0, 30)}
                 {prevPoem.title.length > 30 ? '...' : ''}
@@ -129,13 +129,13 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
           {nextPoem ? (
             <Link
               href={`/poem/${nextPoem.slug}`}
-              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-right min-h-[44px] flex items-center"
+              className="text-secondary hover:text-primary transition-colors text-right min-h-[44px] flex items-center"
             >
               <span className="truncate max-w-[120px] md:max-w-none">
                 {nextPoem.title.slice(0, 30)}
                 {nextPoem.title.length > 30 ? '...' : ''}
               </span>
-              <span className="text-[var(--text-tertiary)] ml-1">→</span>
+              <span className="text-tertiary ml-1">→</span>
             </Link>
           ) : (
             <span />

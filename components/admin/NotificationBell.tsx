@@ -138,7 +138,7 @@ export function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={handleOpen}
-        className="relative p-2 text-[var(--text-sidebar-muted)] hover:text-[var(--text-sidebar)] transition-colors"
+        className="relative p-2 text-secondary hover:text-primary transition-colors"
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,22 +157,22 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-          <div className="p-3 border-b border-[var(--border)]">
-            <h3 className="font-medium text-[var(--text-primary)]">Notifications</h3>
+        <div className="absolute right-0 mt-2 w-80 bg-surface border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+          <div className="p-3 border-b border-border">
+            <h3 className="font-medium text-primary">Notifications</h3>
           </div>
 
           {isLoading ? (
-            <div className="p-4 text-center text-[var(--text-tertiary)]">Loading...</div>
+            <div className="p-4 text-center text-tertiary">Loading...</div>
           ) : notifications.length === 0 ? (
-            <div className="p-4 text-center text-[var(--text-tertiary)]">No notifications</div>
+            <div className="p-4 text-center text-tertiary">No notifications</div>
           ) : (
-            <div className="divide-y divide-[var(--border)]">
+            <div className="divide-y divide-border">
               {notifications.map((notif) => (
                 <Link
                   key={notif.id}
                   href={`/poem/${notif.poem.slug}`}
-                  className="block p-3 hover:bg-[var(--bg-hover)] transition-colors"
+                  className="block p-3 hover:bg-hover transition-colors"
                   onClick={() => setIsOpen(false)}
                 >
                   <div className="flex items-start gap-2">
@@ -190,7 +190,7 @@ export function NotificationBell() {
                       </span>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[var(--text-primary)]">
+                      <p className="text-sm text-primary">
                         {notif.type === 'comment' ? (
                           <>
                             <span className="font-medium">{notif.author_name}</span>
@@ -202,11 +202,11 @@ export function NotificationBell() {
                         <span className="font-medium">&ldquo;{notif.poem.title}&rdquo;</span>
                       </p>
                       {notif.type === 'comment' && notif.content && (
-                        <p className="text-xs text-[var(--text-tertiary)] truncate mt-0.5">
+                        <p className="text-xs text-tertiary truncate mt-0.5">
                           {notif.content}
                         </p>
                       )}
-                      <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                      <p className="text-xs text-tertiary mt-1">
                         {formatTime(notif.created_at)}
                       </p>
                     </div>

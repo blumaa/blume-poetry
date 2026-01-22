@@ -59,6 +59,6 @@ export async function GET(request: Request) {
     .update({ status: 'unsubscribed' })
     .eq('email', email);
 
-  // Redirect to a confirmation page or home
-  return NextResponse.redirect(new URL('/?unsubscribed=true', request.url));
+  // Redirect to the unsubscribe confirmation page
+  return NextResponse.redirect(new URL('/unsubscribe', request.url));
 }

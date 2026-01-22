@@ -41,7 +41,7 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
 
   if (status === 'success') {
     return (
-      <div className={`text-[var(--text-secondary)] ${compact ? 'text-xs' : 'text-center'}`}>
+      <div className={`text-secondary ${compact ? 'text-xs' : 'text-center'}`}>
         Thank you for subscribing!
       </div>
     );
@@ -60,13 +60,13 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
           required
-          className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-[var(--border)] rounded bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)]"
+          className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent"
           disabled={status === 'loading'}
         />
         <button
           type="submit"
           disabled={status === 'loading'}
-          className="px-2 py-1.5 text-sm bg-[var(--accent)] text-white rounded hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50 shrink-0"
+          className="px-2 py-1.5 text-sm bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 shrink-0"
         >
           {status === 'loading' ? '...' : 'Go'}
         </button>
@@ -86,13 +86,13 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
         onChange={(e) => setEmail(e.target.value)}
         placeholder="your@email.com"
         required
-        className="flex-1 px-4 py-3 border border-[var(--border)] rounded bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 min-h-[44px]"
+        className="flex-1 px-4 py-3 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 min-h-[44px]"
         disabled={status === 'loading'}
       />
       <button
         type="submit"
         disabled={status === 'loading'}
-        className="px-6 py-3 bg-[var(--accent)] text-white rounded hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50 min-h-[44px] font-medium"
+        className="px-6 py-3 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 min-h-[44px] font-medium"
       >
         {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
       </button>

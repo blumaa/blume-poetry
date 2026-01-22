@@ -13,15 +13,15 @@ function PoemPreview({ title, subtitle, html }: { title: string; subtitle: strin
     <article className="max-w-2xl mx-auto">
       {/* Title */}
       <header className="mb-8">
-        <h1 className="text-xl md:text-2xl font-normal text-[var(--text-primary)] leading-tight">
+        <h1 className="text-xl md:text-2xl font-normal text-primary leading-tight">
           {title || 'Untitled'}
         </h1>
         {subtitle && (
-          <p className="text-base md:text-lg text-[var(--text-secondary)] mt-1 italic">
+          <p className="text-base md:text-lg text-secondary mt-1 italic">
             {subtitle}
           </p>
         )}
-        <time className="text-sm text-[var(--text-tertiary)] mt-2 block">
+        <time className="text-sm text-tertiary mt-2 block">
           {new Date().toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -153,7 +153,7 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
     <div className="space-y-6">
       {/* Title */}
       <div>
-        <label htmlFor="title" className="block text-sm font-medium mb-2 text-[var(--text-primary)]">
+        <label htmlFor="title" className="block text-sm font-medium mb-2 text-primary">
           Title
         </label>
         <input
@@ -162,14 +162,14 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Poem title..."
-          className="w-full px-4 py-3 text-xl border border-[var(--border)] rounded bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+          className="w-full px-4 py-3 text-xl border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
       </div>
 
       {/* Subtitle */}
       <div>
-        <label htmlFor="subtitle" className="block text-sm font-medium mb-2 text-[var(--text-primary)]">
-          Subtitle <span className="text-[var(--text-tertiary)] font-normal">(optional)</span>
+        <label htmlFor="subtitle" className="block text-sm font-medium mb-2 text-primary">
+          Subtitle <span className="text-tertiary font-normal">(optional)</span>
         </label>
         <input
           id="subtitle"
@@ -177,7 +177,7 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
           value={subtitle}
           onChange={(e) => setSubtitle(e.target.value)}
           placeholder="Optional subtitle..."
-          className="w-full px-4 py-3 border border-[var(--border)] rounded bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+          className="w-full px-4 py-3 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
       </div>
 
@@ -185,27 +185,27 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
       <div className="flex flex-col sm:flex-row gap-6">
         {/* Status */}
         <div>
-          <label className="block text-sm font-medium mb-2 text-[var(--text-primary)]">Status</label>
+          <label className="block text-sm font-medium mb-2 text-primary">Status</label>
           <div className="flex gap-4">
-            <label className="flex items-center gap-2 cursor-pointer text-[var(--text-primary)]">
+            <label className="flex items-center gap-2 cursor-pointer text-primary">
               <input
                 type="radio"
                 name="status"
                 value="draft"
                 checked={status === 'draft'}
                 onChange={() => setStatus('draft')}
-                className="accent-[var(--accent)]"
+                className="accent-accent"
               />
               <span>Draft</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer text-[var(--text-primary)]">
+            <label className="flex items-center gap-2 cursor-pointer text-primary">
               <input
                 type="radio"
                 name="status"
                 value="published"
                 checked={status === 'published'}
                 onChange={() => setStatus('published')}
-                className="accent-[var(--accent)]"
+                className="accent-accent"
               />
               <span>Published</span>
             </label>
@@ -214,7 +214,7 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
 
         {/* Published Date */}
         <div className="flex-1">
-          <label htmlFor="published-date" className="block text-sm font-medium mb-2 text-[var(--text-primary)]">
+          <label htmlFor="published-date" className="block text-sm font-medium mb-2 text-primary">
             Published Date
           </label>
           <input
@@ -222,34 +222,34 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
             type="datetime-local"
             value={publishedAt}
             onChange={(e) => setPublishedAt(e.target.value)}
-            className="px-4 py-2 border border-[var(--border)] rounded bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+            className="px-4 py-2 border border-border rounded bg-surface text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
         </div>
       </div>
 
       {/* Editor / Preview Toggle */}
-      <div className="flex items-center gap-4 border-b border-[var(--border)] pb-2">
+      <div className="flex items-center gap-4 border-b border-border pb-2">
         <button
           onClick={() => setIsPreview(false)}
-          className={`px-3 py-1 text-sm ${!isPreview ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]' : 'text-[var(--text-tertiary)]'}`}
+          className={`px-3 py-1 text-sm ${!isPreview ? 'text-accent border-b-2 border-accent' : 'text-tertiary'}`}
         >
           Edit
         </button>
         <button
           onClick={() => setIsPreview(true)}
-          className={`px-3 py-1 text-sm ${isPreview ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]' : 'text-[var(--text-tertiary)]'}`}
+          className={`px-3 py-1 text-sm ${isPreview ? 'text-accent border-b-2 border-accent' : 'text-tertiary'}`}
         >
           Preview
         </button>
       </div>
 
       {/* Content */}
-      <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg p-6">
+      <div className="bg-surface border border-border rounded-lg p-6">
         {isPreview ? (
           contentHtml ? (
             <PoemPreview title={title} subtitle={subtitle} html={contentHtml} />
           ) : (
-            <div className="text-[var(--text-tertiary)] text-center py-12">
+            <div className="text-tertiary text-center py-12">
               No content yet...
             </div>
           )
@@ -274,13 +274,13 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="px-6 py-2 bg-[var(--accent)] text-white rounded hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50"
+          className="px-6 py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
         >
           {isSaving ? 'Saving...' : isNew ? 'Create Poem' : 'Save Changes'}
         </button>
         <button
           onClick={() => router.back()}
-          className="px-6 py-2 border border-[var(--border)] rounded hover:border-[var(--accent)] transition-colors text-[var(--text-primary)]"
+          className="px-6 py-2 border border-border rounded hover:border-accent transition-colors text-primary"
         >
           Cancel
         </button>

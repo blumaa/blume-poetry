@@ -62,8 +62,8 @@ function TreeItem({
         onClick={onNavigate}
         className={`block py-2 px-3 rounded text-sm truncate transition-colors min-h-[44px] flex items-center ${
           node.slug === activeSlug
-            ? 'bg-[var(--bg-active)] text-[var(--text-primary)]'
-            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
+            ? 'bg-active text-primary'
+            : 'text-secondary hover:bg-hover hover:text-primary'
         }`}
         style={{ paddingLeft: `${depth * 12 + 12}px` }}
         title={node.label}
@@ -77,7 +77,7 @@ function TreeItem({
     <div>
       <button
         onClick={() => toggleNode(node.id)}
-        className="w-full flex items-center gap-1 py-2 px-3 rounded text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors min-h-[44px]"
+        className="w-full flex items-center gap-1 py-2 px-3 rounded text-sm text-secondary hover:bg-hover hover:text-primary transition-colors min-h-[44px]"
         style={{ paddingLeft: `${depth * 12 + 12}px` }}
         aria-expanded={isExpanded}
         aria-controls={hasChildren ? `tree-children-${node.id}` : undefined}
@@ -85,7 +85,7 @@ function TreeItem({
         <ChevronIcon expanded={isExpanded} />
         <span className="truncate">{node.label}</span>
         {node.count !== undefined && (
-          <span className="ml-auto text-xs text-[var(--text-tertiary)]">{node.count}</span>
+          <span className="ml-auto text-xs text-tertiary">{node.count}</span>
         )}
       </button>
       {isExpanded && hasChildren && (
@@ -128,7 +128,7 @@ export function Sidebar({
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState<Poem[] | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(
-    new Set(['recent'])
+    new Set()
   );
   const [manuallyCollapsed, setManuallyCollapsed] = useState<Set<string>>(
     new Set()
@@ -208,24 +208,24 @@ export function Sidebar({
   // Mobile sidebar classes
   if (isMobile) {
     return (
-      <aside className={`sidebar-mobile ${isOpen ? 'open' : ''} w-full flex flex-col bg-[var(--bg-sidebar)] fixed left-0 top-0 z-50`}>
+      <aside className={`sidebar-mobile ${isOpen ? 'open' : ''} w-full flex flex-col bg-surface-sidebar fixed left-0 top-0 z-50`}>
         {/* Header */}
-        <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
+        <div className="p-4 border-b border-border flex items-center justify-between">
           <Link
             href="/"
             onClick={handleNavigate}
-            className="text-lg font-medium text-[var(--text-primary)] hover:text-[var(--text-secondary)] transition-colors"
+            className="text-lg font-medium text-primary hover:text-secondary transition-colors"
           >
             Blumenous Poetry
           </Link>
 
           <div className="flex items-center gap-1">
-            <InfoButton className="text-[var(--text-secondary)]" />
-            <SubscribeButton className="text-[var(--text-secondary)]" />
-            <ThemeToggle className="text-[var(--text-secondary)]" />
+            <InfoButton className="text-secondary" />
+            <SubscribeButton className="text-secondary" />
+            <ThemeToggle />
             <button
               onClick={onClose}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-secondary hover:text-primary hover:bg-hover transition-colors"
               aria-label="Close navigation menu"
             >
               <svg
@@ -247,7 +247,7 @@ export function Sidebar({
         </div>
 
         {/* Search */}
-        <div className="p-3 border-b border-[var(--border)]">
+        <div className="p-3 border-b border-border">
           <label htmlFor="mobile-search-poems" className="sr-only">
             Search poems
           </label>
@@ -257,7 +257,7 @@ export function Sidebar({
             placeholder="Search poems..."
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full rounded px-3 py-2 text-sm min-h-[44px] bg-[var(--bg-primary)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            className="w-full rounded px-3 py-2 text-sm min-h-[44px] bg-surface border border-border text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
 
@@ -265,7 +265,7 @@ export function Sidebar({
         <nav className="flex-1 overflow-y-auto p-2">
           {searchResults ? (
             <div>
-              <div className="px-3 py-2 text-xs text-[var(--text-tertiary)] uppercase tracking-wide">
+              <div className="px-3 py-2 text-xs text-tertiary uppercase tracking-wide">
                 {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
               </div>
               {searchResults.map((poem) => (
@@ -275,8 +275,8 @@ export function Sidebar({
                   onClick={handleNavigate}
                   className={`block py-2 px-3 rounded text-sm truncate transition-colors min-h-[44px] flex items-center ${
                     poem.slug === activeSlug
-                      ? 'bg-[var(--bg-active)] text-[var(--text-primary)]'
-                      : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
+                      ? 'bg-active text-primary'
+                      : 'text-secondary hover:bg-hover hover:text-primary'
                   }`}
                   title={poem.title}
                 >
@@ -299,12 +299,12 @@ export function Sidebar({
         </nav>
 
         {/* Footer */}
-        <div className="p-3 border-t border-[var(--border)]">
+        <div className="p-3 border-t border-border">
           <div className="mb-4">
-            <p className="text-xs text-[var(--text-tertiary)] mb-2">Subscribe</p>
+            <p className="text-xs text-tertiary mb-2">Subscribe</p>
             <SubscribeForm compact />
           </div>
-          <div className="text-xs text-[var(--text-tertiary)]">
+          <div className="text-xs text-tertiary">
             Swipe left / right to navigate poems
           </div>
         </div>
@@ -315,28 +315,28 @@ export function Sidebar({
   // Desktop sidebar - collapsible
   return (
     <aside
-      className={`h-screen flex flex-col bg-[var(--bg-sidebar)] border-r border-[var(--border)] fixed left-0 top-0 hidden md:flex transition-all duration-300 ${
-        isCollapsed ? 'w-[60px]' : 'w-[var(--sidebar-width)]'
+      className={`h-screen flex flex-col bg-surface-sidebar border-r border-border fixed left-0 top-0 hidden md:flex transition-all duration-300 ${
+        isCollapsed ? 'w-[60px]' : 'w-sidebar'
       }`}
     >
       {/* Header */}
-      <div className={`p-4 border-b border-[var(--border)] ${isCollapsed ? 'flex flex-col items-center gap-2' : ''}`}>
+      <div className={`p-4 border-b border-border ${isCollapsed ? 'flex flex-col items-center gap-2' : ''}`}>
         {!isCollapsed && (
           <Link
             href="/"
-            className="block text-lg font-medium text-[var(--text-primary)] hover:text-[var(--text-secondary)] transition-colors truncate mb-3"
+            className="block text-lg font-medium text-primary hover:text-secondary transition-colors truncate mb-3"
           >
             Blumenous Poetry
           </Link>
         )}
 
         <div className={`flex items-center ${isCollapsed ? 'flex-col gap-2' : 'gap-1'}`}>
-          {!isCollapsed && <InfoButton className="text-[var(--text-secondary)]" />}
-          {!isCollapsed && <SubscribeButton className="text-[var(--text-secondary)]" />}
-          {!isCollapsed && <ThemeToggle className="text-[var(--text-secondary)]" />}
+          {!isCollapsed && <InfoButton className="text-secondary" />}
+          {!isCollapsed && <SubscribeButton className="text-secondary" />}
+          {!isCollapsed && <ThemeToggle />}
           <button
             onClick={onToggleCollapse}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-secondary hover:text-primary hover:bg-hover transition-colors"
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={isCollapsed ? 'Expand' : 'Collapse'}
           >
@@ -356,15 +356,15 @@ export function Sidebar({
               <path d="M18 17l-5-5 5-5" />
             </svg>
           </button>
-          {isCollapsed && <ThemeToggle className="text-[var(--text-secondary)]" />}
-          {isCollapsed && <SubscribeButton className="text-[var(--text-secondary)]" />}
-          {isCollapsed && <InfoButton className="text-[var(--text-secondary)]" />}
+          {isCollapsed && <ThemeToggle />}
+          {isCollapsed && <SubscribeButton className="text-secondary" />}
+          {isCollapsed && <InfoButton className="text-secondary" />}
         </div>
       </div>
 
       {/* Search - hidden when collapsed */}
       {!isCollapsed && (
-        <div className="p-3 border-b border-[var(--border)]">
+        <div className="p-3 border-b border-border">
           <label htmlFor="desktop-search-poems" className="sr-only">
             Search poems
           </label>
@@ -374,7 +374,7 @@ export function Sidebar({
             placeholder="Search poems..."
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full rounded px-3 py-2 text-sm min-h-[44px] bg-[var(--bg-primary)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            className="w-full rounded px-3 py-2 text-sm min-h-[44px] bg-surface border border-border text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
       )}
@@ -384,7 +384,7 @@ export function Sidebar({
         <nav className="flex-1 overflow-y-auto p-2">
           {searchResults ? (
             <div>
-              <div className="px-3 py-2 text-xs text-[var(--text-tertiary)] uppercase tracking-wide">
+              <div className="px-3 py-2 text-xs text-tertiary uppercase tracking-wide">
                 {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
               </div>
               {searchResults.map((poem) => (
@@ -393,8 +393,8 @@ export function Sidebar({
                   href={`/poem/${poem.slug}`}
                   className={`block py-2 px-3 rounded text-sm truncate transition-colors min-h-[44px] flex items-center ${
                     poem.slug === activeSlug
-                      ? 'bg-[var(--bg-active)] text-[var(--text-primary)]'
-                      : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
+                      ? 'bg-active text-primary'
+                      : 'text-secondary hover:bg-hover hover:text-primary'
                   }`}
                   title={poem.title}
                 >
@@ -418,15 +418,15 @@ export function Sidebar({
 
       {/* Footer - hidden when collapsed */}
       {!isCollapsed && (
-        <div className="p-3 border-t border-[var(--border)]">
+        <div className="p-3 border-t border-border">
           <div className="mb-4">
-            <p className="text-xs text-[var(--text-tertiary)] mb-2">Subscribe</p>
+            <p className="text-xs text-tertiary mb-2">Subscribe</p>
             <SubscribeForm compact />
           </div>
-          <div className="text-xs text-[var(--text-tertiary)]">
-            <kbd className="px-1.5 py-0.5 bg-[var(--bg-hover)] rounded text-[var(--text-tertiary)]">←</kbd>
+          <div className="text-xs text-tertiary">
+            <kbd className="px-1.5 py-0.5 bg-hover rounded text-tertiary">←</kbd>
             {' / '}
-            <kbd className="px-1.5 py-0.5 bg-[var(--bg-hover)] rounded text-[var(--text-tertiary)]">→</kbd>
+            <kbd className="px-1.5 py-0.5 bg-hover rounded text-tertiary">→</kbd>
             {' navigate'}
           </div>
         </div>

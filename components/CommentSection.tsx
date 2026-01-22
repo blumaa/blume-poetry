@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/components/Toast';
 import { createClient } from '@/lib/supabase/client';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import { SkeletonComment } from '@/components/Skeleton';
 
 interface Comment {
   id: string;
@@ -98,25 +99,28 @@ export function CommentSection({ slug }: CommentSectionProps) {
   };
 
   return (
-    <div className="mt-8 pt-8 border-t border-[var(--border)]">
-      <h2 className="text-lg font-medium mb-6 text-[var(--text-primary)]">Comments</h2>
+    <div className="mt-8 pt-8 border-t border-border">
+      <h2 className="text-lg font-medium mb-6 text-primary">Comments</h2>
 
       <CommentForm slug={slug} onCommentAdded={handleNewComment} />
 
       {isLoading ? (
-        <p className="text-[var(--text-secondary)] mt-6">Loading comments...</p>
+        <div className="mt-6 space-y-4">
+          <SkeletonComment />
+          <SkeletonComment />
+        </div>
       ) : error ? (
         <p className="text-red-600 mt-6">{error}</p>
       ) : comments.length === 0 ? (
-        <p className="text-[var(--text-secondary)] mt-6">No comments yet. Be the first to share your thoughts!</p>
+        <p className="text-secondary mt-6">No comments yet. Be the first to share your thoughts!</p>
       ) : (
         <div className="space-y-6 mt-8">
           {comments.map((comment) => (
-            <div key={comment.id} className="border-b border-[var(--border)] pb-6 last:border-b-0">
+            <div key={comment.id} className="border-b border-border pb-6 last:border-b-0">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-[var(--text-primary)]">{comment.author_name}</span>
-                  <span className="text-[var(--text-tertiary)] text-sm">{formatDate(comment.created_at)}</span>
+                  <span className="font-medium text-primary">{comment.author_name}</span>
+                  <span className="text-tertiary text-sm">{formatDate(comment.created_at)}</span>
                 </div>
                 {isAdmin && (
                   <button
@@ -128,7 +132,7 @@ export function CommentSection({ slug }: CommentSectionProps) {
                   </button>
                 )}
               </div>
-              <p className="text-[var(--text-primary)] whitespace-pre-wrap">{comment.content}</p>
+              <p className="text-primary whitespace-pre-wrap">{comment.content}</p>
             </div>
           ))}
         </div>
@@ -220,7 +224,7 @@ function CommentForm({ slug, onCommentAdded }: CommentFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor="comment-name" className="block text-sm font-medium mb-1 text-[var(--text-primary)]">
+        <label htmlFor="comment-name" className="block text-sm font-medium mb-1 text-primary">
           Name
         </label>
         <input
@@ -230,12 +234,12 @@ function CommentForm({ slug, onCommentAdded }: CommentFormProps) {
           onChange={(e) => setName(e.target.value)}
           placeholder="Your name"
           maxLength={100}
-          className="w-full px-4 py-3 border border-[var(--border)] rounded bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 min-h-[44px]"
+          className="w-full px-4 py-3 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 min-h-[44px]"
         />
       </div>
 
       <div>
-        <label htmlFor="comment-content" className="block text-sm font-medium mb-1 text-[var(--text-primary)]">
+        <label htmlFor="comment-content" className="block text-sm font-medium mb-1 text-primary">
           Comment
         </label>
         <textarea
@@ -245,7 +249,7 @@ function CommentForm({ slug, onCommentAdded }: CommentFormProps) {
           placeholder="Share your thoughts..."
           rows={4}
           maxLength={2000}
-          className="w-full px-4 py-3 border border-[var(--border)] rounded bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 resize-y min-h-[100px]"
+          className="w-full px-4 py-3 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 resize-y min-h-[100px]"
         />
       </div>
 
@@ -266,7 +270,7 @@ function CommentForm({ slug, onCommentAdded }: CommentFormProps) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="px-6 py-3 bg-[var(--accent)] text-white rounded hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50 min-h-[44px] font-medium"
+        className="px-6 py-3 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 min-h-[44px] font-medium"
       >
         {isSubmitting ? 'Posting...' : 'Post Comment'}
       </button>

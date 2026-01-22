@@ -15,12 +15,12 @@ export default function AboutPage() {
         <div className="flex-1">
           <article className="page-content max-w-2xl mx-auto px-4 py-8 md:px-6 md:py-12">
             <header className="mb-8">
-              <h1 className="text-xl md:text-2xl font-normal text-[var(--text-primary)] leading-tight">
+              <h1 className="text-xl md:text-2xl font-normal text-primary leading-tight">
                 About
               </h1>
             </header>
 
-            <div className="poem-content font-serif text-[var(--text-primary)] leading-relaxed">
+            <div className="poem-content font-serif text-primary leading-relaxed">
               <p className="italic mb-8">
                 Blumenous Poetry, by Desmond Blume, is a collection of writings, sometimes dark,
                 other times out there, usually influenced by the moon, never far from the truth,
@@ -30,7 +30,7 @@ export default function AboutPage() {
               <p>
                 <a
                   href="mailto:desmond.blume@gmail.com"
-                  className="text-[var(--accent)] hover:underline"
+                  className="text-accent hover:underline"
                 >
                   desmond.blume@gmail.com
                 </a>

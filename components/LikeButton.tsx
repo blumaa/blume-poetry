@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Skeleton } from '@/components/Skeleton';
 
 interface LikeButtonProps {
   slug: string;
@@ -72,21 +73,13 @@ export function LikeButton({ slug }: LikeButtonProps) {
   };
 
   if (isLoading) {
-    return (
-      <button
-        disabled
-        className="flex items-center gap-2 px-4 py-3 border border-[var(--border)] rounded text-[var(--text-secondary)] opacity-50 min-h-[44px]"
-      >
-        <HeartIcon filled={false} />
-        <span>...</span>
-      </button>
-    );
+    return <Skeleton className="h-[44px] w-20 rounded" />;
   }
 
   return (
     <button
       onClick={handleClick}
-      className="flex items-center gap-2 px-4 py-3 border border-[var(--border)] rounded transition-colors min-h-[44px] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
+      className="flex items-center gap-2 px-4 py-3 border border-border rounded transition-colors min-h-[44px] text-secondary hover:border-tertiary"
       aria-label={hasLiked ? 'Unlike this poem' : 'Like this poem'}
       aria-pressed={hasLiked}
     >

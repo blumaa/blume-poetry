@@ -19,10 +19,10 @@ function AdminNav() {
   ];
 
   return (
-    <nav className="bg-[var(--bg-sidebar)] text-[var(--text-sidebar)] p-4">
+    <nav className="bg-surface-sidebar text-primary p-4">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link href="/" className="font-medium hover:text-[var(--text-sidebar-muted)] transition-colors">
+          <Link href="/" className="font-medium hover:text-secondary transition-colors">
             Blumenous Poetry
           </Link>
           <div className="flex items-center gap-4">
@@ -32,8 +32,8 @@ function AdminNav() {
                 href={item.href}
                 className={`text-sm transition-colors ${
                   pathname === item.href
-                    ? 'text-[var(--text-sidebar)]'
-                    : 'text-[var(--text-sidebar-muted)] hover:text-[var(--text-sidebar)]'
+                    ? 'text-primary'
+                    : 'text-secondary hover:text-primary'
                 }`}
               >
                 {item.label}
@@ -43,11 +43,11 @@ function AdminNav() {
         </div>
         <div className="flex items-center gap-2">
           <NotificationBell />
-          <ThemeToggle className="text-[var(--text-sidebar-muted)]" />
-          <span className="text-sm text-[var(--text-sidebar-dim)] ml-2">{user?.email}</span>
+          <ThemeToggle className="text-secondary" />
+          <span className="text-sm text-tertiary ml-2">{user?.email}</span>
           <button
             onClick={signOut}
-            className="text-sm text-[var(--text-sidebar-muted)] hover:text-[var(--text-sidebar)] transition-colors ml-2"
+            className="text-sm text-secondary hover:text-primary transition-colors ml-2"
           >
             Sign Out
           </button>
@@ -65,7 +65,7 @@ export default function AdminLayout({
   return (
     <AuthProvider>
       <AdminGuard>
-        <div className="min-h-screen bg-[var(--bg-primary)]">
+        <div className="min-h-screen bg-surface">
           <AdminNav />
           <main id="main-content" className="max-w-6xl mx-auto p-6">
             {children}

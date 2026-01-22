@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* ==========================================================================
    Light Theme (Newsprint) - WCAG AA Compliant
    ========================================================================== */
@@ -8,7 +10,7 @@
   --bg-primary: #ffffff;
   --bg-secondary: #f8f8f8;
   --bg-sidebar: #f8f8f8;
-  --bg-hover: rgba(9, 9, 11, 0.05);
+  --bg-hover: #d4d4d8;
   --bg-active: rgba(9, 9, 11, 0.1);
 
   /* Text - High contrast for accessibility */
@@ -51,7 +53,7 @@
   --bg-primary: #121212;
   --bg-secondary: #1e1e1e;
   --bg-sidebar: #181818;
-  --bg-hover: rgba(255, 255, 255, 0.08);
+  --bg-hover: #3f3f46;
   --bg-active: rgba(255, 255, 255, 0.12);
 
   /* Text - softer than pure white to reduce eye strain */
@@ -80,16 +82,20 @@
    Tailwind Theme Mapping
    ========================================================================== */
 @theme inline {
-  --color-bg-primary: var(--bg-primary);
-  --color-bg-secondary: var(--bg-secondary);
-  --color-bg-sidebar: var(--bg-sidebar);
-  --color-bg-hover: var(--bg-hover);
-  --color-bg-active: var(--bg-active);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-tertiary: var(--text-tertiary);
+  --color-surface: var(--bg-primary);
+  --color-surface-secondary: var(--bg-secondary);
+  --color-surface-sidebar: var(--bg-sidebar);
+  --color-hover: var(--bg-hover);
+  --color-active: var(--bg-active);
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-tertiary: var(--text-tertiary);
   --color-border: var(--border);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-heart: var(--color-heart);
+  --font-serif: var(--font-serif);
+  --width-sidebar: var(--sidebar-width);
 }
 
 /* ==========================================================================
@@ -260,13 +266,6 @@ input[type="button"]:disabled {
   cursor: not-allowed;
 }
 
-/* ==========================================================================
-   Card/Section Styling
-   ========================================================================== */
-.rounded-lg {
-  border-color: var(--border);
-  background: var(--bg-primary);
-}
 
 /* ==========================================================================
    Mobile-First Responsive Layout

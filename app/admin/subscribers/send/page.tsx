@@ -147,19 +147,19 @@ export default function SendNewsletterPage() {
   const sanitizedBodyHtml = useMemo(() => sanitizeNewsletterHtml(bodyHtml), [bodyHtml]);
 
   if (isLoading) {
-    return <div className="text-[var(--text-tertiary)]">Loading...</div>;
+    return <div className="text-tertiary">Loading...</div>;
   }
 
   return (
     <div>
-      <h1 className="text-2xl mb-6 text-[var(--text-primary)]">Send Newsletter</h1>
+      <h1 className="text-2xl mb-6 text-primary">Send Newsletter</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left: Compose */}
         <div className="space-y-6">
           {/* Subject */}
           <div>
-            <label htmlFor="subject" className="block text-sm font-medium mb-2 text-[var(--text-primary)]">
+            <label htmlFor="subject" className="block text-sm font-medium mb-2 text-primary">
               Subject
             </label>
             <input
@@ -168,16 +168,16 @@ export default function SendNewsletterPage() {
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Newsletter subject..."
-              className="w-full px-4 py-2 border border-[var(--border)] rounded bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+              className="w-full px-4 py-2 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
           </div>
 
           {/* Body */}
           <div>
-            <label className="block text-sm font-medium mb-2 text-[var(--text-primary)]">
+            <label className="block text-sm font-medium mb-2 text-primary">
               Body
             </label>
-            <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg p-4">
+            <div className="bg-surface border border-border rounded-lg p-4">
               <RichTextEditor
                 ref={editorRef}
                 onChange={handleEditorChange}
@@ -189,14 +189,14 @@ export default function SendNewsletterPage() {
 
           {/* Poem Attachment (Optional) */}
           <div>
-            <label htmlFor="poem" className="block text-sm font-medium mb-2 text-[var(--text-primary)]">
-              Attach Poem <span className="text-[var(--text-tertiary)] font-normal">(optional)</span>
+            <label htmlFor="poem" className="block text-sm font-medium mb-2 text-primary">
+              Attach Poem <span className="text-tertiary font-normal">(optional)</span>
             </label>
             <select
               id="poem"
               value={selectedPoemId}
               onChange={(e) => setSelectedPoemId(e.target.value)}
-              className="w-full px-4 py-2 border border-[var(--border)] rounded bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+              className="w-full px-4 py-2 border border-border rounded bg-surface text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
             >
               <option value="">None</option>
               {poems.map((poem) => (
@@ -208,15 +208,15 @@ export default function SendNewsletterPage() {
           </div>
 
           {/* Subscriber Info */}
-          <div className="p-4 bg-[var(--bg-secondary)] rounded-lg">
-            <div className="text-sm text-[var(--text-tertiary)]">
-              Active subscribers: <strong className="text-[var(--text-primary)]">{subscriberCount}</strong>
+          <div className="p-4 bg-surface-secondary rounded-lg">
+            <div className="text-sm text-tertiary">
+              Active subscribers: <strong className="text-primary">{subscriberCount}</strong>
             </div>
           </div>
 
           {/* Test Email */}
-          <div className="p-4 border border-[var(--border)] rounded-lg">
-            <h3 className="font-medium mb-3 text-[var(--text-primary)]">Send Test Email</h3>
+          <div className="p-4 border border-border rounded-lg">
+            <h3 className="font-medium mb-3 text-primary">Send Test Email</h3>
             <div className="flex gap-2">
               <label htmlFor="test-email" className="sr-only">
                 Test email address
@@ -227,12 +227,12 @@ export default function SendNewsletterPage() {
                 value={testEmail}
                 onChange={(e) => setTestEmail(e.target.value)}
                 placeholder="test@example.com"
-                className="flex-1 px-3 py-2 border border-[var(--border)] rounded bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+                className="flex-1 px-3 py-2 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
               <button
                 onClick={handleSendTest}
                 disabled={isSending}
-                className="px-4 py-2 border border-[var(--border)] rounded hover:border-[var(--accent)] transition-colors disabled:opacity-50 text-[var(--text-primary)]"
+                className="px-4 py-2 border border-border rounded hover:border-accent transition-colors disabled:opacity-50 text-primary"
               >
                 {isSending ? 'Sending...' : 'Send Test'}
               </button>
@@ -244,13 +244,13 @@ export default function SendNewsletterPage() {
             <button
               onClick={handleSendAllClick}
               disabled={isSending || subscriberCount === 0}
-              className="px-6 py-2 bg-[var(--accent)] text-white rounded hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50"
+              className="px-6 py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
             >
               {isSending ? 'Sending...' : `Send to ${subscriberCount} Subscribers`}
             </button>
             <button
               onClick={() => router.back()}
-              className="px-6 py-2 border border-[var(--border)] rounded hover:border-[var(--accent)] transition-colors text-[var(--text-primary)]"
+              className="px-6 py-2 border border-border rounded hover:border-accent transition-colors text-primary"
             >
               Cancel
             </button>
@@ -259,13 +259,13 @@ export default function SendNewsletterPage() {
 
         {/* Right: Preview */}
         <div>
-          <h3 className="text-sm font-medium mb-3 text-[var(--text-primary)]">Preview</h3>
-          <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg p-6 min-h-[400px]">
+          <h3 className="text-sm font-medium mb-3 text-primary">Preview</h3>
+          <div className="bg-surface border border-border rounded-lg p-6 min-h-[400px]">
             {subject || sanitizedBodyHtml || selectedPoem ? (
               <div>
                 {/* Subject Preview */}
                 {subject && (
-                  <h2 className="text-xl mb-4 pb-4 border-b border-[var(--border)] text-[var(--text-primary)]">
+                  <h2 className="text-xl mb-4 pb-4 border-b border-border text-primary">
                     {subject}
                   </h2>
                 )}
@@ -273,7 +273,7 @@ export default function SendNewsletterPage() {
                 {/* Body Preview */}
                 {sanitizedBodyHtml && (
                   <div
-                    className="prose prose-lg max-w-none text-[var(--text-primary)] [&_p]:mb-0 [&_p]:min-h-[1.5em] leading-relaxed"
+                    className="prose prose-lg max-w-none text-primary [&_p]:mb-0 [&_p]:min-h-[1.5em] leading-relaxed"
                     style={{ fontFamily: 'var(--font-serif)' }}
                     dangerouslySetInnerHTML={{ __html: sanitizedBodyHtml }}
                   />
@@ -281,30 +281,30 @@ export default function SendNewsletterPage() {
 
                 {/* Poem Preview */}
                 {selectedPoem && (
-                  <div className={bodyHtml ? 'mt-6 pt-6 border-t border-[var(--border)]' : ''}>
-                    <h3 className="text-lg font-medium mb-3 text-[var(--text-primary)]">
+                  <div className={bodyHtml ? 'mt-6 pt-6 border-t border-border' : ''}>
+                    <h3 className="text-lg font-medium mb-3 text-primary">
                       {selectedPoem.title}
                     </h3>
                     <div
-                      className="whitespace-pre-line text-[var(--text-primary)] leading-relaxed"
+                      className="whitespace-pre-line text-primary leading-relaxed"
                       style={{ fontFamily: 'var(--font-serif)' }}
                     >
                       {selectedPoem.plain_text || selectedPoem.content}
                     </div>
-                    <div className="mt-4 text-sm text-[var(--accent)]">
+                    <div className="mt-4 text-sm text-accent">
                       Read on Blumenous Poetry &rarr;
                     </div>
                   </div>
                 )}
 
                 {/* Footer Preview */}
-                <div className="mt-8 pt-4 border-t border-[var(--border)] text-center text-sm text-[var(--text-tertiary)]">
+                <div className="mt-8 pt-4 border-t border-border text-center text-sm text-tertiary">
                   <p>Blumenous Poetry</p>
                   <p className="underline">Unsubscribe</p>
                 </div>
               </div>
             ) : (
-              <div className="text-[var(--text-tertiary)] text-center pt-20">
+              <div className="text-tertiary text-center pt-20">
                 Start composing to see preview
               </div>
             )}

@@ -37,7 +37,7 @@ export default function EditPoemPage({ params }: EditPoemPageProps) {
   }, [id]);
 
   if (isLoading) {
-    return <div className="text-[var(--text-tertiary)]">Loading poem...</div>;
+    return <div className="text-tertiary">Loading poem...</div>;
   }
 
   if (error) {
@@ -45,12 +45,12 @@ export default function EditPoemPage({ params }: EditPoemPageProps) {
   }
 
   if (!poem) {
-    return <div className="text-[var(--text-tertiary)]">Poem not found</div>;
+    return <div className="text-tertiary">Poem not found</div>;
   }
 
   return (
     <div>
-      <h1 className="text-2xl mb-6 text-[var(--text-primary)]">Edit Poem</h1>
+      <h1 className="text-2xl mb-6 text-primary">Edit Poem</h1>
       <PoemEditor poem={poem} />
     </div>
   );

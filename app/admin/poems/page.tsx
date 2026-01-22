@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { useToast } from '@/components/Toast';
 import type { Poem } from '@/lib/supabase/types';
+import { SkeletonList } from '@/components/Skeleton';
 
 export default function AdminPoemsPage() {
   const [poems, setPoems] = useState<Poem[]>([]);
@@ -89,23 +90,23 @@ export default function AdminPoemsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl text-[var(--text-primary)]">Poems</h1>
+          <h1 className="text-2xl text-primary">Poems</h1>
           <div className="flex gap-2 text-sm">
             <Link
               href="/admin/poems"
-              className={`px-3 py-1 rounded ${!statusFilter ? 'bg-[var(--accent)] text-white' : 'border border-[var(--border)] text-[var(--text-primary)]'}`}
+              className={`px-3 py-1 rounded ${!statusFilter ? 'bg-accent text-white' : 'border border-border text-primary'}`}
             >
               All
             </Link>
             <Link
               href="/admin/poems?status=published"
-              className={`px-3 py-1 rounded ${statusFilter === 'published' ? 'bg-[var(--accent)] text-white' : 'border border-[var(--border)] text-[var(--text-primary)]'}`}
+              className={`px-3 py-1 rounded ${statusFilter === 'published' ? 'bg-accent text-white' : 'border border-border text-primary'}`}
             >
               Published
             </Link>
             <Link
               href="/admin/poems?status=draft"
-              className={`px-3 py-1 rounded ${statusFilter === 'draft' ? 'bg-[var(--accent)] text-white' : 'border border-[var(--border)] text-[var(--text-primary)]'}`}
+              className={`px-3 py-1 rounded ${statusFilter === 'draft' ? 'bg-accent text-white' : 'border border-border text-primary'}`}
             >
               Drafts
             </Link>
@@ -121,11 +122,11 @@ export default function AdminPoemsPage() {
             placeholder="Search poems..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="px-3 py-2 text-sm border border-[var(--border)] rounded bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+            className="px-3 py-2 text-sm border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           />
           <Link
             href="/admin/poems/new"
-            className="px-4 py-2 bg-[var(--accent)] text-white rounded hover:bg-[var(--accent-hover)] transition-colors"
+            className="px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors"
           >
             New Poem
           </Link>
@@ -133,33 +134,33 @@ export default function AdminPoemsPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-[var(--text-tertiary)]">Loading poems...</div>
+        <SkeletonList count={8} />
       ) : poems.length === 0 ? (
-        <div className="text-center py-12 text-[var(--text-tertiary)]">
-          No poems found. <Link href="/admin/poems/new" className="text-[var(--accent)]">Create your first poem</Link>
+        <div className="text-center py-12 text-tertiary">
+          No poems found. <Link href="/admin/poems/new" className="text-accent">Create your first poem</Link>
         </div>
       ) : filteredPoems.length === 0 ? (
-        <div className="text-center py-12 text-[var(--text-tertiary)]">
+        <div className="text-center py-12 text-tertiary">
           No poems matching &ldquo;{search}&rdquo;
         </div>
       ) : (
-        <div className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border)] overflow-hidden">
+        <div className="bg-surface rounded-lg border border-border overflow-hidden">
           <table className="w-full">
-            <thead className="bg-[var(--bg-secondary)]">
+            <thead className="bg-surface-secondary">
               <tr>
-                <th className="text-left p-4 font-medium text-[var(--text-primary)]">Title</th>
-                <th className="text-left p-4 font-medium text-[var(--text-primary)]">Status</th>
-                <th className="text-left p-4 font-medium text-[var(--text-primary)]">Published</th>
-                <th className="text-right p-4 font-medium text-[var(--text-primary)]">Actions</th>
+                <th className="text-left p-4 font-medium text-primary">Title</th>
+                <th className="text-left p-4 font-medium text-primary">Status</th>
+                <th className="text-left p-4 font-medium text-primary">Published</th>
+                <th className="text-right p-4 font-medium text-primary">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredPoems.map((poem) => (
-                <tr key={poem.id} className="border-t border-[var(--border)]">
+                <tr key={poem.id} className="border-t border-border">
                   <td className="p-4">
                     <Link
                       href={`/poem/${poem.slug}`}
-                      className="text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors"
+                      className="text-primary hover:text-accent transition-colors"
                       target="_blank"
                     >
                       {poem.title}
@@ -176,14 +177,14 @@ export default function AdminPoemsPage() {
                       {poem.status}
                     </span>
                   </td>
-                  <td className="p-4 text-[var(--text-tertiary)]">
+                  <td className="p-4 text-tertiary">
                     {new Date(poem.published_at).toLocaleDateString()}
                   </td>
                   <td className="p-4 text-right">
                     <div className="flex gap-2 justify-end">
                       <Link
                         href={`/admin/poems/${poem.id}/edit`}
-                        className="px-3 py-1 text-sm border border-[var(--border)] rounded hover:border-[var(--accent)] transition-colors text-[var(--text-primary)]"
+                        className="px-3 py-1 text-sm border border-border rounded hover:border-accent transition-colors text-primary"
                       >
                         Edit
                       </Link>

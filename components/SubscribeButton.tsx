@@ -15,7 +15,7 @@ export function SubscribeButton({ className = '', showLabel = false }: Subscribe
     <>
       <button
         onClick={() => setIsModalOpen(true)}
-        className={`min-h-[44px] flex items-center gap-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)] ${showLabel ? 'px-3' : 'min-w-[44px] justify-center'} ${className}`}
+        className={`min-h-[44px] flex items-center gap-2 rounded-lg transition-colors hover:bg-hover ${showLabel ? 'px-3' : 'min-w-[44px] justify-center'} ${className}`}
         aria-label="Subscribe to new poems"
         title="Subscribe"
       >

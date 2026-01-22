@@ -15,12 +15,12 @@ export default function PrivacyPage() {
         <div className="flex-1">
           <article className="page-content max-w-2xl mx-auto px-4 py-8 md:px-6 md:py-12">
             <header className="mb-8">
-              <h1 className="text-xl md:text-2xl font-normal text-[var(--text-primary)] leading-tight">
+              <h1 className="text-xl md:text-2xl font-normal text-primary leading-tight">
                 Privacy Policy
               </h1>
             </header>
 
-            <div className="prose prose-sm text-[var(--text-primary)] leading-relaxed space-y-4">
+            <div className="prose prose-sm text-primary leading-relaxed space-y-4">
               <p>
                 Blumenous Poetry collects minimal data to provide you with a better experience.
               </p>
@@ -49,7 +49,7 @@ export default function PrivacyPage() {
                 For any privacy concerns, contact{' '}
                 <a
                   href="mailto:desmond.blume@gmail.com"
-                  className="text-[var(--accent)] hover:underline"
+                  className="text-accent hover:underline"
                 >
                   desmond.blume@gmail.com
                 </a>

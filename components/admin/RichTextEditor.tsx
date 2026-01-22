@@ -73,8 +73,8 @@ function ToolbarButton({
       title={title}
       className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${
         isActive
-          ? 'bg-[var(--accent)] text-white'
-          : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+          ? 'bg-accent text-white'
+          : 'bg-surface-secondary text-primary hover:bg-hover'
       }`}
     >
       {children}
@@ -100,7 +100,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
       content: contentToHtml(content),
       editorProps: {
         attributes: {
-          class: `prose prose-lg max-w-none focus:outline-none whitespace-pre-wrap font-[var(--font-serif)]`,
+          class: `prose prose-lg max-w-none focus:outline-none whitespace-pre-wrap font-serif`,
           style: `min-height: ${minHeight}`,
         },
       },
@@ -123,7 +123,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
       <div className="flex flex-col">
         {/* Toolbar */}
         {showToolbar && editor && (
-          <div className="flex gap-1 pb-3 mb-3 border-b border-[var(--border)]">
+          <div className="flex gap-1 pb-3 mb-3 border-b border-border">
             <ToolbarButton
               onClick={() => editor.chain().focus().toggleBold().run()}
               isActive={editor.isActive('bold')}
@@ -150,7 +150,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
 
         <EditorContent
           editor={editor}
-          className={`[&_.ProseMirror]:outline-none [&_.ProseMirror]:text-[var(--text-primary)] ${className}`}
+          className={`[&_.ProseMirror]:outline-none [&_.ProseMirror]:text-primary ${className}`}
           style={{ minHeight }}
         />
       </div>
