@@ -7,6 +7,7 @@ import { ConfirmModal } from '@/components/ConfirmModal';
 import { Modal } from '@/components/Modal';
 import { SkeletonComment } from '@/components/Skeleton';
 import { isAdminEmail } from '@/lib/config';
+import { trackCommentSubmit } from './AmplitudeProvider';
 
 interface Comment {
   id: string;
@@ -235,6 +236,7 @@ function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalPro
       }
 
       if (data.comment) {
+        trackCommentSubmit(slug);
         onCommentAdded(data.comment);
         setContent('');
         showToast('Comment posted!', 'success');

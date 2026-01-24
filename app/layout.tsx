@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Crimson_Text, Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ToastProvider } from "@/components/Toast";
+import { AmplitudeProvider } from "@/components/AmplitudeProvider";
 
 const crimsonText = Crimson_Text({
   variable: "--font-crimson",
@@ -55,7 +57,11 @@ export default function RootLayout({
         </a>
         <ThemeProvider>
           <ToastProvider>
-            {children}
+            <Suspense fallback={null}>
+              <AmplitudeProvider>
+                {children}
+              </AmplitudeProvider>
+            </Suspense>
           </ToastProvider>
         </ThemeProvider>
         <Analytics />

@@ -7,6 +7,7 @@ import { Poem } from '@/lib/poems';
 import { LikeButton } from './LikeButton';
 import { CommentSection, CommentIcon } from './CommentSection';
 import { PoemContent } from './PoemContent';
+import { trackNavigation, trackCommentModalOpen, trackNavArrowClick, trackScrollDepth, trackTimeOnPoem } from './AmplitudeProvider';
 
 interface PoemDisplayProps {
   poem: Poem;
@@ -21,6 +22,11 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
   const touchStartY = useRef<number | null>(null);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
 
+  // Tracking refs
+  const articleRef = useRef<HTMLElement>(null);
+  const startTimeRef = useRef<number>(Date.now());
+  const scrollMilestonesRef = useRef<Set<25 | 50 | 75 | 100>>(new Set());
+
   // Keyboard navigation
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -28,13 +34,15 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
 
       if (e.key === 'ArrowRight' && nextPoem) {
         e.preventDefault();
+        trackNavigation('keyboard', 'next', poem.slug, nextPoem.slug);
         router.push(`/poem/${nextPoem.slug}`);
       } else if (e.key === 'ArrowLeft' && prevPoem) {
         e.preventDefault();
+        trackNavigation('keyboard', 'prev', poem.slug, prevPoem.slug);
         router.push(`/poem/${prevPoem.slug}`);
       }
     },
-    [router, prevPoem, nextPoem]
+    [router, prevPoem, nextPoem, poem.slug]
   );
 
   // Swipe navigation
@@ -57,9 +65,11 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
       if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
         if (deltaX > 0 && prevPoem) {
           // Swipe right -> go to previous (newer)
+          trackNavigation('swipe', 'prev', poem.slug, prevPoem.slug);
           router.push(`/poem/${prevPoem.slug}`);
         } else if (deltaX < 0 && nextPoem) {
           // Swipe left -> go to next (older)
+          trackNavigation('swipe', 'next', poem.slug, nextPoem.slug);
           router.push(`/poem/${nextPoem.slug}`);
         }
       }
@@ -67,7 +77,7 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
       touchStartX.current = null;
       touchStartY.current = null;
     },
-    [router, prevPoem, nextPoem]
+    [router, prevPoem, nextPoem, poem.slug]
   );
 
   useEffect(() => {
@@ -81,8 +91,54 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
     };
   }, [handleKeyDown, handleTouchStart, handleTouchEnd]);
 
+  // Track time spent on poem when leaving
+  useEffect(() => {
+    startTimeRef.current = Date.now();
+    scrollMilestonesRef.current = new Set();
+
+    return () => {
+      const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);
+      if (timeSpent >= 3) { // Only track if they spent at least 3 seconds
+        trackTimeOnPoem(poem.slug, timeSpent);
+      }
+    };
+  }, [poem.slug]);
+
+  // Track scroll depth
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!articleRef.current) return;
+
+      const article = articleRef.current;
+      const articleTop = article.offsetTop;
+      const articleHeight = article.offsetHeight;
+      const windowHeight = window.innerHeight;
+      const scrollY = window.scrollY;
+
+      // Calculate how much of the article has been scrolled past
+      const scrolledPast = scrollY + windowHeight - articleTop;
+      const scrollPercent = Math.min(100, Math.max(0, (scrolledPast / articleHeight) * 100));
+
+      const milestones: (25 | 50 | 75 | 100)[] = [25, 50, 75, 100];
+      for (const milestone of milestones) {
+        if (scrollPercent >= milestone && !scrollMilestonesRef.current.has(milestone)) {
+          scrollMilestonesRef.current.add(milestone);
+          trackScrollDepth(poem.slug, milestone);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Check initial scroll position
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [poem.slug]);
+
   return (
-    <article key={poem.slug} className="page-content max-w-2xl mx-auto px-4 py-8 md:px-6 md:py-12 overflow-x-hidden">
+    <article ref={articleRef} key={poem.slug} className="page-content max-w-2xl mx-auto px-4 py-8 md:px-6 md:py-12 overflow-x-hidden">
       {/* Title */}
       <header className="mb-8">
         <h1 className="text-xl md:text-2xl font-normal text-primary leading-tight">
@@ -109,7 +165,10 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
       <div className="mt-8 flex items-center justify-between">
         <LikeButton slug={poem.slug} />
         <button
-          onClick={() => setIsCommentModalOpen(true)}
+          onClick={() => {
+            trackCommentModalOpen(poem.slug);
+            setIsCommentModalOpen(true);
+          }}
           className="flex items-center gap-2 px-4 h-[44px] text-sm bg-accent text-white hover:bg-accent-hover rounded transition-colors"
         >
           <CommentIcon />
@@ -123,6 +182,7 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
           {prevPoem ? (
             <Link
               href={`/poem/${prevPoem.slug}`}
+              onClick={() => trackNavArrowClick('prev', poem.slug, prevPoem.slug)}
               className="text-secondary hover:text-primary transition-colors min-h-[44px] flex items-center"
             >
               <span className="text-tertiary mr-1">←</span>
@@ -137,6 +197,7 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
           {nextPoem ? (
             <Link
               href={`/poem/${nextPoem.slug}`}
+              onClick={() => trackNavArrowClick('next', poem.slug, nextPoem.slug)}
               className="text-secondary hover:text-primary transition-colors text-right min-h-[44px] flex items-center"
             >
               <span className="truncate max-w-[120px] md:max-w-none">

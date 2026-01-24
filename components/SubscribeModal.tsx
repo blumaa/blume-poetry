@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Modal } from './Modal';
+import { trackSubscribeSubmit } from './AmplitudeProvider';
 
 interface SubscribeModalProps {
   isOpen: boolean;
@@ -30,11 +31,13 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
       const data = await response.json();
 
       if (response.ok) {
+        if (!isAdmin) trackSubscribeSubmit(true);
         setStatus('success');
         setMessage(isAdmin ? 'Subscriber added!' : 'Thank you for subscribing!');
         setEmail('');
         onSuccess?.();
       } else {
+        if (!isAdmin) trackSubscribeSubmit(false);
         setStatus('error');
         setMessage(data.error || 'Failed to subscribe');
       }

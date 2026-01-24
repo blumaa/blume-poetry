@@ -1,6 +1,7 @@
 'use client';
 
 import { useTheme } from './ThemeProvider';
+import { trackThemeToggle } from './AmplitudeProvider';
 
 interface ThemeToggleProps {
   className?: string;
@@ -9,9 +10,15 @@ interface ThemeToggleProps {
 export function ThemeToggle({ className = '' }: ThemeToggleProps) {
   const { theme, toggleTheme } = useTheme();
 
+  const handleToggle = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    trackThemeToggle(newTheme);
+    toggleTheme();
+  };
+
   return (
     <button
-      onClick={toggleTheme}
+      onClick={handleToggle}
       className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors hover:bg-hover ${className}`}
       aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
     >

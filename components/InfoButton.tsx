@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { trackAboutClick } from './AmplitudeProvider';
 
 interface InfoButtonProps {
   className?: string;
@@ -10,6 +11,7 @@ export function InfoButton({ className = '' }: InfoButtonProps) {
   return (
     <Link
       href="/about"
+      onClick={trackAboutClick}
       className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-hover transition-colors ${className}`}
       aria-label="About"
       title="About"

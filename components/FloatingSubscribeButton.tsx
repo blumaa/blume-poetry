@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { SubscribeModal } from './SubscribeModal';
+import { trackSubscribeModalOpen } from './AmplitudeProvider';
 
 export function FloatingSubscribeButton() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -10,7 +11,10 @@ export function FloatingSubscribeButton() {
     <>
       {/* Desktop: Bottom-right floating button */}
       <button
-        onClick={() => setIsModalOpen(true)}
+        onClick={() => {
+          trackSubscribeModalOpen();
+          setIsModalOpen(true);
+        }}
         className="hidden md:flex fixed bottom-6 right-6 z-40 items-center gap-2 px-4 py-3 bg-accent text-white rounded-full shadow-lg hover:bg-accent-hover hover:shadow-xl transition-all duration-200 min-h-[44px]"
         aria-label="Subscribe to new poems"
       >
@@ -33,7 +37,10 @@ export function FloatingSubscribeButton() {
 
       {/* Mobile: Smaller FAB */}
       <button
-        onClick={() => setIsModalOpen(true)}
+        onClick={() => {
+          trackSubscribeModalOpen();
+          setIsModalOpen(true);
+        }}
         className="md:hidden fixed bottom-4 right-4 z-40 flex items-center justify-center w-14 h-14 bg-accent text-white rounded-full shadow-lg hover:bg-accent-hover hover:shadow-xl transition-all duration-200"
         aria-label="Subscribe to new poems"
       >

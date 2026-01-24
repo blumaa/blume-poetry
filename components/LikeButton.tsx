@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/Skeleton';
+import { trackLike } from './AmplitudeProvider';
 
 interface LikeButtonProps {
   slug: string;
@@ -46,6 +47,9 @@ export function LikeButton({ slug }: LikeButtonProps) {
 
     setIsToggling(true);
     const visitorId = getVisitorId();
+
+    // Track the like/unlike action
+    trackLike(slug, hasLiked ? 'unlike' : 'like');
 
     // Optimistic update
     setHasLiked(!hasLiked);
