@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     const { error } = await supabase.from('subscribers').insert({
       email,
       status: 'active',
-      verified: false,
+      verified: true,
     });
 
     if (error) {
