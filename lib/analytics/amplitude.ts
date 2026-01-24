@@ -1,4 +1,4 @@
-import * as amplitude from "@amplitude/analytics-browser";
+import * as amplitude from "@amplitude/unified";
 
 const AMPLITUDE_API_KEY = process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY as
   | string
@@ -11,14 +11,10 @@ export function initAnalytics() {
     return;
   }
 
-  amplitude.init(AMPLITUDE_API_KEY, {
+  amplitude.initAll(AMPLITUDE_API_KEY, {
     serverZone: "EU",
-    autocapture: {
-      attribution: true,
-      pageViews: true,
-      sessions: true,
-      elementInteractions: true,
-      formInteractions: true,
+    analytics: {
+      autocapture: true,
     },
   });
 

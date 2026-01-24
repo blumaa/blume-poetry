@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@amplitude/analytics-browser": "^2.33.5",
+    "@amplitude/unified": "^1.0.0-beta.31",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",
     "@tiptap/pm": "^3.15.3",
