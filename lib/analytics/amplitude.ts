@@ -7,20 +7,12 @@ const AMPLITUDE_API_KEY = process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY as
 let isInitialized = false;
 
 export function initAnalytics() {
-  console.log("[Amplitude] API Key present:", !!AMPLITUDE_API_KEY);
-  console.log("[Amplitude] API Key starts with:", AMPLITUDE_API_KEY?.substring(0, 8));
-
-  if (!AMPLITUDE_API_KEY) {
-    console.warn("[Amplitude] API key not configured");
-    return;
-  }
-
-  if (isInitialized) {
-    console.log("[Amplitude] Already initialized");
+  if (!AMPLITUDE_API_KEY || isInitialized) {
     return;
   }
 
   amplitude.init(AMPLITUDE_API_KEY, {
+    serverZone: "EU",
     autocapture: {
       attribution: true,
       pageViews: true,
@@ -31,7 +23,6 @@ export function initAnalytics() {
   });
 
   isInitialized = true;
-  console.log("[Amplitude] Initialized successfully");
 }
 
 export function trackEvent(
