@@ -2,11 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import * as amplitude from "@amplitude/analytics-browser";
-
-const AMPLITUDE_API_KEY = process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY;
-
-let initialized = false;
+import { initAnalytics, trackEvent, EVENTS } from "@/lib/analytics";
 
 export function AmplitudeProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -14,47 +10,27 @@ export function AmplitudeProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize Amplitude once
   useEffect(() => {
-    if (initialized) return;
-
-    if (!AMPLITUDE_API_KEY) {
-      console.warn("[Amplitude] API key not configured");
-      return;
-    }
-
-    amplitude.init(AMPLITUDE_API_KEY, {
-      autocapture: {
-        elementInteractions: true,
-        pageViews: true,
-        sessions: true,
-        formInteractions: true,
-      },
-    });
-    initialized = true;
+    initAnalytics();
   }, []);
 
   // Track page views on route changes
   useEffect(() => {
-    if (initialized) {
-      const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "");
-      amplitude.track("Page View", {
-        page_path: pathname,
-        page_url: url,
-      });
-    }
+    const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "");
+    trackEvent(EVENTS.PAGE_VIEW, {
+      page_path: pathname,
+      page_url: url,
+    });
   }, [pathname, searchParams]);
 
   return <>{children}</>;
 }
 
-// Core tracking function
-export function trackEvent(eventName: string, eventProperties?: Record<string, unknown>) {
-  if (!initialized) return;
-  amplitude.track(eventName, eventProperties);
-}
+// Re-export for convenience
+export { trackEvent, EVENTS } from "@/lib/analytics";
 
-// Navigation events
+// Helper functions for specific events
 export function trackNavigation(method: "keyboard" | "swipe" | "click", direction: "next" | "prev", fromPoem: string, toPoem: string) {
-  trackEvent("Poem Navigation", {
+  trackEvent(EVENTS.POEM_NAVIGATION, {
     method,
     direction,
     from_poem: fromPoem,
@@ -62,30 +38,27 @@ export function trackNavigation(method: "keyboard" | "swipe" | "click", directio
   });
 }
 
-// Menu events
 export function trackMenuOpen(source: "hamburger" | "sidebar") {
-  trackEvent("Menu Opened", { source });
+  trackEvent(EVENTS.MENU_OPENED, { source });
 }
 
 export function trackMenuClose() {
-  trackEvent("Menu Closed");
+  trackEvent(EVENTS.MENU_CLOSED);
 }
 
 export function trackSidebarToggle(collapsed: boolean) {
-  trackEvent("Sidebar Toggled", { collapsed });
+  trackEvent(EVENTS.SIDEBAR_TOGGLED, { collapsed });
 }
 
-// Search events
 export function trackSearch(query: string, resultCount: number) {
-  trackEvent("Search", {
+  trackEvent(EVENTS.SEARCH, {
     query,
     result_count: resultCount,
   });
 }
 
-// Poem events
 export function trackPoemOpen(slug: string, title: string, source: "search" | "tree" | "navigation" | "direct") {
-  trackEvent("Poem Opened", {
+  trackEvent(EVENTS.POEM_OPENED, {
     poem_slug: slug,
     poem_title: title,
     source,
@@ -93,51 +66,49 @@ export function trackPoemOpen(slug: string, title: string, source: "search" | "t
 }
 
 export function trackCategoryToggle(categoryId: string, expanded: boolean) {
-  trackEvent("Category Toggled", {
+  trackEvent(EVENTS.CATEGORY_TOGGLED, {
     category_id: categoryId,
     expanded,
   });
 }
 
-// Engagement events
 export function trackLike(slug: string, action: "like" | "unlike") {
-  trackEvent("Poem Liked", {
+  trackEvent(EVENTS.POEM_LIKED, {
     poem_slug: slug,
     action,
   });
 }
 
 export function trackCommentModalOpen(slug: string) {
-  trackEvent("Comment Modal Opened", {
+  trackEvent(EVENTS.COMMENT_MODAL_OPENED, {
     poem_slug: slug,
   });
 }
 
 export function trackCommentSubmit(slug: string) {
-  trackEvent("Comment Submitted", {
+  trackEvent(EVENTS.COMMENT_SUBMITTED, {
     poem_slug: slug,
   });
 }
 
-// UI events
 export function trackThemeToggle(newTheme: "light" | "dark") {
-  trackEvent("Theme Toggled", {
+  trackEvent(EVENTS.THEME_TOGGLED, {
     new_theme: newTheme,
   });
 }
 
 export function trackSubscribeModalOpen() {
-  trackEvent("Subscribe Modal Opened");
+  trackEvent(EVENTS.SUBSCRIBE_MODAL_OPENED);
 }
 
 export function trackSubscribeSubmit(success: boolean) {
-  trackEvent("Subscribe Submitted", {
+  trackEvent(EVENTS.SUBSCRIBE_SUBMITTED, {
     success,
   });
 }
 
 export function trackNavArrowClick(direction: "prev" | "next", fromPoem: string, toPoem: string) {
-  trackEvent("Poem Navigation", {
+  trackEvent(EVENTS.POEM_NAVIGATION, {
     method: "click",
     direction,
     from_poem: fromPoem,
@@ -145,29 +116,27 @@ export function trackNavArrowClick(direction: "prev" | "next", fromPoem: string,
   });
 }
 
-// Reading behavior
 export function trackScrollDepth(slug: string, depth: 25 | 50 | 75 | 100) {
-  trackEvent("Poem Scroll Depth", {
+  trackEvent(EVENTS.SCROLL_DEPTH, {
     poem_slug: slug,
     depth_percent: depth,
   });
 }
 
 export function trackTimeOnPoem(slug: string, seconds: number) {
-  trackEvent("Time on Poem", {
+  trackEvent(EVENTS.TIME_ON_POEM, {
     poem_slug: slug,
     seconds,
     minutes: Math.round(seconds / 60 * 10) / 10,
   });
 }
 
-// Navigation
 export function trackAboutClick() {
-  trackEvent("About Page Clicked");
+  trackEvent(EVENTS.ABOUT_CLICKED);
 }
 
 export function trackUnsubscribe(success: boolean) {
-  trackEvent("Unsubscribe", {
+  trackEvent(EVENTS.UNSUBSCRIBE, {
     success,
   });
 }
