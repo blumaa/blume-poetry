@@ -5,32 +5,31 @@ import { usePathname, useSearchParams } from "next/navigation";
 import * as amplitude from "@amplitude/analytics-browser";
 
 const AMPLITUDE_API_KEY = process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY;
-const PRODUCTION_URL = "https://blumenous-poetry.vercel.app";
 
 let initialized = false;
-
-function isProduction(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.location.origin === PRODUCTION_URL;
-}
 
 export function AmplitudeProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Initialize Amplitude once (only in production)
+  // Initialize Amplitude once
   useEffect(() => {
-    if (!initialized && AMPLITUDE_API_KEY && isProduction()) {
-      amplitude.init(AMPLITUDE_API_KEY, {
-        autocapture: {
-          elementInteractions: true,
-          pageViews: true,
-          sessions: true,
-          formInteractions: true,
-        },
-      });
-      initialized = true;
+    if (initialized) return;
+
+    if (!AMPLITUDE_API_KEY) {
+      console.warn("[Amplitude] API key not configured");
+      return;
     }
+
+    amplitude.init(AMPLITUDE_API_KEY, {
+      autocapture: {
+        elementInteractions: true,
+        pageViews: true,
+        sessions: true,
+        formInteractions: true,
+      },
+    });
+    initialized = true;
   }, []);
 
   // Track page views on route changes
@@ -47,11 +46,10 @@ export function AmplitudeProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Core tracking function - only fires in production
+// Core tracking function
 export function trackEvent(eventName: string, eventProperties?: Record<string, unknown>) {
-  if (initialized && isProduction()) {
-    amplitude.track(eventName, eventProperties);
-  }
+  if (!initialized) return;
+  amplitude.track(eventName, eventProperties);
 }
 
 // Navigation events
