@@ -53,6 +53,21 @@ export function sanitizeNewsletterHtml(html: string): string {
 }
 
 /**
+ * Sanitize poem HTML content for safe rendering.
+ * Allows poem-appropriate tags while stripping dangerous elements.
+ */
+export function sanitizePoemHtml(html: string): string {
+  return sanitizeHtml(html, {
+    allowedTags: [
+      ...ALLOWED_TAGS,
+      'sup', 'sub', 'table', 'thead', 'tbody', 'tr', 'td', 'th',
+    ],
+    allowedAttributes: ALLOWED_ATTRIBUTES,
+    allowedStyles: ALLOWED_STYLES,
+  });
+}
+
+/**
  * Escape HTML entities for safe inclusion in HTML templates
  * Use this for plain text content that will be inserted into HTML
  */

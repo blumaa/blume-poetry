@@ -3,6 +3,8 @@ import { PoemDisplay } from '@/components/PoemDisplay';
 import { Footer } from '@/components/Footer';
 import { getRecentPoems, getAdjacentPoems } from '@/lib/poems';
 
+export const revalidate = 3600;
+
 export default async function Home() {
   const recentPoems = await getRecentPoems(1);
   const latestPoem = recentPoems[0];

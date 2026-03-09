@@ -1,13 +1,10 @@
-'use client';
+import { sanitizePoemHtml } from '@/lib/sanitize';
 
 /**
  * PoemContent - Renders poem HTML with proper formatting and whitespace preservation.
  * Used by both PoemDisplay (user-facing) and PoemPreview (admin editor).
  *
- * Supports:
- * - Bold, italic, underline formatting
- * - Whitespace/indentation preservation (via CSS white-space: pre-wrap)
- * - Consistent styling across the app
+ * HTML is sanitized server-side to prevent XSS.
  */
 
 interface PoemContentProps {
@@ -31,7 +28,7 @@ export function PoemContent({ html, className = '' }: PoemContentProps) {
     return null;
   }
 
-  const normalizedHtml = normalizeWhitespace(html);
+  const sanitizedHtml = sanitizePoemHtml(normalizeWhitespace(html));
 
   return (
     <div
@@ -42,7 +39,7 @@ export function PoemContent({ html, className = '' }: PoemContentProps) {
         maxWidth: '100%',
         overflowWrap: 'break-word',
       }}
-      dangerouslySetInnerHTML={{ __html: normalizedHtml }}
+      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
     />
   );
 }

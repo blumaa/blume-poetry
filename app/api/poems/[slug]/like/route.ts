@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
-import { isRateLimited, getClientIp, RATE_LIMITS } from '@/lib/rateLimit';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
+import { verifyOrigin } from '@/lib/csrf';
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -64,11 +65,11 @@ export async function POST(
 ) {
   const { slug } = await params;
 
-  // Rate limiting
-  const ip = getClientIp(request);
-  if (isRateLimited(ip, RATE_LIMITS.likes)) {
-    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
-  }
+  const csrfError = verifyOrigin(request);
+  if (csrfError) return csrfError;
+
+  const rateLimitError = checkRateLimit(request, RATE_LIMITS.likes);
+  if (rateLimitError) return rateLimitError;
 
   const body = await request.json();
   const visitorId = body.visitorId;

@@ -14,7 +14,7 @@ export function initAnalytics() {
   amplitude.initAll(AMPLITUDE_API_KEY, {
     serverZone: "EU",
     analytics: {
-      autocapture: true,
+      autocapture: false,
     },
   });
 

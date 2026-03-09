@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './supabase/types';
 
@@ -8,6 +9,16 @@ export interface Poem {
   subtitle: string | null;
   content: string;
   plainText: string;
+  publishedAt: string;
+  url: string;
+}
+
+/** Lightweight poem metadata for tree/navigation (no content) */
+export interface PoemMeta {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string | null;
   publishedAt: string;
   url: string;
 }
@@ -27,8 +38,8 @@ function getSupabaseClient() {
   return createClient<Database>(supabaseUrl, supabaseKey);
 }
 
-// Get all poems sorted by date (newest first)
-export async function getAllPoems(): Promise<Poem[]> {
+// Get all poems sorted by date (newest first) — deduplicated with React cache()
+export const getAllPoems = cache(async (): Promise<Poem[]> => {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('poems')
@@ -51,7 +62,31 @@ export async function getAllPoems(): Promise<Poem[]> {
     publishedAt: row.published_at,
     url: row.url || '',
   }));
-}
+});
+
+// Lightweight query for tree/navigation — only fetches metadata fields
+export const getAllPoemsMeta = cache(async (): Promise<PoemMeta[]> => {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('poems')
+    .select('id, slug, title, subtitle, published_at, url')
+    .eq('status', 'published')
+    .order('published_at', { ascending: false });
+
+  if (error || !data) {
+    console.error('Error fetching poem metadata:', error);
+    return [];
+  }
+
+  return data.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    subtitle: row.subtitle,
+    publishedAt: row.published_at,
+    url: row.url || '',
+  }));
+});
 
 // Get a single poem by slug
 export async function getPoemBySlug(slug: string): Promise<Poem | undefined> {
@@ -97,8 +132,8 @@ export async function searchPoems(query: string): Promise<Poem[]> {
 }
 
 // Detect series from poem titles or subtitles
-function detectSeries(poems: Poem[]): Map<string, Poem[]> {
-  const series = new Map<string, Poem[]>();
+function detectSeries(poems: PoemMeta[]): Map<string, PoemMeta[]> {
+  const series = new Map<string, PoemMeta[]>();
 
   const patterns = [
     { regex: /^Diary of a Programmer/i, name: 'Diary of a Programmer' },
@@ -127,8 +162,8 @@ function detectSeries(poems: Poem[]): Map<string, Poem[]> {
 }
 
 // Group poems by year
-function groupByYear(poems: Poem[]): Map<string, Poem[]> {
-  const years = new Map<string, Poem[]>();
+function groupByYear(poems: PoemMeta[]): Map<string, PoemMeta[]> {
+  const years = new Map<string, PoemMeta[]>();
 
   for (const poem of poems) {
     const year = new Date(poem.publishedAt).getFullYear().toString();
@@ -141,9 +176,9 @@ function groupByYear(poems: Poem[]): Map<string, Poem[]> {
   return years;
 }
 
-// Build the tree structure for navigation
+// Build the tree structure for navigation — uses lightweight metadata query
 export async function buildPoemTree(): Promise<TreeNode[]> {
-  const poems = await getAllPoems();
+  const poems = await getAllPoemsMeta();
   const series = detectSeries(poems);
   const years = groupByYear(poems);
 
@@ -238,19 +273,19 @@ export async function buildPoemTree(): Promise<TreeNode[]> {
   return tree;
 }
 
-// Get all poem slugs (for static generation)
+// Get all poem slugs (for static generation) — uses lightweight metadata query
 export async function getAllPoemSlugs(): Promise<string[]> {
-  const poems = await getAllPoems();
+  const poems = await getAllPoemsMeta();
   return poems.map((p) => p.slug);
 }
 
-// Get adjacent poems for navigation
-export async function getAdjacentPoems(slug: string): Promise<{ prev: Poem | null; next: Poem | null }> {
-  const poems = await getAllPoems();
+// Get adjacent poems for navigation — uses lightweight metadata query
+export async function getAdjacentPoems(slug: string): Promise<{ prev: PoemMeta | null; next: PoemMeta | null }> {
+  const poems = await getAllPoemsMeta();
   const index = poems.findIndex((p) => p.slug === slug);
 
   return {
-    prev: index > 0 ? poems[index - 1] : null,
-    next: index < poems.length - 1 ? poems[index + 1] : null,
+    prev: index > 0 ? poems[index - 1] ?? null : null,
+    next: index < poems.length - 1 ? poems[index + 1] ?? null : null,
   };
 }

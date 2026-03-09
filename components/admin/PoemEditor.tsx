@@ -2,10 +2,16 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
-import { RichTextEditor, RichTextEditorRef } from './RichTextEditor';
+import type { RichTextEditorRef } from './RichTextEditor';
 import { PoemContent } from '@/components/PoemContent';
 import type { Poem, NewPoem, UpdatePoem } from '@/lib/supabase/types';
+
+const RichTextEditor = dynamic(
+  () => import('./RichTextEditor').then((m) => m.RichTextEditor),
+  { ssr: false, loading: () => <div className="min-h-[300px] bg-surface border border-border rounded animate-pulse" /> }
+);
 
 // Preview component that matches PoemDisplay exactly
 function PoemPreview({ title, subtitle, html }: { title: string; subtitle: string; html: string }) {

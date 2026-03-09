@@ -3,20 +3,10 @@
 import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/Skeleton';
 import { trackLike } from './AmplitudeProvider';
+import { getVisitorId } from '@/lib/visitorId';
 
 interface LikeButtonProps {
   slug: string;
-}
-
-function getVisitorId(): string {
-  if (typeof window === 'undefined') return '';
-
-  let id = localStorage.getItem('visitor_id');
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem('visitor_id', id);
-  }
-  return id;
 }
 
 export function LikeButton({ slug }: LikeButtonProps) {

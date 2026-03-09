@@ -6,6 +6,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ToastProvider } from "@/components/Toast";
 import { AmplitudeProvider } from "@/components/AmplitudeProvider";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 
 const crimsonText = Crimson_Text({
   variable: "--font-crimson",
@@ -22,6 +23,23 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Blumenous Poetry",
   description: "A contemplative space for poetry",
+  manifest: "/manifest.json",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#614051" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1a2e" },
+  ],
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Poetree",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.svg",
+  },
+  openGraph: {
+    siteName: "Blumenous Poetry",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -65,6 +83,7 @@ export default function RootLayout({
           </ToastProvider>
         </ThemeProvider>
         <Analytics />
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

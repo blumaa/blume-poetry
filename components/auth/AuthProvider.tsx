@@ -24,10 +24,8 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  // No fallback - admin email must be configured via environment variable
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
   useEffect(() => {
     const supabase = createClient();
@@ -35,7 +33,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       setUser(session?.user ?? null);
-      setIsLoading(false);
+      if (session?.user) {
+        checkAdmin();
+      } else {
+        setIsLoading(false);
+      }
     });
 
     // Listen for auth changes
@@ -43,18 +45,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       setUser(session?.user ?? null);
-      setIsLoading(false);
+      if (session?.user) {
+        checkAdmin();
+      } else {
+        setIsAdmin(false);
+        setIsLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
+  const checkAdmin = async () => {
+    try {
+      const res = await fetch('/api/auth/check-admin');
+      const data = await res.json();
+      setIsAdmin(data.isAdmin ?? false);
+    } catch {
+      setIsAdmin(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const signOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
   };
-
-  const isAdmin = Boolean(adminEmail && user?.email === adminEmail);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, isAdmin, signOut }}>

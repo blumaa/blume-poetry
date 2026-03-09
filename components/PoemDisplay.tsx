@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Poem } from '@/lib/poems';
+import { Poem, PoemMeta } from '@/lib/poems';
 import { LikeButton } from './LikeButton';
 import { CommentSection, CommentIcon } from './CommentSection';
 import { PoemContent } from './PoemContent';
@@ -11,8 +11,8 @@ import { trackNavigation, trackCommentModalOpen, trackNavArrowClick, trackScroll
 
 interface PoemDisplayProps {
   poem: Poem;
-  prevPoem?: Poem | null;
-  nextPoem?: Poem | null;
+  prevPoem?: PoemMeta | null;
+  nextPoem?: PoemMeta | null;
   showNavigation?: boolean;
 }
 

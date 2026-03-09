@@ -47,6 +47,17 @@ export function getClientIp(request: Request): string {
   return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
 }
 
+/**
+ * Check rate limit and return a 429 Response if exceeded, or null if allowed
+ */
+export function checkRateLimit(request: Request, options: RateLimitOptions): Response | null {
+  const ip = getClientIp(request);
+  if (isRateLimited(ip, options)) {
+    return Response.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
+  }
+  return null;
+}
+
 // Preset configurations for common use cases
 export const RATE_LIMITS = {
   /** Comments: 10 per 5 minutes */

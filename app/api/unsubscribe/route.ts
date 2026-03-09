@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { verifyOrigin } from '@/lib/csrf';
 
 const unsubscribeSchema = z.object({
   email: z.string().email('Invalid email address'),
 });
 
 export async function POST(request: Request) {
+  const csrfError = verifyOrigin(request);
+  if (csrfError) return csrfError;
+
   try {
     const body = await request.json();
     const { email } = unsubscribeSchema.parse(body);

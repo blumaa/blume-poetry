@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { TreeNode, Poem } from '@/lib/poems';
@@ -162,7 +162,10 @@ export function Sidebar({
     if (isMobile && onClose) {
       onClose();
     }
-  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Intentionally only depend on pathname to close sidebar on navigation,
+    // not on isMobile/onClose which would cause unnecessary closures
+  }, [pathname]);
 
   const toggleNode = (id: string) => {
     const isCurrentlyExpanded = effectiveExpandedNodes.has(id);
@@ -189,20 +192,29 @@ export function Sidebar({
     }
   };
 
-  const handleSearch = async (query: string) => {
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearch = useCallback((query: string) => {
     setSearch(query);
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
     if (!query.trim()) {
       setSearchResults(null);
       return;
     }
 
-    const res = await fetch(`/api/poems/search?q=${encodeURIComponent(query)}`);
-    if (res.ok) {
-      const data = await res.json();
-      setSearchResults(data.poems);
-      trackSearch(query, data.poems?.length || 0);
-    }
-  };
+    searchTimeoutRef.current = setTimeout(async () => {
+      const res = await fetch(`/api/poems/search?q=${encodeURIComponent(query)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(data.poems);
+        trackSearch(query, data.poems?.length || 0);
+      }
+    }, 300);
+  }, []);
 
   const handleTreeNavigate = (slug: string, title: string) => {
     trackPoemOpen(slug, title, 'tree');

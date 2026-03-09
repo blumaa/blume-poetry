@@ -1,12 +1,20 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { verifyOrigin } from '@/lib/csrf';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 const subscribeSchema = z.object({
   email: z.string().email('Invalid email address'),
 });
 
 export async function POST(request: Request) {
+  const csrfError = verifyOrigin(request);
+  if (csrfError) return csrfError;
+
+  const rateLimitError = checkRateLimit(request, RATE_LIMITS.subscriptions);
+  if (rateLimitError) return rateLimitError;
+
   try {
     const body = await request.json();
     const { email } = subscribeSchema.parse(body);

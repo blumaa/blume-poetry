@@ -8,6 +8,7 @@ import { Modal } from '@/components/Modal';
 import { SkeletonComment } from '@/components/Skeleton';
 import { isAdminEmail } from '@/lib/config';
 import { trackCommentSubmit } from './AmplitudeProvider';
+import { getVisitorId } from '@/lib/visitorId';
 
 interface Comment {
   id: string;
@@ -20,17 +21,6 @@ interface CommentSectionProps {
   slug: string;
   isModalOpen?: boolean;
   onModalClose?: () => void;
-}
-
-function getVisitorId(): string {
-  if (typeof window === 'undefined') return '';
-
-  let id = localStorage.getItem('visitor_id');
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem('visitor_id', id);
-  }
-  return id;
 }
 
 function formatDate(dateString: string): string {
