@@ -19,10 +19,16 @@ export default function AdminPoemsPage() {
   const statusFilter = searchParams.get('status');
   const { showToast } = useToast();
 
-  const filteredPoems = poems.filter((poem) =>
-    poem.title.toLowerCase().includes(search.toLowerCase()) ||
-    poem.plain_text?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredPoems = poems
+    .filter((poem) =>
+      poem.title.toLowerCase().includes(search.toLowerCase()) ||
+      poem.plain_text?.toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return 0;
+    });
 
   // Show toast from sessionStorage (e.g., after creating/editing a poem)
   useEffect(() => {
