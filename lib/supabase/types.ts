@@ -21,6 +21,7 @@ export type Database = {
           updated_at: string;
           status: 'draft' | 'published';
           url: string | null;
+          pinned: boolean;
         };
         Insert: {
           id?: string;
@@ -33,6 +34,7 @@ export type Database = {
           updated_at?: string;
           status?: 'draft' | 'published';
           url?: string | null;
+          pinned?: boolean;
         };
         Update: {
           id?: string;
@@ -45,6 +47,7 @@ export type Database = {
           updated_at?: string;
           status?: 'draft' | 'published';
           url?: string | null;
+          pinned?: boolean;
         };
         Relationships: [];
       };

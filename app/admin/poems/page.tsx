@@ -64,6 +64,24 @@ export default function AdminPoemsPage() {
     fetchPoems();
   }, [statusFilter]);
 
+  const handleTogglePin = async (poem: Poem) => {
+    const supabase = createClient();
+    const newPinned = !poem.pinned;
+    const { error: pinError } = await supabase
+      .from('poems')
+      .update({ pinned: newPinned })
+      .eq('id', poem.id);
+
+    if (pinError) {
+      showToast(pinError.message, 'error');
+    } else {
+      setPoems((current) =>
+        current.map((p) => (p.id === poem.id ? { ...p, pinned: newPinned } : p))
+      );
+      showToast(newPinned ? `"${poem.title}" pinned` : `"${poem.title}" unpinned`, 'success');
+    }
+  };
+
   const handleDeleteClick = (poem: Poem) => {
     setDeleteTarget(poem);
   };
@@ -158,13 +176,20 @@ export default function AdminPoemsPage() {
               {filteredPoems.map((poem) => (
                 <tr key={poem.id} className="border-t border-border">
                   <td className="p-4">
-                    <Link
-                      href={`/poem/${poem.slug}`}
-                      className="text-primary hover:text-accent transition-colors"
-                      target="_blank"
-                    >
-                      {poem.title}
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      {poem.pinned && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-accent flex-shrink-0" aria-label="Pinned">
+                          <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
+                        </svg>
+                      )}
+                      <Link
+                        href={`/poem/${poem.slug}`}
+                        className="text-primary hover:text-accent transition-colors"
+                        target="_blank"
+                      >
+                        {poem.title}
+                      </Link>
+                    </div>
                   </td>
                   <td className="p-4">
                     <span
@@ -182,6 +207,17 @@ export default function AdminPoemsPage() {
                   </td>
                   <td className="p-4 text-right">
                     <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => handleTogglePin(poem)}
+                        className={`px-3 py-1 text-sm border rounded transition-colors ${
+                          poem.pinned
+                            ? 'border-accent text-accent hover:bg-accent/10'
+                            : 'border-border text-primary hover:border-accent'
+                        }`}
+                        aria-label={poem.pinned ? 'Unpin poem' : 'Pin poem'}
+                      >
+                        {poem.pinned ? 'Unpin' : 'Pin'}
+                      </button>
                       <Link
                         href={`/admin/poems/${poem.id}/edit`}
                         className="px-3 py-1 text-sm border border-border rounded hover:border-accent transition-colors text-primary"

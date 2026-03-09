@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Crimson_Text, Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
@@ -20,14 +20,17 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Blumenous Poetry",
-  description: "A contemplative space for poetry",
-  manifest: "/manifest.json",
+export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#614051" },
     { media: "(prefers-color-scheme: dark)", color: "#1a1a2e" },
   ],
+};
+
+export const metadata: Metadata = {
+  title: "Blumenous Poetry",
+  description: "A contemplative space for poetry",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

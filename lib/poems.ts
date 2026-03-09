@@ -21,6 +21,7 @@ export interface PoemMeta {
   subtitle: string | null;
   publishedAt: string;
   url: string;
+  pinned: boolean;
 }
 
 export interface TreeNode {
@@ -69,7 +70,7 @@ export const getAllPoemsMeta = cache(async (): Promise<PoemMeta[]> => {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('poems')
-    .select('id, slug, title, subtitle, published_at, url')
+    .select('id, slug, title, subtitle, published_at, url, pinned')
     .eq('status', 'published')
     .order('published_at', { ascending: false });
 
@@ -85,6 +86,7 @@ export const getAllPoemsMeta = cache(async (): Promise<PoemMeta[]> => {
     subtitle: row.subtitle,
     publishedAt: row.published_at,
     url: row.url || '',
+    pinned: row.pinned ?? false,
   }));
 });
 
@@ -183,6 +185,23 @@ export async function buildPoemTree(): Promise<TreeNode[]> {
   const years = groupByYear(poems);
 
   const tree: TreeNode[] = [];
+
+  // Pinned poems (shown at top of sidebar)
+  const pinnedPoems = poems.filter((p) => p.pinned);
+  if (pinnedPoems.length > 0) {
+    tree.push({
+      id: 'pinned',
+      label: 'Pinned',
+      type: 'folder',
+      count: pinnedPoems.length,
+      children: pinnedPoems.map((p) => ({
+        id: `pinned-${p.id}`,
+        label: p.title,
+        type: 'poem',
+        slug: p.slug,
+      })),
+    });
+  }
 
   // Recent poems
   tree.push({

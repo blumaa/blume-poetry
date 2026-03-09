@@ -1,4 +1,4 @@
-import * as amplitude from "@amplitude/unified";
+import * as amplitude from "@amplitude/analytics-browser";
 
 const AMPLITUDE_API_KEY = process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY as
   | string
@@ -11,11 +11,9 @@ export function initAnalytics() {
     return;
   }
 
-  amplitude.initAll(AMPLITUDE_API_KEY, {
+  amplitude.init(AMPLITUDE_API_KEY, {
     serverZone: "EU",
-    analytics: {
-      autocapture: false,
-    },
+    autocapture: false,
   });
 
   isInitialized = true;
@@ -25,8 +23,6 @@ export function trackEvent(
   eventName: string,
   properties?: Record<string, unknown>,
 ) {
-  if (!isInitialized) {
-    return;
-  }
+  if (!isInitialized) return;
   amplitude.track(eventName, properties);
 }

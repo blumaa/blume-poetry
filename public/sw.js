@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-${CACHE_VERSION}`;
 
@@ -43,13 +43,14 @@ self.addEventListener('fetch', (event) => {
   // Skip admin routes
   if (url.pathname.startsWith('/admin')) return;
 
-  // Static assets: cache-first
+  // Don't cache in development
+  if (url.hostname === 'localhost') return;
+
+  // Static assets: cache-first (Next.js hashed filenames ensure cache busting)
   if (
     url.pathname.startsWith('/_next/static/') ||
     url.pathname.startsWith('/icons/') ||
-    url.pathname.endsWith('.svg') ||
-    url.pathname.endsWith('.css') ||
-    url.pathname.endsWith('.js')
+    url.pathname.endsWith('.svg')
   ) {
     event.respondWith(
       caches.match(request).then((cached) => {
