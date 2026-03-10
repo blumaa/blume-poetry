@@ -12,16 +12,18 @@ interface SidebarWrapperProps {
 
 const COLLAPSED_KEY = 'sidebar_collapsed';
 
-// Lazy initializer for collapsed state
-function getInitialCollapsed(): boolean {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem(COLLAPSED_KEY) === 'true';
-}
-
 export function SidebarWrapper({ tree }: SidebarWrapperProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(getInitialCollapsed);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Restore collapsed state from localStorage after mount to avoid hydration mismatch
+  useEffect(() => {
+    const stored = localStorage.getItem(COLLAPSED_KEY);
+    if (stored === 'true') {
+      setIsCollapsed(true);
+    }
+  }, []);
 
   // Detect mobile viewport
   useEffect(() => {

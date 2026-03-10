@@ -89,8 +89,9 @@ export default function AdminSubscribersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
+      {/* Header - stacks on mobile */}
+      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3 flex-wrap">
           <h1 className="text-2xl text-primary">Subscribers</h1>
           <button
             onClick={() => setShowAddModal(true)}
@@ -126,13 +127,13 @@ export default function AdminSubscribersPage() {
         <div className="flex gap-2">
           <button
             onClick={handleExportCSV}
-            className="px-4 py-2 border border-border rounded hover:border-accent transition-colors text-primary"
+            className="flex-1 sm:flex-none px-4 py-2 border border-border rounded hover:border-accent transition-colors text-primary text-sm"
           >
             Export CSV
           </button>
           <Link
             href="/admin/subscribers/send"
-            className="px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors"
+            className="flex-1 sm:flex-none px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors text-center text-sm"
           >
             Send Newsletter
           </Link>
@@ -146,58 +147,98 @@ export default function AdminSubscribersPage() {
           No subscribers found.
         </div>
       ) : (
-        <div className="bg-surface rounded-lg border border-border overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-surface-secondary">
-              <tr>
-                <th className="text-left p-4 font-medium text-primary">Email</th>
-                <th className="text-left p-4 font-medium text-primary">Status</th>
-                <th className="text-left p-4 font-medium text-primary">Subscribed</th>
-                <th className="text-left p-4 font-medium text-primary">Verified</th>
-                <th className="text-right p-4 font-medium text-primary">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {subscribers.map((subscriber) => (
-                <tr key={subscriber.id} className="border-t border-border">
-                  <td className="p-4 text-primary">{subscriber.email}</td>
-                  <td className="p-4">
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded ${
-                        subscriber.status === 'active'
-                          ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/50 dark:text-emerald-100'
-                          : 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100'
-                      }`}
-                    >
-                      {subscriber.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-tertiary">
+        <>
+          {/* Mobile card list */}
+          <div className="md:hidden space-y-3">
+            {subscribers.map((subscriber) => (
+              <div key={subscriber.id} className="bg-surface rounded-lg border border-border p-4">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <span className="text-primary font-medium text-sm truncate">{subscriber.email}</span>
+                  <span
+                    className={`px-2 py-0.5 text-xs font-medium rounded flex-shrink-0 ${
+                      subscriber.status === 'active'
+                        ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/50 dark:text-emerald-100'
+                        : 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100'
+                    }`}
+                  >
+                    {subscriber.status}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-tertiary">
                     {new Date(subscriber.subscribed_at).toLocaleDateString()}
-                  </td>
-                  <td className="p-4">
-                    {subscriber.verified ? (
-                      <span className="text-emerald-600 dark:text-emerald-300 font-medium">Yes</span>
-                    ) : (
-                      <span className="text-tertiary">No</span>
+                    {subscriber.verified && (
+                      <span className="ml-2 text-emerald-600 dark:text-emerald-300 font-medium">verified</span>
                     )}
-                  </td>
-                  <td className="p-4 text-right">
-                    <button
-                      onClick={() => handleDeleteClick(subscriber)}
-                      className="px-3 py-1 text-sm border border-red-300 text-red-600 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="p-4 bg-surface-secondary border-t border-border text-sm text-tertiary">
-            {subscribers.length} subscriber{subscribers.length !== 1 ? 's' : ''}
+                  </div>
+                  <button
+                    onClick={() => handleDeleteClick(subscriber)}
+                    className="px-3 py-1.5 text-sm border border-red-300 text-red-600 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+            <div className="py-3 text-sm text-tertiary text-center">
+              {subscribers.length} subscriber{subscribers.length !== 1 ? 's' : ''}
+            </div>
           </div>
-        </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-surface rounded-lg border border-border overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-surface-secondary">
+                <tr>
+                  <th className="text-left p-4 font-medium text-primary">Email</th>
+                  <th className="text-left p-4 font-medium text-primary">Status</th>
+                  <th className="text-left p-4 font-medium text-primary">Subscribed</th>
+                  <th className="text-left p-4 font-medium text-primary">Verified</th>
+                  <th className="text-right p-4 font-medium text-primary">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {subscribers.map((subscriber) => (
+                  <tr key={subscriber.id} className="border-t border-border">
+                    <td className="p-4 text-primary">{subscriber.email}</td>
+                    <td className="p-4">
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded ${
+                          subscriber.status === 'active'
+                            ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/50 dark:text-emerald-100'
+                            : 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100'
+                        }`}
+                      >
+                        {subscriber.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-tertiary">
+                      {new Date(subscriber.subscribed_at).toLocaleDateString()}
+                    </td>
+                    <td className="p-4">
+                      {subscriber.verified ? (
+                        <span className="text-emerald-600 dark:text-emerald-300 font-medium">Yes</span>
+                      ) : (
+                        <span className="text-tertiary">No</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-right">
+                      <button
+                        onClick={() => handleDeleteClick(subscriber)}
+                        className="px-3 py-1 text-sm border border-red-300 text-red-600 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="p-4 bg-surface-secondary border-t border-border text-sm text-tertiary">
+              {subscribers.length} subscriber{subscribers.length !== 1 ? 's' : ''}
+            </div>
+          </div>
+        </>
       )}
 
       {/* Delete confirmation modal */}

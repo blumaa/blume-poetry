@@ -38,32 +38,32 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-8">
         <h1 className="text-2xl text-primary">Dashboard</h1>
         <Link
           href="/admin/poems/new"
-          className="px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors"
+          className="px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors text-center sm:w-auto"
         >
           New Poem
         </Link>
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
+        <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
+          <div className="min-w-[140px] flex-shrink-0 md:min-w-0"><SkeletonCard /></div>
+          <div className="min-w-[140px] flex-shrink-0 md:min-w-0"><SkeletonCard /></div>
+          <div className="min-w-[140px] flex-shrink-0 md:min-w-0"><SkeletonCard /></div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
           {statCards.map((card) => (
             <Link
               key={card.label}
               href={card.href}
-              className="p-6 bg-surface rounded-lg border border-border hover:border-accent transition-colors"
+              className="min-w-[140px] flex-shrink-0 md:min-w-0 p-5 bg-surface rounded-lg border border-border hover:border-accent transition-colors"
             >
               <div className="text-3xl font-semibold mb-1 text-primary">{card.value}</div>
-              <div className="text-tertiary">{card.label}</div>
+              <div className="text-tertiary text-sm">{card.label}</div>
             </Link>
           ))}
         </div>
@@ -71,16 +71,16 @@ export default function AdminDashboard() {
 
       <div className="mt-8">
         <h2 className="text-lg mb-4 text-primary">Quick Actions</h2>
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <Link
             href="/admin/poems/new"
-            className="px-4 py-2 border border-border rounded hover:border-accent transition-colors text-primary"
+            className="px-4 py-3 sm:py-2 border border-border rounded hover:border-accent transition-colors text-primary text-center"
           >
             Create New Poem
           </Link>
           <Link
             href="/admin/subscribers/send"
-            className="px-4 py-2 border border-border rounded hover:border-accent transition-colors text-primary"
+            className="px-4 py-3 sm:py-2 border border-border rounded hover:border-accent transition-colors text-primary text-center"
           >
             Send Newsletter
           </Link>

@@ -77,9 +77,14 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     });
   }, []);
 
-  // Prevent flash of wrong theme
+  // During SSR, render children with default context so HTML is not blank.
+  // The inline script in <head> already sets the correct data-theme attribute.
   if (!mounted) {
-    return null;
+    return (
+      <ThemeContext.Provider value={{ theme: 'light', toggleTheme: () => {}, setTheme: () => {} }}>
+        {children}
+      </ThemeContext.Provider>
+    );
   }
 
   return (

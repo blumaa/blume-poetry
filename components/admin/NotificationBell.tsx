@@ -157,65 +157,133 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-surface border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-          <div className="p-3 border-b border-border">
-            <h3 className="font-medium text-primary">Notifications</h3>
+        <>
+          {/* Mobile: bottom sheet */}
+          <div className="md:hidden fixed inset-0 z-50">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setIsOpen(false)} />
+            <div className="absolute bottom-0 left-0 right-0 bg-surface rounded-t-2xl max-h-[70vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]" style={{ animation: 'slideUp 0.25s ease-out' }}>
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 bg-tertiary/40 rounded-full" />
+              </div>
+              <div className="p-4 border-b border-border">
+                <h3 className="font-medium text-primary">Notifications</h3>
+              </div>
+              {isLoading ? (
+                <div className="p-4 text-center text-tertiary">Loading...</div>
+              ) : notifications.length === 0 ? (
+                <div className="p-4 text-center text-tertiary">No notifications</div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {notifications.map((notif) => (
+                    <Link
+                      key={notif.id}
+                      href={`/poem/${notif.poem.slug}`}
+                      className="block p-4 hover:bg-hover transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <div className="flex items-start gap-3">
+                        {notif.type === 'comment' ? (
+                          <span className="text-blue-500 shrink-0 mt-0.5">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                          </span>
+                        ) : (
+                          <span className="text-red-500 shrink-0 mt-0.5">
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                            </svg>
+                          </span>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-primary">
+                            {notif.type === 'comment' ? (
+                              <>
+                                <span className="font-medium">{notif.author_name}</span>
+                                {' commented on '}
+                              </>
+                            ) : (
+                              'New like on '
+                            )}
+                            <span className="font-medium">&ldquo;{notif.poem.title}&rdquo;</span>
+                          </p>
+                          {notif.type === 'comment' && notif.content && (
+                            <p className="text-xs text-tertiary truncate mt-0.5">
+                              {notif.content}
+                            </p>
+                          )}
+                          <p className="text-xs text-tertiary mt-1">
+                            {formatTime(notif.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          {isLoading ? (
-            <div className="p-4 text-center text-tertiary">Loading...</div>
-          ) : notifications.length === 0 ? (
-            <div className="p-4 text-center text-tertiary">No notifications</div>
-          ) : (
-            <div className="divide-y divide-border">
-              {notifications.map((notif) => (
-                <Link
-                  key={notif.id}
-                  href={`/poem/${notif.poem.slug}`}
-                  className="block p-3 hover:bg-hover transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <div className="flex items-start gap-2">
-                    {notif.type === 'comment' ? (
-                      <span className="text-blue-500 shrink-0">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
-                      </span>
-                    ) : (
-                      <span className="text-red-500 shrink-0">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                        </svg>
-                      </span>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-primary">
-                        {notif.type === 'comment' ? (
-                          <>
-                            <span className="font-medium">{notif.author_name}</span>
-                            {' commented on '}
-                          </>
-                        ) : (
-                          'New like on '
-                        )}
-                        <span className="font-medium">&ldquo;{notif.poem.title}&rdquo;</span>
-                      </p>
-                      {notif.type === 'comment' && notif.content && (
-                        <p className="text-xs text-tertiary truncate mt-0.5">
-                          {notif.content}
-                        </p>
-                      )}
-                      <p className="text-xs text-tertiary mt-1">
-                        {formatTime(notif.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+          {/* Desktop: dropdown */}
+          <div className="hidden md:block absolute right-0 mt-2 w-80 bg-surface border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+            <div className="p-3 border-b border-border">
+              <h3 className="font-medium text-primary">Notifications</h3>
             </div>
-          )}
-        </div>
+            {isLoading ? (
+              <div className="p-4 text-center text-tertiary">Loading...</div>
+            ) : notifications.length === 0 ? (
+              <div className="p-4 text-center text-tertiary">No notifications</div>
+            ) : (
+              <div className="divide-y divide-border">
+                {notifications.map((notif) => (
+                  <Link
+                    key={notif.id}
+                    href={`/poem/${notif.poem.slug}`}
+                    className="block p-3 hover:bg-hover transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <div className="flex items-start gap-2">
+                      {notif.type === 'comment' ? (
+                        <span className="text-blue-500 shrink-0">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                        </span>
+                      ) : (
+                        <span className="text-red-500 shrink-0">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                            </svg>
+                        </span>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-primary">
+                          {notif.type === 'comment' ? (
+                            <>
+                              <span className="font-medium">{notif.author_name}</span>
+                              {' commented on '}
+                            </>
+                          ) : (
+                            'New like on '
+                          )}
+                          <span className="font-medium">&ldquo;{notif.poem.title}&rdquo;</span>
+                        </p>
+                        {notif.type === 'comment' && notif.content && (
+                          <p className="text-xs text-tertiary truncate mt-0.5">
+                            {notif.content}
+                          </p>
+                        )}
+                        <p className="text-xs text-tertiary mt-1">
+                          {formatTime(notif.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

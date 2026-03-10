@@ -276,17 +276,17 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="px-6 py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
+          className="px-6 py-3 sm:py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
         >
           {isSaving ? 'Saving...' : isNew ? 'Create Poem' : 'Save Changes'}
         </button>
         <button
           onClick={() => router.back()}
-          className="px-6 py-2 border border-border rounded hover:border-accent transition-colors text-primary"
+          className="px-6 py-3 sm:py-2 border border-border rounded hover:border-accent transition-colors text-primary"
         >
           Cancel
         </button>

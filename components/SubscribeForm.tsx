@@ -63,13 +63,13 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
           required
-          className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent"
+          className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent min-h-[44px]"
           disabled={status === 'loading'}
         />
         <button
           type="submit"
           disabled={status === 'loading'}
-          className="px-2 py-1.5 text-sm bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 shrink-0"
+          className="px-3 py-1.5 text-sm bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 shrink-0 min-h-[44px]"
         >
           {status === 'loading' ? '...' : 'Go'}
         </button>

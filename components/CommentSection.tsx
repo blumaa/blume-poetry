@@ -111,15 +111,17 @@ export function CommentSection({ slug, isModalOpen = false, onModalClose }: Comm
   };
 
   return (
-    <div className="mt-8 pt-8 border-t border-border">
+    <div>
       {isLoading ? (
-        <SkeletonComment />
+        <div className="mt-8 pt-8 border-t border-border">
+          <SkeletonComment />
+        </div>
       ) : error ? (
-        <p className="text-red-600">{error}</p>
-      ) : comments.length === 0 ? (
-        <p className="text-secondary text-center py-8">No comments yet. Be the first to share your thoughts!</p>
-      ) : (
-        <div className="space-y-6">
+        <div className="mt-8 pt-8 border-t border-border">
+          <p className="text-red-600">{error}</p>
+        </div>
+      ) : comments.length > 0 ? (
+        <div className="mt-8 pt-8 border-t border-border space-y-6">
           {comments.map((comment) => (
             <div key={comment.id} className="border-b border-border pb-6 last:border-b-0">
               <div className="flex items-center justify-between mb-2">
@@ -141,7 +143,7 @@ export function CommentSection({ slug, isModalOpen = false, onModalClose }: Comm
             </div>
           ))}
         </div>
-      )}
+      ) : null}
 
       <CommentModal
         isOpen={isModalOpen}

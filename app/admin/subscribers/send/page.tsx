@@ -20,6 +20,7 @@ export default function SendNewsletterPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [showSendConfirm, setShowSendConfirm] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'compose' | 'preview'>('compose');
   const router = useRouter();
   const editorRef = useRef<RichTextEditorRef>(null);
   const { showToast } = useToast();
@@ -154,9 +155,33 @@ export default function SendNewsletterPage() {
     <div>
       <h1 className="text-2xl mb-6 text-primary">Send Newsletter</h1>
 
+      {/* Mobile tab toggle */}
+      <div className="lg:hidden flex border-b border-border mb-6">
+        <button
+          onClick={() => setMobileTab('compose')}
+          className={`flex-1 px-3 py-2.5 text-sm font-medium transition-colors ${
+            mobileTab === 'compose'
+              ? 'text-accent border-b-2 border-accent'
+              : 'text-tertiary'
+          }`}
+        >
+          Compose
+        </button>
+        <button
+          onClick={() => setMobileTab('preview')}
+          className={`flex-1 px-3 py-2.5 text-sm font-medium transition-colors ${
+            mobileTab === 'preview'
+              ? 'text-accent border-b-2 border-accent'
+              : 'text-tertiary'
+          }`}
+        >
+          Preview
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left: Compose */}
-        <div className="space-y-6">
+        <div className={`space-y-6 ${mobileTab !== 'compose' ? 'hidden lg:block' : ''}`}>
           {/* Subject */}
           <div>
             <label htmlFor="subject" className="block text-sm font-medium mb-2 text-primary">
@@ -217,7 +242,7 @@ export default function SendNewsletterPage() {
           {/* Test Email */}
           <div className="p-4 border border-border rounded-lg">
             <h3 className="font-medium mb-3 text-primary">Send Test Email</h3>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <label htmlFor="test-email" className="sr-only">
                 Test email address
               </label>
@@ -232,7 +257,7 @@ export default function SendNewsletterPage() {
               <button
                 onClick={handleSendTest}
                 disabled={isSending}
-                className="px-4 py-2 border border-border rounded hover:border-accent transition-colors disabled:opacity-50 text-primary"
+                className="px-4 py-2 border border-border rounded hover:border-accent transition-colors disabled:opacity-50 text-primary whitespace-nowrap"
               >
                 {isSending ? 'Sending...' : 'Send Test'}
               </button>
@@ -240,17 +265,17 @@ export default function SendNewsletterPage() {
           </div>
 
           {/* Send Buttons */}
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
               onClick={handleSendAllClick}
               disabled={isSending || subscriberCount === 0}
-              className="px-6 py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
+              className="px-6 py-3 sm:py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
             >
               {isSending ? 'Sending...' : `Send to ${subscriberCount} Subscribers`}
             </button>
             <button
               onClick={() => router.back()}
-              className="px-6 py-2 border border-border rounded hover:border-accent transition-colors text-primary"
+              className="px-6 py-3 sm:py-2 border border-border rounded hover:border-accent transition-colors text-primary"
             >
               Cancel
             </button>
@@ -258,7 +283,7 @@ export default function SendNewsletterPage() {
         </div>
 
         {/* Right: Preview */}
-        <div>
+        <div className={mobileTab !== 'preview' ? 'hidden lg:block' : ''}>
           <h3 className="text-sm font-medium mb-3 text-primary">Preview</h3>
           <div className="bg-surface border border-border rounded-lg p-6 min-h-[400px]">
             {subject || sanitizedBodyHtml || selectedPoem ? (

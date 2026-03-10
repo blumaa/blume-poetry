@@ -2,8 +2,6 @@
 
 import Link from 'next/link';
 import { ThemeToggle } from './ThemeToggle';
-import { SubscribeButton } from './SubscribeButton';
-import { InfoButton } from './InfoButton';
 import { trackMenuOpen } from './AmplitudeProvider';
 
 interface MobileHeaderProps {
@@ -49,8 +47,6 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
 
       {/* Right side buttons */}
       <div className="shrink-0 flex items-center">
-        <InfoButton />
-        <SubscribeButton />
         <ThemeToggle />
       </div>
     </header>

@@ -71,7 +71,7 @@ function ToolbarButton({
       type="button"
       onClick={onClick}
       title={title}
-      className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${
+      className={`px-3 py-1.5 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 text-sm font-medium rounded transition-colors flex items-center justify-center ${
         isActive
           ? 'bg-accent text-white'
           : 'bg-surface-secondary text-primary hover:bg-hover'

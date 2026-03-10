@@ -141,7 +141,7 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
     <article ref={articleRef} key={poem.slug} className="page-content max-w-2xl mx-auto px-4 py-8 md:px-6 md:py-12 overflow-x-hidden">
       {/* Title */}
       <header className="mb-8">
-        <h1 className="text-xl md:text-2xl font-normal text-primary leading-tight">
+        <h1 className="text-2xl md:text-4xl font-normal text-primary leading-tight tracking-tight">
           {poem.title}
         </h1>
         {poem.subtitle && (
