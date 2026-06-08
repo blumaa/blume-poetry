@@ -24,9 +24,9 @@ export async function POST(request: Request) {
       revalidatePath(path);
     }
 
-    // Always revalidate the home page and poems listing
-    revalidatePath('/');
-    revalidatePath('/poem/[slug]', 'page');
+    // Revalidate the root layout — covers the site-wide sidebar
+    // (pinned poems) across the home page, poem pages, and all other routes.
+    revalidatePath('/', 'layout');
 
     return NextResponse.json({ revalidated: true, paths });
   } catch (error) {

@@ -73,7 +73,7 @@ export default function RootLayout({
       <body className={`${crimsonText.variable} ${sourceSans.variable} antialiased`}>
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-surface focus:text-primary focus:border focus:border-border focus:rounded focus:shadow-lg"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 md:focus:left-[calc(var(--sidebar-current-width)+1rem)] focus:z-50 focus:px-4 focus:py-2 focus:bg-surface focus:text-primary focus:border focus:border-border focus:rounded focus:shadow-lg focus:transition-[left] focus:duration-300"
         >
           Skip to main content
         </a>

@@ -84,6 +84,11 @@ export default function AdminPoemsPage() {
       setPoems((current) =>
         current.map((p) => (p.id === poem.id ? { ...p, pinned: newPinned } : p))
       );
+      await fetch('/api/admin/revalidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paths: [] }),
+      });
       showToast(newPinned ? `"${poem.title}" pinned` : `"${poem.title}" unpinned`, 'success');
     }
   };
@@ -104,6 +109,11 @@ export default function AdminPoemsPage() {
       setIsDeleting(false);
     } else {
       setPoems((currentPoems) => currentPoems.filter((p) => p.id !== deleteTarget.id));
+      await fetch('/api/admin/revalidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paths: [`/poem/${deleteTarget.slug}`] }),
+      });
       showToast(`"${deleteTarget.title}" deleted`, 'success');
       setDeleteTarget(null);
       setIsDeleting(false);
