@@ -1,5 +1,15 @@
 import nodemailer from 'nodemailer';
 import { escapeHtml, sanitizeNewsletterHtml } from './sanitize';
+import { getSiteUrl } from './config';
+import { createUnsubscribeToken } from './unsubscribeToken';
+
+/**
+ * Build a signed, one-click unsubscribe URL. Carries a tamper-proof token
+ * rather than the raw email so the link can't be used to unsubscribe others.
+ */
+function buildUnsubscribeUrl(email: string): string {
+  return `${getSiteUrl()}/api/unsubscribe?token=${createUnsubscribeToken(email)}`;
+}
 
 let transporter: nodemailer.Transporter | null = null;
 
@@ -67,9 +77,9 @@ interface NewsletterEmailData {
 }
 
 export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, customMessage }: PoemEmailData): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blumenous-poetry.vercel.app';
+  const siteUrl = getSiteUrl();
   const poemUrl = `${siteUrl}/poem/${slug}`;
-  const unsubscribeUrl = `${siteUrl}/api/unsubscribe?email=${encodeURIComponent(unsubscribeEmail)}`;
+  const unsubscribeUrl = buildUnsubscribeUrl(unsubscribeEmail);
 
   // Escape HTML entities to prevent injection
   const safeTitle = escapeHtml(title);
@@ -141,9 +151,9 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
 }
 
 export function generatePoemEmailText({ title, content, slug, unsubscribeEmail, customMessage }: PoemEmailData): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blumenous-poetry.vercel.app';
+  const siteUrl = getSiteUrl();
   const poemUrl = `${siteUrl}/poem/${slug}`;
-  const unsubscribeUrl = `${siteUrl}/api/unsubscribe?email=${encodeURIComponent(unsubscribeEmail)}`;
+  const unsubscribeUrl = buildUnsubscribeUrl(unsubscribeEmail);
 
   const messageSection = customMessage ? `${customMessage}\n\n---\n\n` : '';
 
@@ -163,8 +173,8 @@ Unsubscribe: ${unsubscribeUrl}
 }
 
 export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEmail }: NewsletterEmailData): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blumenous-poetry.vercel.app';
-  const unsubscribeUrl = `${siteUrl}/api/unsubscribe?email=${encodeURIComponent(unsubscribeEmail)}`;
+  const siteUrl = getSiteUrl();
+  const unsubscribeUrl = buildUnsubscribeUrl(unsubscribeEmail);
 
   // Escape subject and sanitize body HTML to prevent injection
   const safeSubject = escapeHtml(subject);
@@ -234,8 +244,8 @@ export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEma
 }
 
 export function generateNewsletterText({ subject, bodyText, poem, unsubscribeEmail }: NewsletterEmailData): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blumenous-poetry.vercel.app';
-  const unsubscribeUrl = `${siteUrl}/api/unsubscribe?email=${encodeURIComponent(unsubscribeEmail)}`;
+  const siteUrl = getSiteUrl();
+  const unsubscribeUrl = buildUnsubscribeUrl(unsubscribeEmail);
 
   const poemSection = poem ? `
 ---

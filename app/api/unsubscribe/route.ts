@@ -1,67 +1,33 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
-import { z } from 'zod';
-import { verifyOrigin } from '@/lib/csrf';
+import { verifyUnsubscribeToken } from '@/lib/unsubscribeToken';
 
-const unsubscribeSchema = z.object({
-  email: z.string().email('Invalid email address'),
-});
-
-export async function POST(request: Request) {
-  const csrfError = verifyOrigin(request);
-  if (csrfError) return csrfError;
-
-  try {
-    const body = await request.json();
-    const { email } = unsubscribeSchema.parse(body);
-
-    const supabase = createAdminClient();
-
-    const { error } = await supabase
-      .from('subscribers')
-      .update({ status: 'unsubscribed' })
-      .eq('email', email);
-
-    if (error) {
-      console.error('Unsubscribe error:', error);
-      return NextResponse.json(
-        { error: 'Failed to unsubscribe' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ message: 'Successfully unsubscribed' });
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: err.issues[0].message },
-        { status: 400 }
-      );
-    }
-
-    console.error('Unsubscribe error:', err);
-    return NextResponse.json(
-      { error: 'An unexpected error occurred' },
-      { status: 500 }
-    );
-  }
-}
-
-// Also support GET for unsubscribe links
+// One-click unsubscribe from an email link. The link carries a signed token
+// (see lib/unsubscribeToken) instead of the raw email, so it can only
+// unsubscribe the address it was issued for — not an arbitrary victim.
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const email = searchParams.get('email');
+  const token = searchParams.get('token');
 
+  const email = token ? verifyUnsubscribeToken(token) : null;
   if (!email) {
-    return NextResponse.json({ error: 'Email required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid or missing unsubscribe token' },
+      { status: 400 }
+    );
   }
 
   const supabase = createAdminClient();
 
-  await supabase
+  const { error } = await supabase
     .from('subscribers')
     .update({ status: 'unsubscribed' })
     .eq('email', email);
+
+  if (error) {
+    console.error('Unsubscribe error:', error);
+    return NextResponse.json({ error: 'Failed to unsubscribe' }, { status: 500 });
+  }
 
   // Redirect to the unsubscribe confirmation page
   return NextResponse.redirect(new URL('/unsubscribe', request.url));

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { isAdminEmail } from '@/lib/config';
 import { z } from 'zod';
 
 const subscriberSchema = z.object({
@@ -8,6 +9,15 @@ const subscriberSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    // Verify admin authentication — this route uses the service-role client,
+    // so it must never be reachable by anonymous callers.
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
+
+    if (!user || !isAdminEmail(user.email)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { email } = subscriberSchema.parse(body);
 
