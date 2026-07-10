@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { SubscribeModal } from './SubscribeModal';
-import { trackSubscribeModalOpen } from './AmplitudeProvider';
 
 interface SubscribeButtonProps {
   className?: string;
@@ -15,10 +14,7 @@ export function SubscribeButton({ className = '', showLabel = false }: Subscribe
   return (
     <>
       <button
-        onClick={() => {
-          trackSubscribeModalOpen();
-          setIsModalOpen(true);
-        }}
+        onClick={() => setIsModalOpen(true)}
         className={`min-h-[44px] flex items-center gap-2 rounded-lg transition-colors hover:bg-hover ${showLabel ? 'px-3' : 'min-w-[44px] justify-center'} ${className}`}
         aria-label="Subscribe to new poems"
         title="Subscribe"

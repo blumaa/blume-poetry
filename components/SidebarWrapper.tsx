@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import type { TreeNode } from '@/lib/poems';
 import { Sidebar } from './Sidebar';
 import { MobileHeader } from './MobileHeader';
-import { trackSidebarToggle } from './AmplitudeProvider';
 
 interface SidebarWrapperProps {
   tree: TreeNode[];
@@ -65,7 +64,6 @@ export function SidebarWrapper({ tree }: SidebarWrapperProps) {
 
   const toggleCollapse = () => {
     const newValue = !isCollapsed;
-    trackSidebarToggle(newValue);
     setIsCollapsed(newValue);
     localStorage.setItem(COLLAPSED_KEY, String(newValue));
   };

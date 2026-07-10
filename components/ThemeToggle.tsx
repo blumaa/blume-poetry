@@ -1,7 +1,6 @@
 'use client';
 
 import { useTheme } from './ThemeProvider';
-import { trackThemeToggle } from './AmplitudeProvider';
 
 interface ThemeToggleProps {
   className?: string;
@@ -11,8 +10,6 @@ export function ThemeToggle({ className = '' }: ThemeToggleProps) {
   const { theme, toggleTheme } = useTheme();
 
   const handleToggle = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    trackThemeToggle(newTheme);
     toggleTheme();
   };
 

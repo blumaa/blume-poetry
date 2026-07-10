@@ -1,11 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Suspense } from "react";
 import { Crimson_Text, Source_Sans_3 } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ToastProvider } from "@/components/Toast";
-import { AmplitudeProvider } from "@/components/AmplitudeProvider";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 
 const crimsonText = Crimson_Text({
@@ -30,7 +28,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "Blumenous Poetry",
-  description: "A contemplative space for poetry",
+  description: "Poetry by Desmond Blume",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -79,11 +77,7 @@ export default function RootLayout({
         </a>
         <ThemeProvider>
           <ToastProvider>
-            <Suspense fallback={null}>
-              <AmplitudeProvider>
-                {children}
-              </AmplitudeProvider>
-            </Suspense>
+            {children}
           </ToastProvider>
         </ThemeProvider>
         <Analytics />

@@ -8,7 +8,6 @@ import { ThemeToggle } from './ThemeToggle';
 import { SubscribeButton } from './SubscribeButton';
 import { InfoButton } from './InfoButton';
 import { SubscribeForm } from './SubscribeForm';
-import { trackSearch, trackPoemOpen, trackCategoryToggle, trackMenuClose } from './AmplitudeProvider';
 
 // Find path to a poem in the tree (returns parent node IDs)
 function findPoemPath(nodes: TreeNode[], slug: string, path: string[] = []): string[] | null {
@@ -170,9 +169,6 @@ export function Sidebar({
   const toggleNode = (id: string) => {
     const isCurrentlyExpanded = effectiveExpandedNodes.has(id);
 
-    // Track category toggle
-    trackCategoryToggle(id, !isCurrentlyExpanded);
-
     if (isCurrentlyExpanded) {
       // Collapsing - add to manually collapsed set
       setManuallyCollapsed((prev) => new Set([...prev, id]));
@@ -211,30 +207,24 @@ export function Sidebar({
       if (res.ok) {
         const data = await res.json();
         setSearchResults(data.poems);
-        trackSearch(query, data.poems?.length || 0);
       }
     }, 300);
   }, []);
 
-  const handleTreeNavigate = (slug: string, title: string) => {
-    trackPoemOpen(slug, title, 'tree');
+  const handleTreeNavigate = () => {
     if (isMobile && onClose) {
-      trackMenuClose();
       onClose();
     }
   };
 
-  const handleSearchResultClick = (slug: string, title: string) => {
-    trackPoemOpen(slug, title, 'search');
+  const handleSearchResultClick = () => {
     if (isMobile && onClose) {
-      trackMenuClose();
       onClose();
     }
   };
 
   const handleCloseMenu = () => {
     if (isMobile && onClose) {
-      trackMenuClose();
       onClose();
     }
   };
@@ -306,7 +296,7 @@ export function Sidebar({
                 <Link
                   key={poem.id}
                   href={`/poem/${poem.slug}`}
-                  onClick={() => handleSearchResultClick(poem.slug, poem.title)}
+                  onClick={handleSearchResultClick}
                   className={`block py-2 px-3 rounded text-sm truncate transition-colors min-h-[44px] flex items-center ${
                     poem.slug === activeSlug
                       ? 'bg-active text-primary'
@@ -425,7 +415,6 @@ export function Sidebar({
                 <Link
                   key={poem.id}
                   href={`/poem/${poem.slug}`}
-                  onClick={() => trackPoemOpen(poem.slug, poem.title, 'search')}
                   className={`block py-2 px-3 rounded text-sm truncate transition-colors min-h-[44px] flex items-center ${
                     poem.slug === activeSlug
                       ? 'bg-active text-primary'
@@ -445,7 +434,6 @@ export function Sidebar({
                 activeSlug={activeSlug}
                 expandedNodes={effectiveExpandedNodes}
                 toggleNode={toggleNode}
-                onNavigate={(slug, title) => trackPoemOpen(slug, title, 'tree')}
               />
             ))
           )}

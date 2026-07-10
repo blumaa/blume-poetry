@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SidebarServer } from '@/components/SidebarServer';
 import { Footer } from '@/components/Footer';
-import { UnsubscribeTracker } from '@/components/UnsubscribeTracker';
 
 export const metadata: Metadata = {
   title: 'Unsubscribed | Blumenous Poetry',
@@ -12,7 +11,6 @@ export const metadata: Metadata = {
 export default function UnsubscribePage() {
   return (
     <div className="min-h-screen has-sidebar">
-      <UnsubscribeTracker />
       <SidebarServer />
       <main id="main-content" className="flex-1 flex flex-col">
         <div className="flex-1 flex items-center justify-center px-4 py-12">

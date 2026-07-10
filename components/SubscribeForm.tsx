@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useToast } from '@/components/Toast';
-import { trackSubscribeSubmit } from './AmplitudeProvider';
 
 interface SubscribeFormProps {
   compact?: boolean;
@@ -27,12 +26,10 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
       const data = await response.json();
 
       if (response.ok) {
-        trackSubscribeSubmit(true);
         setStatus('success');
         showToast('Thank you for subscribing!', 'success');
         setEmail('');
       } else {
-        trackSubscribeSubmit(false);
         setStatus('idle');
         showToast(data.error || 'Failed to subscribe', 'error');
       }

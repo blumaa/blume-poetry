@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { ThemeToggle } from './ThemeToggle';
-import { trackMenuOpen } from './AmplitudeProvider';
 
 interface MobileHeaderProps {
   onMenuClick: () => void;
@@ -13,10 +12,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
     <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-surface border-b border-border px-2 h-14 flex items-center justify-between w-full overflow-hidden">
       {/* Hamburger menu button */}
       <button
-        onClick={() => {
-          trackMenuOpen('hamburger');
-          onMenuClick();
-        }}
+        onClick={onMenuClick}
         className="shrink-0 w-[44px] h-[44px] flex items-center justify-center rounded-lg transition-colors hover:bg-hover"
         aria-label="Open navigation menu"
       >
