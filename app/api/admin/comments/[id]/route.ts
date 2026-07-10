@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/config';
 
 export async function DELETE(
@@ -20,7 +20,11 @@ export async function DELETE(
     return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
   }
 
-  const { error: deleteError } = await supabase
+  // Auth is verified above via the cookie-auth client; the actual delete runs
+  // through the service-role client so it doesn't depend on RLS's hardcoded-email
+  // policy. isAdminEmail() is the single source of truth for delete authorization.
+  const adminSupabase = createAdminClient();
+  const { error: deleteError } = await adminSupabase
     .from('comments')
     .delete()
     .eq('id', id);

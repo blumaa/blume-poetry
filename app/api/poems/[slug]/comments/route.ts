@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/lib/supabase/types';
+import { getAnonClient } from '@/lib/supabase/anon';
+import { createAdminClient } from '@/lib/supabase/server';
+import { getPoemIdBySlug } from '@/lib/poems';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { verifyOrigin } from '@/lib/csrf';
-
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase environment variables');
-  }
-
-  return createClient<Database>(supabaseUrl, supabaseKey);
-}
 
 // GET - Get comments for a poem
 export async function GET(
@@ -22,16 +12,12 @@ export async function GET(
 ) {
   const { slug } = await params;
 
-  const supabase = getSupabaseClient();
+  const supabase = getAnonClient();
 
   // Get poem ID from slug
-  const { data: poem, error: poemError } = await supabase
-    .from('poems')
-    .select('id')
-    .eq('slug', slug)
-    .single();
+  const poemId = await getPoemIdBySlug(slug);
 
-  if (poemError || !poem) {
+  if (!poemId) {
     return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
   }
 
@@ -39,7 +25,7 @@ export async function GET(
   const { data: comments, error: commentsError } = await supabase
     .from('comments')
     .select('id, author_name, content, created_at')
-    .eq('poem_id', poem.id)
+    .eq('poem_id', poemId)
     .order('created_at', { ascending: false });
 
   if (commentsError) {
@@ -88,16 +74,12 @@ export async function POST(
     return NextResponse.json({ error: 'Name and comment are required' }, { status: 400 });
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = createAdminClient();
 
   // Get poem ID from slug
-  const { data: poem, error: poemError } = await supabase
-    .from('poems')
-    .select('id')
-    .eq('slug', slug)
-    .single();
+  const poemId = await getPoemIdBySlug(slug);
 
-  if (poemError || !poem) {
+  if (!poemId) {
     return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
   }
 
@@ -105,7 +87,7 @@ export async function POST(
   const { data: newComment, error: insertError } = await supabase
     .from('comments')
     .insert({
-      poem_id: poem.id,
+      poem_id: poemId,
       visitor_id: visitorId,
       author_name: trimmedName,
       content: trimmedContent,

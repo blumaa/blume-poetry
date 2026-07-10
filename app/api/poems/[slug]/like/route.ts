@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/lib/supabase/types';
+import { getAnonClient } from '@/lib/supabase/anon';
+import { createAdminClient } from '@/lib/supabase/server';
+import { getPoemIdBySlug } from '@/lib/poems';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { verifyOrigin } from '@/lib/csrf';
-
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase environment variables');
-  }
-
-  return createClient<Database>(supabaseUrl, supabaseKey);
-}
 
 // GET - Get like count and whether current visitor has liked
 export async function GET(
@@ -23,16 +13,12 @@ export async function GET(
   const { slug } = await params;
   const visitorId = request.headers.get('x-visitor-id') || '';
 
-  const supabase = getSupabaseClient();
+  const supabase = getAnonClient();
 
   // Get poem ID from slug
-  const { data: poem, error: poemError } = await supabase
-    .from('poems')
-    .select('id')
-    .eq('slug', slug)
-    .single();
+  const poemId = await getPoemIdBySlug(slug);
 
-  if (poemError || !poem) {
+  if (!poemId) {
     return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
   }
 
@@ -40,7 +26,7 @@ export async function GET(
   const { count } = await supabase
     .from('likes')
     .select('*', { count: 'exact', head: true })
-    .eq('poem_id', poem.id);
+    .eq('poem_id', poemId);
 
   // Check if visitor has liked
   let hasLiked = false;
@@ -48,7 +34,7 @@ export async function GET(
     const { data: existingLike } = await supabase
       .from('likes')
       .select('id')
-      .eq('poem_id', poem.id)
+      .eq('poem_id', poemId)
       .eq('visitor_id', visitorId)
       .single();
 
@@ -78,16 +64,12 @@ export async function POST(
     return NextResponse.json({ error: 'Visitor ID required' }, { status: 400 });
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = createAdminClient();
 
   // Get poem ID from slug
-  const { data: poem, error: poemError } = await supabase
-    .from('poems')
-    .select('id')
-    .eq('slug', slug)
-    .single();
+  const poemId = await getPoemIdBySlug(slug);
 
-  if (poemError || !poem) {
+  if (!poemId) {
     return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
   }
 
@@ -95,7 +77,7 @@ export async function POST(
   const { data: existingLike } = await supabase
     .from('likes')
     .select('id')
-    .eq('poem_id', poem.id)
+    .eq('poem_id', poemId)
     .eq('visitor_id', visitorId)
     .single();
 
@@ -111,7 +93,7 @@ export async function POST(
     // Like
     const { error: insertError } = await supabase
       .from('likes')
-      .insert({ poem_id: poem.id, visitor_id: visitorId });
+      .insert({ poem_id: poemId, visitor_id: visitorId });
 
     if (insertError) {
       return NextResponse.json({ error: 'Failed to like' }, { status: 500 });
