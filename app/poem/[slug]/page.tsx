@@ -42,13 +42,14 @@ export async function generateMetadata({ params }: PoemPageProps) {
 
 export default async function PoemPage({ params }: PoemPageProps) {
   const { slug } = await params;
-  const poem = await getPoemBySlug(slug);
+  const [poem, { prev, next }] = await Promise.all([
+    getPoemBySlug(slug),
+    getAdjacentPoems(slug),
+  ]);
 
   if (!poem) {
     notFound();
   }
-
-  const { prev, next } = await getAdjacentPoems(slug);
 
   return <PoemDisplay poem={poem} prevPoem={prev} nextPoem={next} />;
 }

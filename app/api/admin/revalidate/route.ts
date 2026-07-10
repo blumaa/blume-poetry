@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/config';
+import { POEMS_CACHE_TAG } from '@/lib/supabase/anon';
 
 export async function POST(request: Request) {
   try {
@@ -12,6 +13,12 @@ export async function POST(request: Request) {
     if (!user || !isAdminEmail(user.email)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Bust the cached poem/tree reads so poem edits show up immediately.
+    // `{ expire: 0 }` forces immediate expiration (read-your-own-writes): after
+    // the admin publishes/edits, the next visit to the site serves fresh data —
+    // not the one-visit-stale behavior of the 'max' stale-while-revalidate profile.
+    revalidateTag(POEMS_CACHE_TAG, { expire: 0 });
 
     const { paths } = await request.json();
 

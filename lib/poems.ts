@@ -1,6 +1,6 @@
 import { cache } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import type { Database } from './supabase/types';
+import { getCachedPoemClient } from './supabase/anon';
 
 export interface Poem {
   id: string;
@@ -33,15 +33,28 @@ export interface TreeNode {
   count?: number;
 }
 
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  return createClient<Database>(supabaseUrl, supabaseKey);
+// Row shape shared by every query that selects the full poem column set
+type PoemRow = Pick<
+  Database['public']['Tables']['poems']['Row'],
+  'id' | 'slug' | 'title' | 'subtitle' | 'content' | 'plain_text' | 'published_at' | 'url'
+>;
+
+function mapPoemRow(row: PoemRow): Poem {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    subtitle: row.subtitle,
+    content: row.content,
+    plainText: row.plain_text || '',
+    publishedAt: row.published_at,
+    url: row.url || '',
+  };
 }
 
 // Get all poems sorted by date (newest first) — deduplicated with React cache()
 export const getAllPoems = cache(async (): Promise<Poem[]> => {
-  const supabase = getSupabaseClient();
+  const supabase = getCachedPoemClient();
   const { data, error } = await supabase
     .from('poems')
     .select('id, slug, title, subtitle, content, plain_text, published_at, url')
@@ -53,21 +66,12 @@ export const getAllPoems = cache(async (): Promise<Poem[]> => {
     return [];
   }
 
-  return data.map((row) => ({
-    id: row.id,
-    slug: row.slug,
-    title: row.title,
-    subtitle: row.subtitle,
-    content: row.content,
-    plainText: row.plain_text || '',
-    publishedAt: row.published_at,
-    url: row.url || '',
-  }));
+  return data.map(mapPoemRow);
 });
 
 // Lightweight query for tree/navigation — only fetches metadata fields
 export const getAllPoemsMeta = cache(async (): Promise<PoemMeta[]> => {
-  const supabase = getSupabaseClient();
+  const supabase = getCachedPoemClient();
   const { data, error } = await supabase
     .from('poems')
     .select('id, slug, title, subtitle, published_at, url, pinned')
@@ -90,9 +94,9 @@ export const getAllPoemsMeta = cache(async (): Promise<PoemMeta[]> => {
   }));
 });
 
-// Get a single poem by slug
-export async function getPoemBySlug(slug: string): Promise<Poem | undefined> {
-  const supabase = getSupabaseClient();
+// Get a single poem by slug — cached: fetched twice per page (metadata + body)
+export const getPoemBySlug = cache(async (slug: string): Promise<Poem | undefined> => {
+  const supabase = getCachedPoemClient();
   const { data, error } = await supabase
     .from('poems')
     .select('id, slug, title, subtitle, content, plain_text, published_at, url')
@@ -104,23 +108,34 @@ export async function getPoemBySlug(slug: string): Promise<Poem | undefined> {
     return undefined;
   }
 
-  return {
-    id: data.id,
-    slug: data.slug,
-    title: data.title,
-    subtitle: data.subtitle,
-    content: data.content,
-    plainText: data.plain_text || '',
-    publishedAt: data.published_at,
-    url: data.url || '',
-  };
-}
+  return mapPoemRow(data);
+});
 
-// Get recent poems
-export async function getRecentPoems(count: number = 10): Promise<Poem[]> {
-  const poems = await getAllPoems();
-  return poems.slice(0, count);
-}
+// Get recent poems — queries directly with a DB-level limit
+export const getRecentPoems = cache(async (count: number = 10): Promise<Poem[]> => {
+  const supabase = getCachedPoemClient();
+  const { data, error } = await supabase
+    .from('poems')
+    .select('id, slug, title, subtitle, content, plain_text, published_at, url')
+    .eq('status', 'published')
+    .order('published_at', { ascending: false })
+    .limit(count);
+
+  if (error || !data) {
+    console.error('Error fetching recent poems:', error);
+    return [];
+  }
+
+  return data.map(mapPoemRow);
+});
+
+// Shared, cached slug→id lookup — matches the routes' existing slug-only filter
+// (likes/comments do not restrict by status, so this doesn't either)
+export const getPoemIdBySlug = cache(async (slug: string): Promise<string | null> => {
+  const supabase = getCachedPoemClient();
+  const { data } = await supabase.from('poems').select('id').eq('slug', slug).single();
+  return data?.id ?? null;
+});
 
 // Search poems by title or content
 export async function searchPoems(query: string): Promise<Poem[]> {
