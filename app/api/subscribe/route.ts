@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
+import { upsertSubscriber } from '@/lib/subscribers';
 import { z } from 'zod';
 import { verifyOrigin } from '@/lib/csrf';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
@@ -21,39 +22,28 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient();
 
-    // Check if already subscribed
-    const { data: existing } = await supabase
-      .from('subscribers')
-      .select('id, status')
-      .eq('email', email)
-      .single();
+    // Check if already subscribed / reactivate if previously unsubscribed /
+    // insert if new. Emails are lowercased inside upsertSubscriber so this
+    // matches up with the (also lowercased) unsubscribe lookup.
+    const result = await upsertSubscriber(supabase, email, {
+      status: 'active',
+      subscribed_at: new Date().toISOString(),
+    });
 
-    if (existing) {
-      if (existing.status === 'active') {
-        return NextResponse.json(
-          { error: 'This email is already subscribed' },
-          { status: 400 }
-        );
-      }
+    if (result.outcome === 'already_active') {
+      return NextResponse.json(
+        { error: 'This email is already subscribed' },
+        { status: 400 }
+      );
+    }
 
-      // Reactivate if previously unsubscribed
-      await supabase
-        .from('subscribers')
-        .update({ status: 'active', subscribed_at: new Date().toISOString() })
-        .eq('id', existing.id);
-
+    if (result.outcome === 'reactivated') {
       return NextResponse.json({ message: 'Successfully resubscribed!' });
     }
 
-    // Insert new subscriber
-    const { error } = await supabase.from('subscribers').insert({
-      email,
-      status: 'active',
-      verified: true,
-    });
-
-    if (error) {
-      console.error('Subscription error:', error);
+    // Inserted a new subscriber
+    if (result.error) {
+      console.error('Subscription error:', result.error);
       return NextResponse.json(
         { error: 'Failed to subscribe' },
         { status: 500 }

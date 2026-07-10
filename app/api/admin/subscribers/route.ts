@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { isAdminEmail } from '@/lib/config';
+import { createAdminClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/auth';
+import { upsertSubscriber } from '@/lib/subscribers';
 import { z } from 'zod';
 
 const subscriberSchema = z.object({
@@ -11,73 +12,45 @@ export async function POST(request: Request) {
   try {
     // Verify admin authentication — this route uses the service-role client,
     // so it must never be reachable by anonymous callers.
-    const authClient = await createClient();
-    const { data: { user } } = await authClient.auth.getUser();
-
-    if (!user || !isAdminEmail(user.email)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth instanceof NextResponse) return auth;
 
     const body = await request.json();
     const { email } = subscriberSchema.parse(body);
 
     const supabase = createAdminClient();
-    const normalizedEmail = email.toLowerCase();
 
-    // Check if subscriber already exists
-    const { data: existing } = await supabase
-      .from('subscribers')
-      .select('id, status')
-      .eq('email', normalizedEmail)
-      .single();
+    const result = await upsertSubscriber(supabase, email, { status: 'active', verified: true });
 
-    if (existing) {
-      if (existing.status === 'active') {
-        return NextResponse.json(
-          { error: 'This email is already subscribed' },
-          { status: 400 }
-        );
-      }
+    if (result.outcome === 'already_active') {
+      return NextResponse.json(
+        { error: 'This email is already subscribed' },
+        { status: 400 }
+      );
+    }
 
-      // Re-activate unsubscribed user
-      const { data, error } = await supabase
-        .from('subscribers')
-        .update({ status: 'active', verified: true })
-        .eq('id', existing.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Reactivate subscriber error:', error);
+    if (result.outcome === 'reactivated') {
+      if (result.error) {
+        console.error('Reactivate subscriber error:', result.error);
         return NextResponse.json(
           { error: 'Failed to reactivate subscriber' },
           { status: 500 }
         );
       }
 
-      return NextResponse.json({ subscriber: data, reactivated: true });
+      return NextResponse.json({ subscriber: result.data, reactivated: true });
     }
 
-    // Insert new subscriber
-    const { data, error } = await supabase
-      .from('subscribers')
-      .insert({
-        email: normalizedEmail,
-        status: 'active',
-        verified: true,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Add subscriber error:', error);
+    // Inserted a new subscriber
+    if (result.error) {
+      console.error('Add subscriber error:', result.error);
       return NextResponse.json(
         { error: 'Failed to add subscriber' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ subscriber: data });
+    return NextResponse.json({ subscriber: result.data });
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(

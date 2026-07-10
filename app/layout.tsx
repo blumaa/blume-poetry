@@ -4,7 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ToastProvider } from "@/components/Toast";
-import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { getSiteUrl } from "@/lib/config";
 
 const crimsonText = Crimson_Text({
   variable: "--font-crimson",
@@ -27,6 +27,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: "Blumenous Poetry",
   description: "Poetry by Desmond Blume",
   manifest: "/manifest.json",
@@ -81,7 +82,6 @@ export default function RootLayout({
           </ToastProvider>
         </ThemeProvider>
         <Analytics />
-        <ServiceWorkerRegistration />
       </body>
     </html>
   );

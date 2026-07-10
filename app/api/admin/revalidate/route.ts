@@ -1,18 +1,13 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath, revalidateTag } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
-import { isAdminEmail } from '@/lib/config';
+import { requireAdmin } from '@/lib/auth';
 import { POEMS_CACHE_TAG } from '@/lib/supabase/anon';
 
 export async function POST(request: Request) {
   try {
     // Verify admin authentication
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user || !isAdminEmail(user.email)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth instanceof NextResponse) return auth;
 
     // Bust the cached poem/tree reads so poem edits show up immediately.
     // `{ expire: 0 }` forces immediate expiration (read-your-own-writes): after

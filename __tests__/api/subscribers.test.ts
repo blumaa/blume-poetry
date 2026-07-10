@@ -47,10 +47,10 @@ describe('POST /api/admin/subscribers', () => {
     expect(insertMock).not.toHaveBeenCalled();
   });
 
-  it('rejects a logged-in non-admin with 401 and never writes', async () => {
+  it('rejects a logged-in non-admin with 403 and never writes', async () => {
     currentUser = { email: 'notadmin@example.com' };
     const res = await post({ email: 'new@example.com' });
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
     expect(insertMock).not.toHaveBeenCalled();
   });
 

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { sendEmail, generateNewsletterHtml, generateNewsletterText } from '@/lib/email';
-import { isAdminEmail } from '@/lib/config';
+import { requireAdmin } from '@/lib/auth';
 import { z } from 'zod';
 import type { Poem, Subscriber } from '@/lib/supabase/types';
 
@@ -17,12 +16,8 @@ const sendEmailSchema = z.object({
 export async function POST(request: Request) {
   try {
     // Verify admin authentication
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user || !isAdminEmail(user.email)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdmin();
+    if (auth instanceof NextResponse) return auth;
 
     const body = await request.json();
     const { subject, bodyHtml, bodyText, poemId, testEmail } = sendEmailSchema.parse(body);

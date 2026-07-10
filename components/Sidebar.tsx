@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { TreeNode, Poem } from '@/lib/poems';
-import { ThemeToggle } from './ThemeToggle';
-import { SubscribeButton } from './SubscribeButton';
-import { InfoButton } from './InfoButton';
-import { SubscribeForm } from './SubscribeForm';
+import { SidebarHeader } from './sidebar/SidebarHeader';
+import { SidebarSearch } from './sidebar/SidebarSearch';
+import { SidebarNav } from './sidebar/SidebarNav';
+import { SidebarFooter } from './sidebar/SidebarFooter';
 
 // Find path to a poem in the tree (returns parent node IDs)
 function findPoemPath(nodes: TreeNode[], slug: string, path: string[] = []): string[] | null {
@@ -21,90 +20,6 @@ function findPoemPath(nodes: TreeNode[], slug: string, path: string[] = []): str
     }
   }
   return null;
-}
-
-function ChevronIcon({ expanded }: { expanded: boolean }) {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="currentColor"
-      className={`transition-transform ${expanded ? 'rotate-90' : ''}`}
-    >
-      <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
-function TreeItem({
-  node,
-  depth = 0,
-  activeSlug,
-  expandedNodes,
-  toggleNode,
-  onNavigate,
-}: {
-  node: TreeNode;
-  depth?: number;
-  activeSlug?: string;
-  expandedNodes: Set<string>;
-  toggleNode: (id: string) => void;
-  onNavigate?: (slug: string, title: string) => void;
-}) {
-  const hasChildren = node.children && node.children.length > 0;
-  const isExpanded = expandedNodes.has(node.id);
-
-  if (node.type === 'poem') {
-    return (
-      <Link
-        href={`/poem/${node.slug}`}
-        onClick={() => onNavigate?.(node.slug!, node.label)}
-        className={`block py-2 px-3 rounded text-sm truncate transition-colors min-h-[44px] flex items-center ${
-          node.slug === activeSlug
-            ? 'bg-active text-primary'
-            : 'text-secondary hover:bg-hover hover:text-primary'
-        }`}
-        style={{ paddingLeft: `${depth * 12 + 12}px` }}
-        title={node.label}
-      >
-        {node.label}
-      </Link>
-    );
-  }
-
-  return (
-    <div>
-      <button
-        onClick={() => toggleNode(node.id)}
-        className="w-full flex items-center gap-1 py-2 px-3 rounded text-sm text-secondary hover:bg-hover hover:text-primary transition-colors min-h-[44px]"
-        style={{ paddingLeft: `${depth * 12 + 12}px` }}
-        aria-expanded={isExpanded}
-        aria-controls={hasChildren ? `tree-children-${node.id}` : undefined}
-      >
-        <ChevronIcon expanded={isExpanded} />
-        <span className="truncate">{node.label}</span>
-        {node.count !== undefined && (
-          <span className="ml-auto text-xs text-tertiary">{node.count}</span>
-        )}
-      </button>
-      {isExpanded && hasChildren && (
-        <div id={`tree-children-${node.id}`} role="group">
-          {node.children!.map((child) => (
-            <TreeItem
-              key={child.id}
-              node={child}
-              depth={depth + 1}
-              activeSlug={activeSlug}
-              expandedNodes={expandedNodes}
-              toggleNode={toggleNode}
-              onNavigate={onNavigate}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 interface SidebarProps {
@@ -229,109 +144,25 @@ export function Sidebar({
     }
   };
 
-  // Mobile sidebar classes
+  // Mobile sidebar
   if (isMobile) {
     return (
       <aside className={`sidebar-mobile ${isOpen ? 'open' : ''} w-full flex flex-col bg-surface-sidebar fixed left-0 top-0 z-50`}>
-        {/* Header */}
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          <Link
-            href="/"
-            onClick={handleCloseMenu}
-            className="text-lg font-medium text-primary hover:text-secondary transition-colors h-[44px] flex items-center"
-          >
-            Blumenous Poetry
-          </Link>
+        <SidebarHeader variant="mobile" onClose={handleCloseMenu} />
 
-          <div className="flex items-center">
-            <InfoButton className="text-secondary" />
-            <SubscribeButton className="text-secondary" />
-            <ThemeToggle />
-            <button
-              onClick={handleCloseMenu}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-secondary hover:text-primary hover:bg-hover transition-colors"
-              aria-label="Close navigation menu"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
-        </div>
+        <SidebarSearch id="mobile-search-poems" value={search} onChange={handleSearch} />
 
-        {/* Search */}
-        <div className="p-3 border-b border-border">
-          <label htmlFor="mobile-search-poems" className="sr-only">
-            Search poems
-          </label>
-          <input
-            id="mobile-search-poems"
-            type="text"
-            placeholder="Search poems..."
-            value={search}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="w-full rounded px-3 py-2 text-sm min-h-[44px] bg-surface border border-border text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-        </div>
+        <SidebarNav
+          tree={tree}
+          searchResults={searchResults}
+          activeSlug={activeSlug}
+          expandedNodes={effectiveExpandedNodes}
+          toggleNode={toggleNode}
+          onNavigate={handleTreeNavigate}
+          onSearchResultClick={handleSearchResultClick}
+        />
 
-        {/* Tree / Search Results */}
-        <nav className="flex-1 overflow-y-auto p-2">
-          {searchResults ? (
-            <div>
-              <div className="px-3 py-2 text-xs text-tertiary uppercase tracking-wide">
-                {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
-              </div>
-              {searchResults.map((poem) => (
-                <Link
-                  key={poem.id}
-                  href={`/poem/${poem.slug}`}
-                  onClick={handleSearchResultClick}
-                  className={`block py-2 px-3 rounded text-sm truncate transition-colors min-h-[44px] flex items-center ${
-                    poem.slug === activeSlug
-                      ? 'bg-active text-primary'
-                      : 'text-secondary hover:bg-hover hover:text-primary'
-                  }`}
-                  title={poem.title}
-                >
-                  {poem.title}
-                </Link>
-              ))}
-            </div>
-          ) : (
-            tree.map((node) => (
-              <TreeItem
-                key={node.id}
-                node={node}
-                activeSlug={activeSlug}
-                expandedNodes={effectiveExpandedNodes}
-                toggleNode={toggleNode}
-                onNavigate={handleTreeNavigate}
-              />
-            ))
-          )}
-        </nav>
-
-        {/* Footer */}
-        <div className="p-3 border-t border-border">
-          <div className="mb-4">
-            <p className="text-xs text-tertiary mb-2">Subscribe</p>
-            <SubscribeForm compact />
-          </div>
-          <div className="text-xs text-tertiary">
-            Swipe left / right to navigate poems
-          </div>
-        </div>
+        <SidebarFooter hint="Swipe left / right to navigate poems" />
       </aside>
     );
   }
@@ -343,117 +174,37 @@ export function Sidebar({
         isCollapsed ? 'w-[60px]' : 'w-sidebar'
       }`}
     >
-      {/* Header */}
-      <div className={`p-4 border-b border-border ${isCollapsed ? 'flex flex-col items-center gap-2' : ''}`}>
-        {!isCollapsed && (
-          <Link
-            href="/"
-            className="block text-lg font-medium text-primary hover:text-secondary transition-colors truncate mb-3"
-          >
-            Blumenous Poetry
-          </Link>
-        )}
+      <SidebarHeader
+        variant="desktop"
+        isCollapsed={isCollapsed}
+        onToggleCollapse={onToggleCollapse}
+      />
 
-        <div className={`flex items-center ${isCollapsed ? 'flex-col gap-2' : 'gap-1'}`}>
-          {!isCollapsed && <InfoButton className="text-secondary" />}
-          {!isCollapsed && <SubscribeButton className="text-secondary" />}
-          {!isCollapsed && <ThemeToggle />}
-          <button
-            onClick={onToggleCollapse}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-secondary hover:text-primary hover:bg-hover transition-colors"
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            title={isCollapsed ? 'Expand' : 'Collapse'}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={`transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
-            >
-              <path d="M11 17l-5-5 5-5" />
-              <path d="M18 17l-5-5 5-5" />
-            </svg>
-          </button>
-          {isCollapsed && <ThemeToggle />}
-          {isCollapsed && <SubscribeButton className="text-secondary" />}
-          {isCollapsed && <InfoButton className="text-secondary" />}
-        </div>
-      </div>
-
-      {/* Search - hidden when collapsed */}
       {!isCollapsed && (
-        <div className="p-3 border-b border-border">
-          <label htmlFor="desktop-search-poems" className="sr-only">
-            Search poems
-          </label>
-          <input
-            id="desktop-search-poems"
-            type="text"
-            placeholder="Search poems..."
-            value={search}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="w-full rounded px-3 py-2 text-sm min-h-[44px] bg-surface border border-border text-primary placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-        </div>
+        <SidebarSearch id="desktop-search-poems" value={search} onChange={handleSearch} />
       )}
 
-      {/* Tree / Search Results - hidden when collapsed */}
       {!isCollapsed && (
-        <nav className="flex-1 overflow-y-auto p-2">
-          {searchResults ? (
-            <div>
-              <div className="px-3 py-2 text-xs text-tertiary uppercase tracking-wide">
-                {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
-              </div>
-              {searchResults.map((poem) => (
-                <Link
-                  key={poem.id}
-                  href={`/poem/${poem.slug}`}
-                  className={`block py-2 px-3 rounded text-sm truncate transition-colors min-h-[44px] flex items-center ${
-                    poem.slug === activeSlug
-                      ? 'bg-active text-primary'
-                      : 'text-secondary hover:bg-hover hover:text-primary'
-                  }`}
-                  title={poem.title}
-                >
-                  {poem.title}
-                </Link>
-              ))}
-            </div>
-          ) : (
-            tree.map((node) => (
-              <TreeItem
-                key={node.id}
-                node={node}
-                activeSlug={activeSlug}
-                expandedNodes={effectiveExpandedNodes}
-                toggleNode={toggleNode}
-              />
-            ))
-          )}
-        </nav>
+        <SidebarNav
+          tree={tree}
+          searchResults={searchResults}
+          activeSlug={activeSlug}
+          expandedNodes={effectiveExpandedNodes}
+          toggleNode={toggleNode}
+        />
       )}
 
-      {/* Footer - hidden when collapsed */}
       {!isCollapsed && (
-        <div className="p-3 border-t border-border">
-          <div className="mb-4">
-            <p className="text-xs text-tertiary mb-2">Subscribe</p>
-            <SubscribeForm compact />
-          </div>
-          <div className="text-xs text-tertiary">
-            <kbd className="px-1.5 py-0.5 bg-hover rounded text-tertiary">←</kbd>
-            {' / '}
-            <kbd className="px-1.5 py-0.5 bg-hover rounded text-tertiary">→</kbd>
-            {' navigate'}
-          </div>
-        </div>
+        <SidebarFooter
+          hint={
+            <>
+              <kbd className="px-1.5 py-0.5 bg-hover rounded text-tertiary">←</kbd>
+              {' / '}
+              <kbd className="px-1.5 py-0.5 bg-hover rounded text-tertiary">→</kbd>
+              {' navigate'}
+            </>
+          }
+        />
       )}
     </aside>
   );

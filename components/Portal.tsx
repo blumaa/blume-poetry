@@ -1,20 +1,14 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
+import { useMounted } from '@/hooks/useMounted';
 
 interface PortalProps {
   children: React.ReactNode;
 }
 
-const emptySubscribe = () => () => {};
-
 export function Portal({ children }: PortalProps) {
-  const mounted = useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false
-  );
+  const mounted = useMounted();
 
   if (!mounted) return null;
 

@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import type { RichTextEditorRef } from './RichTextEditor';
 import { PoemContent } from '@/components/PoemContent';
-import type { Poem, NewPoem, UpdatePoem } from '@/lib/supabase/types';
+import type { Poem, NewPoem } from '@/lib/supabase/types';
 
 const RichTextEditor = dynamic(
   () => import('./RichTextEditor').then((m) => m.RichTextEditor),
@@ -103,51 +103,36 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
         ? new Date(publishedAt).toISOString()
         : new Date().toISOString();
 
-      if (isNew) {
-        const newPoemData: NewPoem = {
-          title: title.trim(),
-          subtitle: subtitle.trim() || null,
-          slug,
-          content: contentHtml,
-          plain_text: contentText,
-          status,
-          published_at: finalPublishedAt,
-        };
-        const { error: insertError } = await supabase.from('poems').insert(newPoemData);
-        if (insertError) throw insertError;
+      const poemData: NewPoem = {
+        title: title.trim(),
+        subtitle: subtitle.trim() || null,
+        slug,
+        content: contentHtml,
+        plain_text: contentText,
+        status,
+        published_at: finalPublishedAt,
+      };
 
-        // Revalidate pages so new poem shows up
-        await fetch('/api/admin/revalidate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paths: [`/poem/${slug}`] }),
-        });
+      const { error: saveError } = isNew
+        ? await supabase.from('poems').insert(poemData)
+        : await supabase.from('poems').update(poemData).eq('id', poem!.id);
+      if (saveError) throw saveError;
 
-        sessionStorage.setItem('toast', JSON.stringify({ message: `"${title.trim()}" created`, type: 'success' }));
-        router.push('/admin/poems');
-      } else {
-        const updateData: UpdatePoem = {
-          title: title.trim(),
-          subtitle: subtitle.trim() || null,
-          slug,
-          content: contentHtml,
-          plain_text: contentText,
-          status,
-          published_at: finalPublishedAt,
-        };
-        const { error: updateError } = await supabase.from('poems').update(updateData).eq('id', poem!.id);
-        if (updateError) throw updateError;
+      // Revalidate pages so the change shows up
+      await fetch('/api/admin/revalidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paths: [`/poem/${slug}`] }),
+      });
 
-        // Revalidate pages so changes show up
-        await fetch('/api/admin/revalidate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paths: [`/poem/${slug}`] }),
-        });
-
-        sessionStorage.setItem('toast', JSON.stringify({ message: 'Changes saved', type: 'success' }));
-        router.push('/admin/poems');
-      }
+      sessionStorage.setItem(
+        'toast',
+        JSON.stringify({
+          message: isNew ? `"${title.trim()}" created` : 'Changes saved',
+          type: 'success',
+        })
+      );
+      router.push('/admin/poems');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save poem');
     } finally {

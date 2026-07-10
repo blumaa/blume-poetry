@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useSyncExternalStore, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useMounted } from '@/hooks/useMounted';
 
 type Theme = 'light' | 'dark';
 
@@ -24,8 +25,6 @@ interface ThemeProviderProps {
   children: React.ReactNode;
 }
 
-const emptySubscribe = () => () => {};
-
 // Lazy initializer for theme state - runs only on client
 function getInitialTheme(): Theme {
   if (typeof window === 'undefined') return 'light';
@@ -37,11 +36,7 @@ function getInitialTheme(): Theme {
 export function ThemeProvider({ children }: ThemeProviderProps) {
   // Use lazy initialization - the function only runs on first render
   const [theme, setThemeState] = useState<Theme>(getInitialTheme);
-  const mounted = useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false
-  );
+  const mounted = useMounted();
 
   // Sync theme to DOM when it changes
   useEffect(() => {

@@ -53,10 +53,6 @@ export function SkeletonCard() {
   );
 }
 
-export function SkeletonButton() {
-  return <Skeleton className="h-11 w-24 rounded-lg" />;
-}
-
 export function SkeletonComment() {
   return (
     <div className="py-4 space-y-2" aria-hidden="true">

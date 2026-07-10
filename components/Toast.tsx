@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useSyncExternalStore, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useMounted } from '@/hooks/useMounted';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -29,15 +30,9 @@ interface ToastProviderProps {
   children: ReactNode;
 }
 
-const emptySubscribe = () => () => {};
-
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const mounted = useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false
-  );
+  const mounted = useMounted();
 
   const showToast = useCallback((message: string, type: ToastType = 'success') => {
     const id = crypto.randomUUID();

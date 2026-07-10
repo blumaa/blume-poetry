@@ -6,23 +6,25 @@ import { createClient } from '@/lib/supabase/client';
 import { SkeletonCard } from '@/components/Skeleton';
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({ poems: 0, subscribers: 0, drafts: 0 });
+  const [stats, setStats] = useState({ poems: 0, subscribers: 0, drafts: 0, comments: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
 
     async function fetchStats() {
-      const [poemsResult, subscribersResult, draftsResult] = await Promise.all([
+      const [poemsResult, subscribersResult, draftsResult, commentsResult] = await Promise.all([
         supabase.from('poems').select('*', { count: 'exact', head: true }),
         supabase.from('subscribers').select('*', { count: 'exact', head: true }).eq('status', 'active'),
         supabase.from('poems').select('*', { count: 'exact', head: true }).eq('status', 'draft'),
+        supabase.from('comments').select('*', { count: 'exact', head: true }),
       ]);
 
       setStats({
         poems: poemsResult.count || 0,
         subscribers: subscribersResult.count || 0,
         drafts: draftsResult.count || 0,
+        comments: commentsResult.count || 0,
       });
       setIsLoading(false);
     }
@@ -34,6 +36,7 @@ export default function AdminDashboard() {
     { label: 'Total Poems', value: stats.poems, href: '/admin/poems' },
     { label: 'Drafts', value: stats.drafts, href: '/admin/poems?status=draft' },
     { label: 'Subscribers', value: stats.subscribers, href: '/admin/subscribers' },
+    { label: 'Comments', value: stats.comments, href: '/admin/comments' },
   ];
 
   return (
@@ -49,13 +52,14 @@ export default function AdminDashboard() {
       </div>
 
       {isLoading ? (
-        <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
+        <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-4 md:overflow-visible md:pb-0">
+          <div className="min-w-[140px] flex-shrink-0 md:min-w-0"><SkeletonCard /></div>
           <div className="min-w-[140px] flex-shrink-0 md:min-w-0"><SkeletonCard /></div>
           <div className="min-w-[140px] flex-shrink-0 md:min-w-0"><SkeletonCard /></div>
           <div className="min-w-[140px] flex-shrink-0 md:min-w-0"><SkeletonCard /></div>
         </div>
       ) : (
-        <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
+        <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-4 md:overflow-visible md:pb-0">
           {statCards.map((card) => (
             <Link
               key={card.label}

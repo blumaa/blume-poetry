@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import { PoemDisplay } from '@/components/PoemDisplay';
 import { getPoemBySlug, getAllPoemSlugs, getAdjacentPoems } from '@/lib/poems';
+import { getSiteUrl } from '@/lib/config';
+import { buildPoemJsonLd } from '@/lib/jsonLd';
 
 export const revalidate = 3600;
 
@@ -26,9 +28,13 @@ export async function generateMetadata({ params }: PoemPageProps) {
   return {
     title: `${poem.title} | Blumenous Poetry`,
     description,
+    alternates: {
+      canonical: `/poem/${slug}`,
+    },
     openGraph: {
       title: poem.title,
       description,
+      url: `/poem/${slug}`,
       type: 'article',
       siteName: 'Blumenous Poetry',
     },
@@ -51,5 +57,15 @@ export default async function PoemPage({ params }: PoemPageProps) {
     notFound();
   }
 
-  return <PoemDisplay poem={poem} prevPoem={prev} nextPoem={next} />;
+  const jsonLd = buildPoemJsonLd(poem, getSiteUrl());
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <PoemDisplay poem={poem} prevPoem={prev} nextPoem={next} />
+    </>
+  );
 }

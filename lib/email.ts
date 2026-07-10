@@ -76,6 +76,76 @@ interface NewsletterEmailData {
   unsubscribeEmail: string;
 }
 
+/**
+ * Shared doctype/head/font/card/footer wrapper for every outgoing email.
+ * `headTitle` fills both the `<title>` tag and the `<h1>`; `bodyContent` is
+ * the pre-rendered HTML that goes between the h1 and the footer.
+ */
+function renderEmailShell({
+  headTitle,
+  bodyContent,
+  unsubscribeUrl,
+}: {
+  headTitle: string;
+  bodyContent: string;
+  unsubscribeUrl: string;
+}): string {
+  const fontStack = "'Crimson Text', Georgia, 'Times New Roman', serif";
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${headTitle}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
+  </style>
+</head>
+<body style="font-family: ${fontStack}; background-color: #f8f8f8; margin: 0; padding: 0;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <div style="background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
+      <h1 style="color: #09090b; font-size: 24px; font-weight: normal; margin: 0 0 24px 0; border-bottom: 1px solid #e4e4e7; padding-bottom: 16px;">
+        ${headTitle}
+      </h1>
+
+      ${bodyContent}
+    </div>
+
+    <div style="text-align: center; margin-top: 24px; color: #52525b; font-size: 12px;">
+      <p style="margin: 0 0 8px 0;">
+        Blumenous Poetry
+      </p>
+      <p style="margin: 0;">
+        <a href="${unsubscribeUrl}" style="color: #52525b; text-decoration: underline;">
+          Unsubscribe
+        </a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Shared heading/body/footer wrapper for the plain-text equivalents.
+ * `heading` is the title/subject line; `body` is everything between it and
+ * the final `---` / unsubscribe footer.
+ */
+function renderEmailTextShell(heading: string, body: string, unsubscribeUrl: string): string {
+  return `
+${heading}
+
+${body}
+---
+
+Unsubscribe: ${unsubscribeUrl}
+  `.trim();
+}
+
 export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, customMessage }: PoemEmailData): string {
   const siteUrl = getSiteUrl();
   const poemUrl = `${siteUrl}/poem/${slug}`;
@@ -96,28 +166,7 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
         .join('\n')
     : '';
 
-  const fontStack = "'Crimson Text', Georgia, 'Times New Roman', serif";
-
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${safeTitle}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
-  </style>
-</head>
-<body style="font-family: ${fontStack}; background-color: #f8f8f8; margin: 0; padding: 0;">
-  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-    <div style="background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
-      <h1 style="color: #09090b; font-size: 24px; font-weight: normal; margin: 0 0 24px 0; border-bottom: 1px solid #e4e4e7; padding-bottom: 16px;">
-        ${safeTitle}
-      </h1>
-
-      ${formattedMessage ? `
+  const bodyContent = `${formattedMessage ? `
       <div style="color: #09090b; font-size: 16px; line-height: 1.6; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #e4e4e7;">
         ${formattedMessage}
       </div>
@@ -131,23 +180,9 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
         <a href="${poemUrl}" style="color: #2563eb; text-decoration: none;">
           Read on Blumenous Poetry &rarr;
         </a>
-      </div>
-    </div>
+      </div>`;
 
-    <div style="text-align: center; margin-top: 24px; color: #52525b; font-size: 12px;">
-      <p style="margin: 0 0 8px 0;">
-        Blumenous Poetry
-      </p>
-      <p style="margin: 0;">
-        <a href="${unsubscribeUrl}" style="color: #52525b; text-decoration: underline;">
-          Unsubscribe
-        </a>
-      </p>
-    </div>
-  </div>
-</body>
-</html>
-  `.trim();
+  return renderEmailShell({ headTitle: safeTitle, bodyContent, unsubscribeUrl });
 }
 
 export function generatePoemEmailText({ title, content, slug, unsubscribeEmail, customMessage }: PoemEmailData): string {
@@ -157,19 +192,14 @@ export function generatePoemEmailText({ title, content, slug, unsubscribeEmail, 
 
   const messageSection = customMessage ? `${customMessage}\n\n---\n\n` : '';
 
-  return `
-${title}
-
-${messageSection}${content}
+  const body = `${messageSection}${content}
 
 ---
 
 Read on Blumenous Poetry: ${poemUrl}
+`;
 
----
-
-Unsubscribe: ${unsubscribeUrl}
-  `.trim();
+  return renderEmailTextShell(title, body, unsubscribeUrl);
 }
 
 export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEmail }: NewsletterEmailData): string {
@@ -199,48 +229,13 @@ export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEma
       </div>
     ` : '';
 
-  const fontStack = "'Crimson Text', Georgia, 'Times New Roman', serif";
-
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${safeSubject}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
-  </style>
-</head>
-<body style="font-family: ${fontStack}; background-color: #f8f8f8; margin: 0; padding: 0;">
-  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-    <div style="background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
-      <h1 style="color: #09090b; font-size: 24px; font-weight: normal; margin: 0 0 24px 0; border-bottom: 1px solid #e4e4e7; padding-bottom: 16px;">
-        ${safeSubject}
-      </h1>
-
-      <div style="color: #09090b; font-size: 16px; line-height: 1.6;">
+  const bodyContent = `<div style="color: #09090b; font-size: 16px; line-height: 1.6;">
         ${safeBodyHtml}
       </div>
 
-      ${poemSection}
-    </div>
+      ${poemSection}`;
 
-    <div style="text-align: center; margin-top: 24px; color: #52525b; font-size: 12px;">
-      <p style="margin: 0 0 8px 0;">
-        Blumenous Poetry
-      </p>
-      <p style="margin: 0;">
-        <a href="${unsubscribeUrl}" style="color: #52525b; text-decoration: underline;">
-          Unsubscribe
-        </a>
-      </p>
-    </div>
-  </div>
-</body>
-</html>
-  `.trim();
+  return renderEmailShell({ headTitle: safeSubject, bodyContent, unsubscribeUrl });
 }
 
 export function generateNewsletterText({ subject, bodyText, poem, unsubscribeEmail }: NewsletterEmailData): string {
@@ -257,13 +252,8 @@ ${poem.content}
 Read on Blumenous Poetry: ${siteUrl}/poem/${poem.slug}
 ` : '';
 
-  return `
-${subject}
+  const body = `${bodyText}
+${poemSection}`;
 
-${bodyText}
-${poemSection}
----
-
-Unsubscribe: ${unsubscribeUrl}
-  `.trim();
+  return renderEmailTextShell(subject, body, unsubscribeUrl);
 }
