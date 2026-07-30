@@ -7,6 +7,7 @@ import { Poem, PoemMeta } from '@/lib/poems';
 import { LikeButton } from './LikeButton';
 import { CommentSection, CommentIcon } from './CommentSection';
 import { PoemContent } from './PoemContent';
+import { formatDate } from '@/lib/date';
 
 interface PoemDisplayProps {
   poem: Poem;
@@ -83,6 +84,34 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
 
   return (
     <article key={poem.slug} className="page-content max-w-2xl mx-auto px-4 py-8 md:px-6 md:py-12 overflow-x-hidden">
+      {/* Navigation */}
+      {showNavigation && (
+        <nav className="mb-8 pb-4 border-b border-border flex justify-between text-sm gap-4">
+          {prevPoem ? (
+            <Link
+              href={`/poem/${prevPoem.slug}`}
+              className="text-secondary hover:text-primary transition-colors min-h-[44px] flex items-center"
+            >
+              <span className="text-tertiary mr-1">←</span>
+              <span>Prev poem</span>
+            </Link>
+          ) : (
+            <span />
+          )}
+          {nextPoem ? (
+            <Link
+              href={`/poem/${nextPoem.slug}`}
+              className="text-secondary hover:text-primary transition-colors text-right min-h-[44px] flex items-center"
+            >
+              <span>Next poem</span>
+              <span className="text-tertiary ml-1">→</span>
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
+      )}
+
       {/* Title */}
       <header className="mb-8">
         <h1 className="text-2xl md:text-4xl font-normal text-primary leading-tight tracking-tight">
@@ -94,11 +123,7 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
           </p>
         )}
         <time className="text-sm text-tertiary mt-2 block">
-          {new Date(poem.publishedAt).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
+          {formatDate(poem.publishedAt)}
         </time>
       </header>
 
@@ -116,40 +141,6 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
           <span>add comment</span>
         </button>
       </div>
-
-      {/* Navigation */}
-      {showNavigation && (
-        <footer className="mt-8 md:mt-12 pt-8 border-t border-border flex justify-between text-sm gap-4">
-          {prevPoem ? (
-            <Link
-              href={`/poem/${prevPoem.slug}`}
-              className="text-secondary hover:text-primary transition-colors min-h-[44px] flex items-center"
-            >
-              <span className="text-tertiary mr-1">←</span>
-              <span className="truncate max-w-[120px] md:max-w-none">
-                {prevPoem.title.slice(0, 30)}
-                {prevPoem.title.length > 30 ? '...' : ''}
-              </span>
-            </Link>
-          ) : (
-            <span />
-          )}
-          {nextPoem ? (
-            <Link
-              href={`/poem/${nextPoem.slug}`}
-              className="text-secondary hover:text-primary transition-colors text-right min-h-[44px] flex items-center"
-            >
-              <span className="truncate max-w-[120px] md:max-w-none">
-                {nextPoem.title.slice(0, 30)}
-                {nextPoem.title.length > 30 ? '...' : ''}
-              </span>
-              <span className="text-tertiary ml-1">→</span>
-            </Link>
-          ) : (
-            <span />
-          )}
-        </footer>
-      )}
 
       {/* Comments */}
       <CommentSection

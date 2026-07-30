@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import type { RichTextEditorRef } from './RichTextEditor';
 import { PoemContent } from '@/components/PoemContent';
+import { formatDate } from '@/lib/date';
 import type { Poem, NewPoem } from '@/lib/supabase/types';
 
 const RichTextEditor = dynamic(
@@ -28,11 +29,7 @@ function PoemPreview({ title, subtitle, html }: { title: string; subtitle: strin
           </p>
         )}
         <time className="text-sm text-tertiary mt-2 block">
-          {new Date().toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          })}
+          {formatDate(new Date())}
         </time>
       </header>
 

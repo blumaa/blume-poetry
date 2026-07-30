@@ -8,6 +8,7 @@ import { ConfirmModal } from '@/components/ConfirmModal';
 import { useToast } from '@/components/Toast';
 import type { Poem } from '@/lib/supabase/types';
 import { SkeletonList } from '@/components/Skeleton';
+import { formatDate } from '@/lib/date';
 
 export default function AdminPoemsPage() {
   const [poems, setPoems] = useState<Poem[]>([]);
@@ -211,7 +212,7 @@ export default function AdminPoemsPage() {
                 </div>
                 <div className="flex items-center justify-between mt-3">
                   <span className="text-xs text-tertiary">
-                    {new Date(poem.published_at).toLocaleDateString()}
+                    {formatDate(poem.published_at)}
                   </span>
                   <div className="flex items-center gap-2">
                     <button
@@ -288,7 +289,7 @@ export default function AdminPoemsPage() {
                       </span>
                     </td>
                     <td className="p-4 text-tertiary">
-                      {new Date(poem.published_at).toLocaleDateString()}
+                      {formatDate(poem.published_at)}
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex gap-2 justify-end">

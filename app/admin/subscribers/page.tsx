@@ -7,6 +7,7 @@ import { ConfirmModal } from '@/components/ConfirmModal';
 import { SubscribeModal } from '@/components/SubscribeModal';
 import { useToast } from '@/components/Toast';
 import type { Subscriber } from '@/lib/supabase/types';
+import { formatDate } from '@/lib/date';
 
 export default function AdminSubscribersPage() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
@@ -166,7 +167,7 @@ export default function AdminSubscribersPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-tertiary">
-                    {new Date(subscriber.subscribed_at).toLocaleDateString()}
+                    {formatDate(subscriber.subscribed_at)}
                     {subscriber.verified && (
                       <span className="ml-2 text-emerald-600 dark:text-emerald-300 font-medium">verified</span>
                     )}
@@ -213,7 +214,7 @@ export default function AdminSubscribersPage() {
                       </span>
                     </td>
                     <td className="p-4 text-tertiary">
-                      {new Date(subscriber.subscribed_at).toLocaleDateString()}
+                      {formatDate(subscriber.subscribed_at)}
                     </td>
                     <td className="p-4">
                       {subscriber.verified ? (

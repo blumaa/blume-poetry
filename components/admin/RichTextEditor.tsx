@@ -98,6 +98,11 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
         Underline,
       ],
       content: contentToHtml(content),
+      // Preserve leading/indentation spaces and blank lines when loading a poem
+      // into edit mode. Without this ProseMirror collapses whitespace on parse.
+      parseOptions: {
+        preserveWhitespace: 'full',
+      },
       editorProps: {
         attributes: {
           class: `prose prose-lg max-w-none focus:outline-none whitespace-pre-wrap font-serif`,
