@@ -314,12 +314,15 @@ export async function getAllPoemSlugs(): Promise<string[]> {
 }
 
 // Get adjacent poems for navigation — uses lightweight metadata query
+// Poems are sorted newest-first, so "prev" (older, back in time) is the next
+// index and "next" (newer, forward in time) is the previous index.
 export async function getAdjacentPoems(slug: string): Promise<{ prev: PoemMeta | null; next: PoemMeta | null }> {
   const poems = await getAllPoemsMeta();
   const index = poems.findIndex((p) => p.slug === slug);
+  if (index === -1) return { prev: null, next: null };
 
   return {
-    prev: index > 0 ? poems[index - 1] ?? null : null,
-    next: index < poems.length - 1 ? poems[index + 1] ?? null : null,
+    prev: index < poems.length - 1 ? poems[index + 1] ?? null : null,
+    next: index > 0 ? poems[index - 1] ?? null : null,
   };
 }

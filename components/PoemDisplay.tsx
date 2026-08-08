@@ -27,12 +27,13 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
     (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-      if (e.key === 'ArrowRight' && nextPoem) {
-        e.preventDefault();
-        router.push(`/poem/${nextPoem.slug}`);
-      } else if (e.key === 'ArrowLeft' && prevPoem) {
+      // Right goes back in time (previous), left goes forward in time (next)
+      if (e.key === 'ArrowRight' && prevPoem) {
         e.preventDefault();
         router.push(`/poem/${prevPoem.slug}`);
+      } else if (e.key === 'ArrowLeft' && nextPoem) {
+        e.preventDefault();
+        router.push(`/poem/${nextPoem.slug}`);
       }
     },
     [router, prevPoem, nextPoem, poem.slug]
@@ -56,12 +57,12 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
       // Only navigate if horizontal swipe is dominant and significant
       const minSwipeDistance = 50;
       if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
-        if (deltaX > 0 && prevPoem) {
-          // Swipe right -> go to previous (newer)
-          router.push(`/poem/${prevPoem.slug}`);
-        } else if (deltaX < 0 && nextPoem) {
-          // Swipe left -> go to next (older)
+        if (deltaX > 0 && nextPoem) {
+          // Swipe right -> go to next (newer)
           router.push(`/poem/${nextPoem.slug}`);
+        } else if (deltaX < 0 && prevPoem) {
+          // Swipe left -> go to previous (older)
+          router.push(`/poem/${prevPoem.slug}`);
         }
       }
 
@@ -87,23 +88,23 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
       {/* Navigation */}
       {showNavigation && (
         <nav className="mb-8 pb-4 border-b border-border flex justify-between text-sm gap-4">
-          {prevPoem ? (
+          {nextPoem ? (
             <Link
-              href={`/poem/${prevPoem.slug}`}
+              href={`/poem/${nextPoem.slug}`}
               className="text-secondary hover:text-primary transition-colors min-h-[44px] flex items-center"
             >
               <span className="text-tertiary mr-1">←</span>
-              <span>Prev poem</span>
+              <span>next poem</span>
             </Link>
           ) : (
             <span />
           )}
-          {nextPoem ? (
+          {prevPoem ? (
             <Link
-              href={`/poem/${nextPoem.slug}`}
+              href={`/poem/${prevPoem.slug}`}
               className="text-secondary hover:text-primary transition-colors text-right min-h-[44px] flex items-center"
             >
-              <span>Next poem</span>
+              <span>previous poem</span>
               <span className="text-tertiary ml-1">→</span>
             </Link>
           ) : (

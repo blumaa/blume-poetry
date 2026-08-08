@@ -15,8 +15,7 @@ export default async function Home() {
   const recentPoems = await getRecentPoems(1);
   const latestPoem = recentPoems[0];
 
-  // Get adjacent poems for navigation
-  // Note: poems are sorted newest-first, so "next" is the older poem (arrow right)
+  // Get adjacent poems for navigation — "prev" is older, "next" is newer
   const { prev, next } = latestPoem ? await getAdjacentPoems(latestPoem.slug) : { prev: null, next: null };
 
   return (
