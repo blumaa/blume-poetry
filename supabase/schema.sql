@@ -11,7 +11,9 @@ CREATE TABLE poems (
   published_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   status TEXT DEFAULT 'published' CHECK (status IN ('draft', 'published')),
-  url TEXT
+  url TEXT,
+  -- Set when the publish notification for this poem has been sent
+  notified_at TIMESTAMPTZ
 );
 
 -- Subscribers table
@@ -20,7 +22,9 @@ CREATE TABLE subscribers (
   email TEXT UNIQUE NOT NULL,
   subscribed_at TIMESTAMPTZ DEFAULT NOW(),
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'unsubscribed')),
-  verified BOOLEAN DEFAULT FALSE
+  verified BOOLEAN DEFAULT FALSE,
+  -- Master switch is `status`; this only governs new-poem notifications
+  notify_new_poems BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Email logs table

@@ -4,6 +4,7 @@ import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import { useImperativeHandle, forwardRef } from 'react';
+import { contentToHtml } from '@/lib/poemHtml';
 
 export interface RichTextEditorRef {
   getHTML: () => string;
@@ -20,39 +21,9 @@ export interface RichTextEditorProps {
   showToolbar?: boolean;
 }
 
-// Convert plain text to HTML for Tiptap editor
-export function contentToHtml(content: string): string {
-  if (!content) return '';
-
-  // If it already looks like HTML, return as-is
-  if (content.trim().startsWith('<')) {
-    return content;
-  }
-
-  // Convert plain text with newlines to HTML paragraphs
-  // Preserve tabs and multiple spaces using &nbsp;
-  return content
-    .split('\n')
-    .map(line => {
-      if (!line) return '<p><br></p>';
-
-      // Convert tabs to 4 non-breaking spaces
-      let processed = line.replace(/\t/g, '\u00A0\u00A0\u00A0\u00A0');
-
-      // Convert multiple spaces to non-breaking spaces (preserve indentation)
-      processed = processed.replace(/ {2,}/g, (match) =>
-        '\u00A0'.repeat(match.length)
-      );
-
-      // Convert leading spaces to non-breaking spaces
-      processed = processed.replace(/^( +)/, (match) =>
-        '\u00A0'.repeat(match.length)
-      );
-
-      return `<p>${processed}</p>`;
-    })
-    .join('');
-}
+// Re-exported so existing editor imports keep working; the implementation lives
+// in lib/poemHtml so the email renderer applies the same conversion.
+export { contentToHtml };
 
 // Toolbar button component
 function ToolbarButton({

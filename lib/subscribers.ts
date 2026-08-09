@@ -23,11 +23,16 @@ export type UpsertSubscriberResult =
  * reactivating a previously-unsubscribed row (the two routes update
  * different fields here); the insert-new fields are identical for both
  * callers so they aren't parameterized.
+ *
+ * `notifyNewPoems` is its own argument rather than part of
+ * `reactivateFields` because it applies to both paths: whichever answer the
+ * subscriber just gave wins over whatever an earlier signup left behind.
  */
 export async function upsertSubscriber(
   client: SubscribersClient,
   rawEmail: string,
-  reactivateFields: SubscriberUpdate
+  reactivateFields: SubscriberUpdate,
+  notifyNewPoems: boolean = true
 ): Promise<UpsertSubscriberResult> {
   const email = rawEmail.toLowerCase();
 
@@ -44,7 +49,7 @@ export async function upsertSubscriber(
 
     const { data, error } = await client
       .from('subscribers')
-      .update(reactivateFields)
+      .update({ ...reactivateFields, notify_new_poems: notifyNewPoems })
       .eq('id', existing.id)
       // `.select<'*', Subscriber>('*')` instead of bare `.select()`: in the
       // installed postgrest-js version, a bare `.select()` after
@@ -60,7 +65,7 @@ export async function upsertSubscriber(
 
   const { data, error } = await client
     .from('subscribers')
-    .insert({ email, status: 'active', verified: true })
+    .insert({ email, status: 'active', verified: true, notify_new_poems: notifyNewPoems })
     .select<'*', Subscriber>('*')
     .single();
 

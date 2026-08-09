@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { RichTextEditor, RichTextEditorRef } from '@/components/admin/RichTextEditor';
 import { ConfirmModal } from '@/components/ConfirmModal';
+import { PoemContent } from '@/components/PoemContent';
 import { useToast } from '@/components/Toast';
 import { sanitizeNewsletterHtml } from '@/lib/sanitize';
+import { contentToHtml } from '@/lib/poemHtml';
 import type { Poem } from '@/lib/supabase/types';
 
 export default function SendNewsletterPage() {
@@ -310,12 +312,7 @@ export default function SendNewsletterPage() {
                     <h3 className="text-lg font-medium mb-3 text-primary">
                       {selectedPoem.title}
                     </h3>
-                    <div
-                      className="whitespace-pre-line text-primary leading-relaxed"
-                      style={{ fontFamily: 'var(--font-serif)' }}
-                    >
-                      {selectedPoem.plain_text || selectedPoem.content}
-                    </div>
+                    <PoemContent html={contentToHtml(selectedPoem.content || selectedPoem.plain_text || '')} />
                     <div className="mt-4 text-sm text-accent">
                       Read on Blumenous Poetry &rarr;
                     </div>

@@ -12,6 +12,7 @@ interface SubscribeModalProps {
 
 export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: SubscribeModalProps) {
   const [email, setEmail] = useState('');
+  const [notifyNewPoems, setNotifyNewPoems] = useState(true);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
 
@@ -24,7 +25,9 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        // The admin endpoint takes an email only; the preference belongs to
+        // the person signing themselves up.
+        body: JSON.stringify(isAdmin ? { email } : { email, notifyNewPoems }),
       });
 
       const data = await response.json();
@@ -103,6 +106,18 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
               disabled={status === 'loading'}
             />
           </div>
+          {!isAdmin && (
+            <label className="flex items-start gap-2 text-sm text-secondary cursor-pointer">
+              <input
+                type="checkbox"
+                checked={notifyNewPoems}
+                onChange={(e) => setNotifyNewPoems(e.target.checked)}
+                disabled={status === 'loading'}
+                className="accent-accent mt-0.5"
+              />
+              <span>Email me when a new poem is published</span>
+            </label>
+          )}
           {status === 'error' && (
             <p id="modal-subscribe-error" className="text-red-600 text-sm" role="alert">{message}</p>
           )}

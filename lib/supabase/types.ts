@@ -22,6 +22,7 @@ export type Database = {
           status: 'draft' | 'published';
           url: string | null;
           pinned: boolean;
+          notified_at: string | null;
         };
         Insert: {
           id?: string;
@@ -35,6 +36,7 @@ export type Database = {
           status?: 'draft' | 'published';
           url?: string | null;
           pinned?: boolean;
+          notified_at?: string | null;
         };
         Update: {
           id?: string;
@@ -48,6 +50,7 @@ export type Database = {
           status?: 'draft' | 'published';
           url?: string | null;
           pinned?: boolean;
+          notified_at?: string | null;
         };
         Relationships: [];
       };
@@ -58,6 +61,7 @@ export type Database = {
           subscribed_at: string;
           status: 'active' | 'unsubscribed';
           verified: boolean;
+          notify_new_poems: boolean;
         };
         Insert: {
           id?: string;
@@ -65,6 +69,7 @@ export type Database = {
           subscribed_at?: string;
           status?: 'active' | 'unsubscribed';
           verified?: boolean;
+          notify_new_poems?: boolean;
         };
         Update: {
           id?: string;
@@ -72,6 +77,7 @@ export type Database = {
           subscribed_at?: string;
           status?: 'active' | 'unsubscribed';
           verified?: boolean;
+          notify_new_poems?: boolean;
         };
         Relationships: [];
       };

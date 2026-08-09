@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import type { RichTextEditorRef } from './RichTextEditor';
 import { PoemContent } from '@/components/PoemContent';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { formatDate } from '@/lib/date';
 import type { Poem, NewPoem } from '@/lib/supabase/types';
 
@@ -72,9 +73,34 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
   const router = useRouter();
   const editorRef = useRef<RichTextEditorRef>(null);
 
+  // A poem is only ever announced once — the server stamps `notified_at` when
+  // it sends. So the offer is available while that stamp is missing, but it
+  // only defaults to on for the save that actually publishes the poem.
+  const isPublishTransition = status === 'published' && poem?.status !== 'published';
+  const canNotify = status === 'published' && !poem?.notified_at;
+  // Null means "admin hasn't said" — follow the transition. Once they touch
+  // the box their answer sticks, even if they toggle the status around.
+  const [notifyOverride, setNotifyOverride] = useState<boolean | null>(null);
+  const notifySubscribers = notifyOverride ?? isPublishTransition;
+  const [showNotifyConfirm, setShowNotifyConfirm] = useState(false);
+  const willNotify = canNotify && notifySubscribers;
+
   const handleEditorChange = (html: string, text: string) => {
     setContentHtml(html);
     setContentText(text);
+  };
+
+  /**
+   * Emailing the whole list can't be undone, so the confirm step stands
+   * between the button and the send. Saving without a send goes straight
+   * through.
+   */
+  const handleSaveClick = () => {
+    if (willNotify) {
+      setShowNotifyConfirm(true);
+      return;
+    }
+    handleSave();
   };
 
   const handleSave = async () => {
@@ -110,9 +136,16 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
         published_at: finalPublishedAt,
       };
 
-      const { error: saveError } = isNew
-        ? await supabase.from('poems').insert(poemData)
-        : await supabase.from('poems').update(poemData).eq('id', poem!.id);
+      // `.select<...>('id')` so a brand-new poem's id is available to the
+      // notification call below without a second round trip.
+      const { data: saved, error: saveError } = isNew
+        ? await supabase.from('poems').insert(poemData).select<'id', { id: string }>('id').single()
+        : await supabase
+            .from('poems')
+            .update(poemData)
+            .eq('id', poem!.id)
+            .select<'id', { id: string }>('id')
+            .single();
       if (saveError) throw saveError;
 
       // Revalidate pages so the change shows up
@@ -122,13 +155,32 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
         body: JSON.stringify({ paths: [`/poem/${slug}`] }),
       });
 
-      sessionStorage.setItem(
-        'toast',
-        JSON.stringify({
-          message: isNew ? `"${title.trim()}" created` : 'Changes saved',
-          type: 'success',
-        })
-      );
+      let message = isNew ? `"${title.trim()}" created` : 'Changes saved';
+      let type: 'success' | 'error' = 'success';
+
+      // The poem is already saved at this point. A failed send is reported as
+      // its own problem rather than rolling anything back, so the admin knows
+      // exactly which half went wrong.
+      if (willNotify && saved?.id) {
+        try {
+          const res = await fetch('/api/admin/notify-poem', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ poemId: saved.id }),
+          });
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || 'Failed to email subscribers');
+
+          message = result.alreadyNotified
+            ? `${message}. Subscribers had already been emailed about this poem`
+            : `${message}. Emailed ${result.sent} subscriber${result.sent === 1 ? '' : 's'}`;
+        } catch (err) {
+          type = 'error';
+          message = `Saved, but the email failed: ${err instanceof Error ? err.message : 'unknown error'}`;
+        }
+      }
+
+      sessionStorage.setItem('toast', JSON.stringify({ message, type }));
       router.push('/admin/poems');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save poem');
@@ -215,6 +267,26 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
         </div>
       </div>
 
+      {/* Notify subscribers */}
+      {canNotify && (
+        <div>
+          <label className="flex items-start gap-2 cursor-pointer text-primary">
+            <input
+              type="checkbox"
+              checked={notifySubscribers}
+              onChange={(e) => setNotifyOverride(e.target.checked)}
+              className="accent-accent mt-1"
+            />
+            <span>
+              Email subscribers about this poem
+              <span className="block text-sm text-tertiary">
+                Goes to everyone with new-poem emails turned on. Only ever sent once per poem.
+              </span>
+            </span>
+          </label>
+        </div>
+      )}
+
       {/* Editor / Preview Toggle */}
       <div className="flex items-center gap-4 border-b border-border pb-2">
         <button
@@ -260,7 +332,7 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <button
-          onClick={handleSave}
+          onClick={handleSaveClick}
           disabled={isSaving}
           className="px-6 py-3 sm:py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
         >
@@ -273,6 +345,20 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
           Cancel
         </button>
       </div>
+
+      <ConfirmModal
+        isOpen={showNotifyConfirm}
+        onClose={() => setShowNotifyConfirm(false)}
+        onConfirm={() => {
+          setShowNotifyConfirm(false);
+          handleSave();
+        }}
+        title="Email subscribers?"
+        message={`Saving will publish "${title.trim() || 'this poem'}" and email every subscriber who has new-poem emails turned on. Email can't be recalled.`}
+        confirmText="Save and send"
+        variant="warning"
+        isLoading={isSaving}
+      />
     </div>
   );
 }

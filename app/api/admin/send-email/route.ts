@@ -39,10 +39,12 @@ export async function POST(request: Request) {
       poemData = poem as Poem;
     }
 
-    // Build poem attachment data if poem is selected
+    // Build poem attachment data if poem is selected.
+    // `content` is the canonical copy the site renders; `plain_text` is a lossy
+    // search index and is only a fallback for rows saved before rich text.
     const poemAttachment = poemData ? {
       title: poemData.title,
-      content: poemData.plain_text || poemData.content,
+      content: poemData.content || poemData.plain_text || '',
       slug: poemData.slug,
     } : undefined;
 

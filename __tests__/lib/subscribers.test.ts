@@ -37,7 +37,9 @@ describe('upsertSubscriber', () => {
 
     const result = await upsertSubscriber(client, 'Foo@Example.com', { status: 'active' });
 
-    expect(insert).toHaveBeenCalledWith({ email: 'foo@example.com', status: 'active', verified: true });
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'foo@example.com', status: 'active', verified: true })
+    );
     expect(result).toEqual({ outcome: 'inserted', data: { id: 'new-1' }, error: null });
   });
 
@@ -56,9 +58,35 @@ describe('upsertSubscriber', () => {
 
     const result = await upsertSubscriber(client, 'foo@example.com', { status: 'active', verified: true });
 
-    expect(update).toHaveBeenCalledWith({ status: 'active', verified: true });
+    expect(update).toHaveBeenCalledWith({ status: 'active', verified: true, notify_new_poems: true });
     expect(eqUpdate).toHaveBeenCalledWith('id', 'sub-1');
     expect(insert).not.toHaveBeenCalled();
     expect(result).toEqual({ outcome: 'reactivated', data: { id: 'sub-1', status: 'active' }, error: null });
+  });
+
+  describe('new-poem notification preference', () => {
+    it('opts a new subscriber in by default', async () => {
+      const { client, insert } = buildClient(null);
+
+      await upsertSubscriber(client, 'foo@example.com', { status: 'active' });
+
+      expect(insert).toHaveBeenCalledWith(expect.objectContaining({ notify_new_poems: true }));
+    });
+
+    it('records a new subscriber who declined', async () => {
+      const { client, insert } = buildClient(null);
+
+      await upsertSubscriber(client, 'foo@example.com', { status: 'active' }, false);
+
+      expect(insert).toHaveBeenCalledWith(expect.objectContaining({ notify_new_poems: false }));
+    });
+
+    it('applies the choice when reactivating, so an old preference cannot override a fresh one', async () => {
+      const { client, update } = buildClient({ id: 'sub-1', status: 'unsubscribed' });
+
+      await upsertSubscriber(client, 'foo@example.com', { status: 'active' }, false);
+
+      expect(update).toHaveBeenCalledWith(expect.objectContaining({ notify_new_poems: false }));
+    });
   });
 });

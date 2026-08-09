@@ -7,6 +7,10 @@ import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 const subscribeSchema = z.object({
   email: z.string().email('Invalid email address'),
+  // Optional so the compact sidebar form can stay a single field; leaving it
+  // out means the subscriber gets new-poem emails, which is what the form
+  // says it will do.
+  notifyNewPoems: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -18,17 +22,22 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { email } = subscribeSchema.parse(body);
+    const { email, notifyNewPoems = true } = subscribeSchema.parse(body);
 
     const supabase = createAdminClient();
 
     // Check if already subscribed / reactivate if previously unsubscribed /
     // insert if new. Emails are lowercased inside upsertSubscriber so this
     // matches up with the (also lowercased) unsubscribe lookup.
-    const result = await upsertSubscriber(supabase, email, {
-      status: 'active',
-      subscribed_at: new Date().toISOString(),
-    });
+    const result = await upsertSubscriber(
+      supabase,
+      email,
+      {
+        status: 'active',
+        subscribed_at: new Date().toISOString(),
+      },
+      notifyNewPoems
+    );
 
     if (result.outcome === 'already_active') {
       return NextResponse.json(

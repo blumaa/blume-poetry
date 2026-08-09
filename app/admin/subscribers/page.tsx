@@ -16,6 +16,7 @@ export default function AdminSubscribersPage() {
   const [deleteTarget, setDeleteTarget] = useState<Subscriber | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [savingNotifyId, setSavingNotifyId] = useState<string | null>(null);
   const { showToast } = useToast();
 
   const fetchSubscribers = useCallback(async () => {
@@ -65,11 +66,43 @@ export default function AdminSubscribersPage() {
     }
   };
 
+  /**
+   * Flip one subscriber's new-poem preference. Writes an absolute value taken
+   * from the row currently on screen, then updates local state on success —
+   * no refetch, and nothing moves if the write is rejected.
+   */
+  const handleNotifyToggle = async (subscriber: Subscriber) => {
+    const next = !subscriber.notify_new_poems;
+
+    setSavingNotifyId(subscriber.id);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('subscribers')
+      .update({ notify_new_poems: next })
+      .eq('id', subscriber.id);
+    setSavingNotifyId(null);
+
+    if (error) {
+      showToast(error.message, 'error');
+      return;
+    }
+
+    setSubscribers((current) =>
+      current.map((s) => (s.id === subscriber.id ? { ...s, notify_new_poems: next } : s))
+    );
+    showToast(
+      next
+        ? `"${subscriber.email}" will get new-poem emails`
+        : `"${subscriber.email}" will not get new-poem emails`,
+      'success'
+    );
+  };
+
   const handleExportCSV = () => {
     const csv = [
-      'Email,Status,Subscribed At,Verified',
+      'Email,Status,Subscribed At,Verified,New Poem Emails',
       ...subscribers.map((s) =>
-        `${s.email},${s.status},${s.subscribed_at},${s.verified}`
+        `${s.email},${s.status},${s.subscribed_at},${s.verified},${s.notify_new_poems}`
       ),
     ].join('\n');
 
@@ -165,6 +198,16 @@ export default function AdminSubscribersPage() {
                     {subscriber.status}
                   </span>
                 </div>
+                <label className="flex items-center gap-2 mb-3 text-sm text-secondary cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={subscriber.notify_new_poems}
+                    onChange={() => handleNotifyToggle(subscriber)}
+                    disabled={savingNotifyId === subscriber.id}
+                    className="accent-accent"
+                  />
+                  <span>New poem emails</span>
+                </label>
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-tertiary">
                     {formatDate(subscriber.subscribed_at)}
@@ -195,6 +238,7 @@ export default function AdminSubscribersPage() {
                   <th className="text-left p-4 font-medium text-primary">Status</th>
                   <th className="text-left p-4 font-medium text-primary">Subscribed</th>
                   <th className="text-left p-4 font-medium text-primary">Verified</th>
+                  <th className="text-left p-4 font-medium text-primary">New poems</th>
                   <th className="text-right p-4 font-medium text-primary">Actions</th>
                 </tr>
               </thead>
@@ -222,6 +266,21 @@ export default function AdminSubscribersPage() {
                       ) : (
                         <span className="text-tertiary">No</span>
                       )}
+                    </td>
+                    <td className="p-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={subscriber.notify_new_poems}
+                          onChange={() => handleNotifyToggle(subscriber)}
+                          disabled={savingNotifyId === subscriber.id}
+                          className="accent-accent"
+                          aria-label={`New poem emails for ${subscriber.email}`}
+                        />
+                        <span className="text-sm text-tertiary">
+                          {subscriber.notify_new_poems ? 'On' : 'Off'}
+                        </span>
+                      </label>
                     </td>
                     <td className="p-4 text-right">
                       <button

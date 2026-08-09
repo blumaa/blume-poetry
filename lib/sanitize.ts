@@ -9,7 +9,7 @@ const ALLOWED_TAGS = [
   'hr', 'div', 'span'
 ];
 
-const ALLOWED_ATTRIBUTES = {
+export const ALLOWED_ATTRIBUTES = {
   'a': ['href', 'target', 'rel'],
   'div': ['style'],
   'span': ['style'],
@@ -18,7 +18,7 @@ const ALLOWED_ATTRIBUTES = {
 };
 
 // Allowed CSS properties for inline styles
-const ALLOWED_STYLES = {
+export const ALLOWED_STYLES = {
   '*': {
     'color': [/.*/],
     'background-color': [/.*/],
@@ -53,18 +53,25 @@ export function sanitizeNewsletterHtml(html: string): string {
 }
 
 /**
+ * Sanitizer config for poem content. Exported so renderers that need to decorate
+ * the markup (e.g. inlining styles for email) can do it in the same pass instead
+ * of loosening the allowlist to run a second one.
+ */
+export const POEM_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: [
+    ...ALLOWED_TAGS,
+    'sup', 'sub', 'table', 'thead', 'tbody', 'tr', 'td', 'th',
+  ],
+  allowedAttributes: ALLOWED_ATTRIBUTES,
+  allowedStyles: ALLOWED_STYLES,
+};
+
+/**
  * Sanitize poem HTML content for safe rendering.
  * Allows poem-appropriate tags while stripping dangerous elements.
  */
 export function sanitizePoemHtml(html: string): string {
-  return sanitizeHtml(html, {
-    allowedTags: [
-      ...ALLOWED_TAGS,
-      'sup', 'sub', 'table', 'thead', 'tbody', 'tr', 'td', 'th',
-    ],
-    allowedAttributes: ALLOWED_ATTRIBUTES,
-    allowedStyles: ALLOWED_STYLES,
-  });
+  return sanitizeHtml(html, POEM_SANITIZE_OPTIONS);
 }
 
 /**

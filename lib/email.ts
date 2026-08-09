@@ -1,7 +1,9 @@
 import nodemailer from 'nodemailer';
 import { escapeHtml, sanitizeNewsletterHtml } from './sanitize';
+import { POEM_FONT_STACK, renderPoemHtmlForEmail, renderPoemTextForEmail } from './poemHtml';
 import { getSiteUrl } from './config';
 import { createUnsubscribeToken } from './unsubscribeToken';
+import { createEmailToken } from './emailToken';
 
 /**
  * Build a signed, one-click unsubscribe URL. Carries a tamper-proof token
@@ -9,6 +11,32 @@ import { createUnsubscribeToken } from './unsubscribeToken';
  */
 function buildUnsubscribeUrl(email: string): string {
   return `${getSiteUrl()}/api/unsubscribe?token=${createUnsubscribeToken(email)}`;
+}
+
+/**
+ * Build a link to the new-poem notification settings.
+ *
+ * Points at a page rather than an API route, and names an absolute action
+ * instead of a toggle: mail scanners follow links in delivered email, and a
+ * toggling GET would flip the reader's setting without them ever clicking.
+ */
+function buildNotificationsUrl(email: string, action?: 'on' | 'off'): string {
+  const token = createEmailToken(email, 'notifications');
+  const query = action ? `?token=${token}&action=${action}` : `?token=${token}`;
+  return `${getSiteUrl()}/notifications${query}`;
+}
+
+/**
+ * Footer link for the new-poem notification setting.
+ *
+ * A poem notification offers the way out directly ("off"); every other email
+ * links to the settings page with no action, where the reader can switch it
+ * either way.
+ */
+function notificationsFooter(email: string, kind: 'poem-notification' | 'general') {
+  return kind === 'poem-notification'
+    ? { url: buildNotificationsUrl(email, 'off'), label: 'Turn off new-poem emails' }
+    : { url: buildNotificationsUrl(email), label: 'Turn new-poem emails on or off' };
 }
 
 let transporter: nodemailer.Transporter | null = null;
@@ -85,12 +113,14 @@ function renderEmailShell({
   headTitle,
   bodyContent,
   unsubscribeUrl,
+  notifications,
 }: {
   headTitle: string;
   bodyContent: string;
   unsubscribeUrl: string;
+  notifications: { url: string; label: string };
 }): string {
-  const fontStack = "'Crimson Text', Georgia, 'Times New Roman', serif";
+  const fontStack = POEM_FONT_STACK;
 
   return `
 <!DOCTYPE html>
@@ -118,9 +148,14 @@ function renderEmailShell({
       <p style="margin: 0 0 8px 0;">
         Blumenous Poetry
       </p>
+      <p style="margin: 0 0 8px 0;">
+        <a href="${notifications.url}" style="color: #52525b; text-decoration: underline;">
+          ${notifications.label}
+        </a>
+      </p>
       <p style="margin: 0;">
         <a href="${unsubscribeUrl}" style="color: #52525b; text-decoration: underline;">
-          Unsubscribe
+          Unsubscribe from all emails
         </a>
       </p>
     </div>
@@ -135,14 +170,21 @@ function renderEmailShell({
  * `heading` is the title/subject line; `body` is everything between it and
  * the final `---` / unsubscribe footer.
  */
-function renderEmailTextShell(heading: string, body: string, unsubscribeUrl: string): string {
+function renderEmailTextShell(
+  heading: string,
+  body: string,
+  unsubscribeUrl: string,
+  notifications: { url: string; label: string }
+): string {
   return `
 ${heading}
 
 ${body}
 ---
 
-Unsubscribe: ${unsubscribeUrl}
+${notifications.label}: ${notifications.url}
+
+Unsubscribe from all emails: ${unsubscribeUrl}
   `.trim();
 }
 
@@ -154,10 +196,7 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
   // Escape HTML entities to prevent injection
   const safeTitle = escapeHtml(title);
 
-  const formattedContent = content
-    .split('\n')
-    .map((line) => (line.trim() === '' ? '<br>' : `<p style="margin: 0; line-height: 1.8;">${escapeHtml(line)}</p>`))
-    .join('\n');
+  const formattedContent = renderPoemHtmlForEmail(content);
 
   const formattedMessage = customMessage
     ? customMessage
@@ -172,9 +211,7 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
       </div>
       ` : ''}
 
-      <div style="color: #09090b; font-size: 16px; line-height: 1.8;">
-        ${formattedContent}
-      </div>
+      ${formattedContent}
 
       <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e4e4e7;">
         <a href="${poemUrl}" style="color: #2563eb; text-decoration: none;">
@@ -182,7 +219,12 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
         </a>
       </div>`;
 
-  return renderEmailShell({ headTitle: safeTitle, bodyContent, unsubscribeUrl });
+  return renderEmailShell({
+    headTitle: safeTitle,
+    bodyContent,
+    unsubscribeUrl,
+    notifications: notificationsFooter(unsubscribeEmail, 'poem-notification'),
+  });
 }
 
 export function generatePoemEmailText({ title, content, slug, unsubscribeEmail, customMessage }: PoemEmailData): string {
@@ -192,14 +234,19 @@ export function generatePoemEmailText({ title, content, slug, unsubscribeEmail, 
 
   const messageSection = customMessage ? `${customMessage}\n\n---\n\n` : '';
 
-  const body = `${messageSection}${content}
+  const body = `${messageSection}${renderPoemTextForEmail(content)}
 
 ---
 
 Read on Blumenous Poetry: ${poemUrl}
 `;
 
-  return renderEmailTextShell(title, body, unsubscribeUrl);
+  return renderEmailTextShell(
+    title,
+    body,
+    unsubscribeUrl,
+    notificationsFooter(unsubscribeEmail, 'poem-notification')
+  );
 }
 
 export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEmail }: NewsletterEmailData): string {
@@ -215,12 +262,7 @@ export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEma
         <h2 style="color: #09090b; font-size: 20px; font-weight: normal; margin: 0 0 16px 0;">
           ${escapeHtml(poem.title)}
         </h2>
-        <div style="color: #09090b; font-size: 16px; line-height: 1.8;">
-          ${poem.content
-            .split('\n')
-            .map((line) => (line.trim() === '' ? '<br>' : `<p style="margin: 0; line-height: 1.8;">${escapeHtml(line)}</p>`))
-            .join('\n')}
-        </div>
+        ${renderPoemHtmlForEmail(poem.content)}
         <div style="margin-top: 24px;">
           <a href="${siteUrl}/poem/${poem.slug}" style="color: #2563eb; text-decoration: none;">
             Read on Blumenous Poetry &rarr;
@@ -235,7 +277,12 @@ export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEma
 
       ${poemSection}`;
 
-  return renderEmailShell({ headTitle: safeSubject, bodyContent, unsubscribeUrl });
+  return renderEmailShell({
+    headTitle: safeSubject,
+    bodyContent,
+    unsubscribeUrl,
+    notifications: notificationsFooter(unsubscribeEmail, 'general'),
+  });
 }
 
 export function generateNewsletterText({ subject, bodyText, poem, unsubscribeEmail }: NewsletterEmailData): string {
@@ -247,7 +294,7 @@ export function generateNewsletterText({ subject, bodyText, poem, unsubscribeEma
 
 ${poem.title}
 
-${poem.content}
+${renderPoemTextForEmail(poem.content)}
 
 Read on Blumenous Poetry: ${siteUrl}/poem/${poem.slug}
 ` : '';
@@ -255,5 +302,10 @@ Read on Blumenous Poetry: ${siteUrl}/poem/${poem.slug}
   const body = `${bodyText}
 ${poemSection}`;
 
-  return renderEmailTextShell(subject, body, unsubscribeUrl);
+  return renderEmailTextShell(
+    subject,
+    body,
+    unsubscribeUrl,
+    notificationsFooter(unsubscribeEmail, 'general')
+  );
 }
