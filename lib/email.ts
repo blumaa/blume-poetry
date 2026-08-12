@@ -1,6 +1,11 @@
 import nodemailer from 'nodemailer';
 import { escapeHtml, sanitizeNewsletterHtml } from './sanitize';
-import { POEM_FONT_STACK, renderPoemHtmlForEmail, renderPoemTextForEmail } from './poemHtml';
+import {
+  POEM_EMAIL_MEASURE_PX,
+  POEM_FONT_STACK,
+  renderPoemHtmlForEmail,
+  renderPoemTextForEmail,
+} from './poemHtml';
 import { getSiteUrl } from './config';
 import { createUnsubscribeToken } from './unsubscribeToken';
 import { createEmailToken } from './emailToken';
@@ -104,6 +109,23 @@ interface NewsletterEmailData {
   unsubscribeEmail: string;
 }
 
+/** Padding the shell and the white card each take out of the text column. */
+const SHELL_PADDING = 20;
+const CARD_PADDING = 40;
+
+/** Standard email width, for mail that is only prose. */
+const SHELL_WIDTH = 600;
+
+/**
+ * Wide enough to lay out a poem at `POEM_EMAIL_MEASURE_PX` and no wider, so an
+ * emailed poem breaks its lines exactly where the site does. A poem's line
+ * breaks are the poet's, so the shell gives way to the poem, not the reverse.
+ *
+ * Counts only the card padding: email has no `box-sizing: border-box` reset, so
+ * the shell's own padding sits outside this width.
+ */
+const POEM_SHELL_WIDTH = POEM_EMAIL_MEASURE_PX + 2 * CARD_PADDING;
+
 /**
  * Shared doctype/head/font/card/footer wrapper for every outgoing email.
  * `headTitle` fills both the `<title>` tag and the `<h1>`; `bodyContent` is
@@ -114,9 +136,11 @@ function renderEmailShell({
   bodyContent,
   unsubscribeUrl,
   notifications,
+  width = SHELL_WIDTH,
 }: {
   headTitle: string;
   bodyContent: string;
+  width?: number;
   unsubscribeUrl: string;
   notifications: { url: string; label: string };
 }): string {
@@ -129,14 +153,14 @@ function renderEmailShell({
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${headTitle}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
   </style>
 </head>
 <body style="font-family: ${fontStack}; background-color: #f8f8f8; margin: 0; padding: 0;">
-  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-    <div style="background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
+  <div style="max-width: ${width}px; margin: 0 auto; padding: 40px ${SHELL_PADDING}px;">
+    <div style="background-color: #ffffff; padding: ${CARD_PADDING}px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
       <h1 style="color: #09090b; font-size: 24px; font-weight: normal; margin: 0 0 24px 0; border-bottom: 1px solid #e4e4e7; padding-bottom: 16px;">
         ${headTitle}
       </h1>
@@ -222,6 +246,7 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
   return renderEmailShell({
     headTitle: safeTitle,
     bodyContent,
+    width: POEM_SHELL_WIDTH,
     unsubscribeUrl,
     notifications: notificationsFooter(unsubscribeEmail, 'poem-notification'),
   });
@@ -280,6 +305,7 @@ export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEma
   return renderEmailShell({
     headTitle: safeSubject,
     bodyContent,
+    width: poem ? POEM_SHELL_WIDTH : SHELL_WIDTH,
     unsubscribeUrl,
     notifications: notificationsFooter(unsubscribeEmail, 'general'),
   });

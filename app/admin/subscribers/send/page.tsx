@@ -301,7 +301,6 @@ export default function SendNewsletterPage() {
                 {sanitizedBodyHtml && (
                   <div
                     className="prose prose-lg max-w-none text-primary [&_p]:mb-0 [&_p]:min-h-[1.5em] leading-relaxed"
-                    style={{ fontFamily: 'var(--font-serif)' }}
                     dangerouslySetInnerHTML={{ __html: sanitizedBodyHtml }}
                   />
                 )}

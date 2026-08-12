@@ -1,17 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Crimson_Text, Source_Sans_3 } from "next/font/google";
+import { Source_Sans_3 } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ToastProvider } from "@/components/Toast";
 import { getSiteUrl } from "@/lib/config";
-
-const crimsonText = Crimson_Text({
-  variable: "--font-crimson",
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  style: ["normal", "italic"],
-});
 
 const sourceSans = Source_Sans_3({
   variable: "--font-inter",
@@ -51,7 +44,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    // The font variable belongs on <html>: globals.css declares --font-sans on
+    // :root, and a var() is substituted on the element that declares it. Held on
+    // <body>, --font-inter would be undefined at :root, which would make
+    // --font-sans invalid and drop the whole site to the browser default.
+    <html lang="en" suppressHydrationWarning className={sourceSans.variable}>
       <head>
         {/* Prevent flash of wrong theme */}
         <script
@@ -69,7 +66,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${crimsonText.variable} ${sourceSans.variable} antialiased`}>
+      <body className="antialiased">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 md:focus:left-[calc(var(--sidebar-current-width)+1rem)] focus:z-50 focus:px-4 focus:py-2 focus:bg-surface focus:text-primary focus:border focus:border-border focus:rounded focus:shadow-lg focus:transition-[left] focus:duration-300"

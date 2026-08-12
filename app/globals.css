@@ -40,9 +40,20 @@
   --sidebar-current-width: var(--sidebar-width);
   --mobile-header-height: 56px;
 
-  /* Typography */
-  --font-serif: var(--font-crimson), Georgia, 'Times New Roman', serif;
+  /* Typography. One family, everywhere: the sidebar tree, the chrome and the
+     poems all read in Source Sans 3. Mirrored by POEM_FONT_STACK in
+     lib/poemHtml.ts, which spells it out for email. */
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+
+  /* Widest a poem column gets. In ems, because a poem's line breaks are the
+     poet's: at the same measure the site and an email break a line at the same
+     word whatever font size each renders at. Mirrored by POEM_MEASURE_EM in
+     lib/poemHtml.ts. */
+  --poem-measure: 42em;
+
+  /* Floor on fitting a wide poem down to its column. Mirrors POEM_MIN_FONT_PX
+     in lib/poemFit.ts. */
+  --poem-fit-min: 0.8125rem;
 }
 
 /* ==========================================================================
@@ -98,8 +109,10 @@
   --color-error: var(--color-error);
   --color-warning: var(--color-warning);
   --color-info: var(--color-info);
-  --font-serif: var(--font-serif);
   --width-sidebar: var(--sidebar-width);
+  /* `max-w-poem`: --poem-measure at the 18px desktop poem size, plus the
+     article's 1.5rem side padding, so the column can reach its full measure. */
+  --container-poem: 50.25rem;
 }
 
 /* ==========================================================================
@@ -152,7 +165,7 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
@@ -203,14 +216,45 @@ main {
    Poem Content Styling
    ========================================================================== */
 article {
-  font-family: var(--font-serif);
   line-height: 1.8;
 }
 
 /* Poem content renderer - in @layer base to override Tailwind's preflight */
 @layer base {
+  /* The column a poem is fitted to. Sizing it as a query container lets the
+     poem below answer "how wide is the space I have?" in CSS, with no JS and
+     no guess about the viewport. */
+  .poem-fit {
+    container-type: inline-size;
+  }
+
   .poem-content {
-    font-family: var(--font-serif);
+    /* Named rather than inherited: the email renderer mirrors this rule as
+       inline styles, so the family has to be stated where the rest of it is. */
+    font-family: var(--font-sans);
+    /* Size and spacing live here, not in font-size utilities: a `text-lg`
+       utility carries its own line-height and would override the 1.8 the
+       email renderer mirrors.
+
+       The size fits the poem's longest line to the column: `--poem-line` is
+       that line's width in em, measured in lib/poemFit.ts, so dividing the
+       column by it gives the size at which the line just fits. Clamped so a
+       poem is never set larger than its base size and never smaller than
+       --poem-fit-min, where a poem too wide to fit holds and wraps instead.
+       The email renderer applies the same clamp in JavaScript. */
+    font-size: clamp(
+      var(--poem-fit-min),
+      calc(100cqi / var(--poem-line, 0.01)),
+      1rem
+    );
+    line-height: 1.8;
+    /* Size the column to the poem's own longest line rather than to a fixed
+       prose measure: a soft wrap invents a line break the poet didn't write.
+       Poems too wide to fit even at --poem-fit-min (prose poems) wrap here. */
+    width: max-content;
+    /* The column, and only the column. The 42em measure is enforced upstream —
+       `max-w-poem` on the article, the shell width in email — so repeating it
+       here would re-wrap the very lines the font size was just fitted to. */
     max-width: 100%;
     overflow-x: hidden;
     white-space: pre-wrap;
@@ -243,6 +287,16 @@ article {
 
   .poem-content u {
     text-decoration: underline;
+  }
+
+  @media (min-width: 768px) {
+    .poem-content {
+      font-size: clamp(
+        var(--poem-fit-min),
+        calc(100cqi / var(--poem-line, 0.01)),
+        1.125rem
+      );
+    }
   }
 }
 

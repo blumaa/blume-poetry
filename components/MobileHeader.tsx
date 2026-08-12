@@ -36,7 +36,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
       {/* Site title */}
       <Link
         href="/"
-        className="font-serif text-base font-medium text-primary hover:text-secondary transition-colors h-[44px] flex items-center truncate min-w-0"
+        className="text-base font-medium text-primary hover:text-secondary transition-colors h-[44px] flex items-center truncate min-w-0"
       >
         Blumenous Poetry
       </Link>

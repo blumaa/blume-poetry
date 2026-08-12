@@ -76,7 +76,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
       },
       editorProps: {
         attributes: {
-          class: `prose prose-lg max-w-none focus:outline-none whitespace-pre-wrap font-serif`,
+          class: `prose prose-lg max-w-none focus:outline-none whitespace-pre-wrap`,
           style: `min-height: ${minHeight}`,
         },
       },

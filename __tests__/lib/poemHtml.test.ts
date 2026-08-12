@@ -1,4 +1,10 @@
-import { contentToHtml, renderPoemHtmlForEmail, renderPoemTextForEmail } from '@/lib/poemHtml';
+import {
+  POEM_EMAIL_MEASURE_PX,
+  contentToHtml,
+  renderPoemHtmlForEmail,
+  renderPoemTextForEmail,
+} from '@/lib/poemHtml';
+import { POEM_MIN_FONT_PX, estimateLongestLineEm, fitFontSizePx } from '@/lib/poemFit';
 
 const NBSP = ' ';
 
@@ -46,11 +52,48 @@ describe('renderPoemHtmlForEmail', () => {
     expect(openingTag).toContain('white-space:pre-wrap');
   });
 
-  it('wraps the poem in the shared serif typography', () => {
+  it('wraps the poem in the same family the site reads in', () => {
     const html = renderPoemHtmlForEmail('<p>line</p>');
 
-    expect(html).toMatch(/^<div style="[^"]*Crimson Text/);
+    expect(html).toMatch(/^<div style="[^"]*Source Sans 3/);
   });
+
+  it('sets a poem that fits at the full email size', () => {
+    const wrapper = renderPoemHtmlForEmail('<p>a short line</p>').match(/^<div style="([^"]*)"/)![1];
+
+    expect(wrapper).toContain('font-size:16px');
+  });
+
+  it('fits a wide poem down to the column, by the same rule the site uses', () => {
+    // The site solves this in CSS and email solves it in JavaScript, so the
+    // answer has to come from one place: lib/poemFit.
+    const poem = `<p>${'wide '.repeat(40)}</p>`;
+    const wrapper = renderPoemHtmlForEmail(poem).match(/^<div style="([^"]*)"/)![1];
+
+    const expected = fitFontSizePx({
+      lineEm: estimateLongestLineEm(poem),
+      columnPx: POEM_EMAIL_MEASURE_PX,
+      maxPx: 16,
+    });
+
+    expect(expected).toBeLessThan(16);
+    expect(wrapper).toContain(`font-size:${expected}px`);
+  });
+
+  it('never sets a poem below the legibility floor, even a prose one', () => {
+    const prose = `<p>${'a very long prose poem line that just keeps going '.repeat(40)}</p>`;
+    const wrapper = renderPoemHtmlForEmail(prose).match(/^<div style="([^"]*)"/)![1];
+
+    expect(wrapper).toContain(`font-size:${POEM_MIN_FONT_PX}px`);
+  });
+
+  it('shrinks the poem block to its longest line, like the site column does', () => {
+    const wrapper = renderPoemHtmlForEmail('<p>line</p>').match(/^<div style="([^"]*)"/)![1];
+
+    expect(wrapper).toContain('display:inline-block');
+    expect(wrapper).toContain('max-width:100%');
+  });
+
 
   it('keeps non-breaking spaces so indentation survives clients without pre-wrap', () => {
     const html = renderPoemHtmlForEmail(`<p>${NBSP}${NBSP}indented</p>`);

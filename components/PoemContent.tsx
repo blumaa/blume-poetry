@@ -1,4 +1,6 @@
+import type { CSSProperties } from 'react';
 import { sanitizePoemHtml } from '@/lib/sanitize';
+import { estimateLongestLineEm } from '@/lib/poemFit';
 
 /**
  * PoemContent - Renders poem HTML with proper formatting and whitespace preservation.
@@ -30,16 +32,22 @@ export function PoemContent({ html, className = '' }: PoemContentProps) {
 
   const sanitizedHtml = sanitizePoemHtml(normalizeWhitespace(html));
 
+  // Typography and column sizing live in `.poem-content` (globals.css), shared
+  // with the email renderer. Inline styles here would override that rule and
+  // pin every poem to one measure.
+  //
+  // The one thing CSS can't work out for itself is how wide the poem's longest
+  // line is, so it is measured here and handed over as `--poem-line`. The
+  // wrapper is the query container that number is fitted against.
   return (
     <div
-      className={`poem-content text-base md:text-lg leading-relaxed text-primary ${className}`}
-      style={{
-        lineHeight: '1.8',
-        fontFamily: 'var(--font-serif)',
-        maxWidth: '100%',
-        overflowWrap: 'break-word',
-      }}
-      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-    />
+      className="poem-fit"
+      style={{ '--poem-line': estimateLongestLineEm(sanitizedHtml) } as CSSProperties}
+    >
+      <div
+        className={`poem-content text-primary ${className}`}
+        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+      />
+    </div>
   );
 }

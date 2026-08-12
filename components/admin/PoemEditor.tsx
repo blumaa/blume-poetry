@@ -18,7 +18,7 @@ const RichTextEditor = dynamic(
 // Preview component that matches PoemDisplay exactly
 function PoemPreview({ title, subtitle, html }: { title: string; subtitle: string; html: string }) {
   return (
-    <article className="max-w-2xl mx-auto">
+    <article className="max-w-poem mx-auto">
       {/* Title */}
       <header className="mb-8">
         <h1 className="text-xl md:text-2xl font-normal text-primary leading-tight">

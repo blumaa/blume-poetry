@@ -84,7 +84,7 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
   }, [handleKeyDown, handleTouchStart, handleTouchEnd]);
 
   return (
-    <article key={poem.slug} className="page-content max-w-2xl mx-auto px-4 py-8 md:px-6 md:py-12 overflow-x-hidden">
+    <article key={poem.slug} className="page-content max-w-poem mx-auto px-4 py-8 md:px-6 md:py-12 overflow-x-hidden">
       {/* Navigation */}
       {showNavigation && (
         <nav className="mb-8 pb-4 border-b border-border flex justify-between text-sm gap-4">

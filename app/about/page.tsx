@@ -19,7 +19,7 @@ export default function AboutPage() {
           </h1>
         </header>
 
-        <div className="poem-content font-serif text-primary leading-relaxed">
+        <div className="poem-content text-primary text-base leading-relaxed">
           <p className="italic mb-8">
             Blumenous Poetry, by Desmond Blume, is a collection of writings, sometimes dark,
             other times out there, usually influenced by the moon, never far from the truth,

@@ -5,6 +5,7 @@ import {
   POEM_SANITIZE_OPTIONS,
   sanitizePoemHtml,
 } from './sanitize';
+import { estimateLongestLineEm, fitFontSizePx } from './poemFit';
 
 /**
  * Single source of truth for turning a stored poem into rendered output.
@@ -16,11 +17,27 @@ import {
  * the shared definition.
  */
 
-/** Mirrors `--font-serif` in globals.css, spelled out for clients with no CSS vars. */
-export const POEM_FONT_STACK = "'Crimson Text', Georgia, 'Times New Roman', serif";
+/** Mirrors `--font-sans` in globals.css, spelled out for clients with no CSS vars. */
+export const POEM_FONT_STACK =
+  "'Source Sans 3', system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif";
 
 /** Mirrors `.poem-content` / `.poem-content p` line spacing. */
 const POEM_LINE_HEIGHT = '1.8';
+
+/** Font size of the poem in email, matching the site's mobile step. */
+const POEM_EMAIL_FONT_SIZE_PX = 16;
+
+/**
+ * Widest a poem column ever gets, mirroring `--poem-measure` in globals.css.
+ *
+ * Lineation is the poem's own content, so the column is measured in ems rather
+ * than pixels: at the same measure, the site and an email break a line at the
+ * same word regardless of which font size each is rendering at.
+ */
+const POEM_MEASURE_EM = 42;
+
+/** `--poem-measure` resolved at the email font size, for the shell in `email.ts`. */
+export const POEM_EMAIL_MEASURE_PX = POEM_MEASURE_EM * POEM_EMAIL_FONT_SIZE_PX;
 
 /**
  * Inline equivalents of the `.poem-content` rules, one entry per tag the poem
@@ -37,13 +54,34 @@ const EMAIL_TAG_STYLES: Record<string, string> = {
   a: 'color:#2563eb;',
 };
 
-const WRAPPER_STYLE = [
+const wrapperStyle = (fontSizePx: number) => [
   `font-family:${POEM_FONT_STACK}`,
-  'font-size:16px',
+  `font-size:${fontSizePx}px`,
   'color:#09090b',
   `line-height:${POEM_LINE_HEIGHT}`,
   'white-space:pre-wrap',
+  // Shrink-to-fit, the email equivalent of `width: max-content` on the site: the
+  // block takes the width of the poem's longest line and no more. The shell in
+  // `email.ts` is sized to `POEM_EMAIL_MEASURE_PX`, so that is where wrapping
+  // starts. Outlook's Word engine ignores inline-block and falls back to a full
+  // -width block, which wraps at the same place.
+  'display:inline-block',
+  'max-width:100%',
 ].join(';');
+
+/**
+ * Size for an emailed poem: the same fit-to-column the site applies in CSS,
+ * done here because no mail client supports container queries. The column is
+ * the card's text width, which is fixed, so this resolves to a single number
+ * per poem rather than to a formula.
+ */
+function emailFontSizePx(content: string): number {
+  return fitFontSizePx({
+    lineEm: estimateLongestLineEm(content),
+    columnPx: POEM_EMAIL_MEASURE_PX,
+    maxPx: POEM_EMAIL_FONT_SIZE_PX,
+  });
+}
 
 /**
  * Convert plain text to Tiptap-compatible HTML.
@@ -114,7 +152,7 @@ export function renderPoemHtmlForEmail(content: string): string {
     ),
   });
 
-  return `<div style="${WRAPPER_STYLE}">${styled}</div>`;
+  return `<div style="${wrapperStyle(emailFontSizePx(content))}">${styled}</div>`;
 }
 
 const HTML_ENTITIES: Record<string, string> = {

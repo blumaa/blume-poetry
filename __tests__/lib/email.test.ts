@@ -6,8 +6,27 @@ import {
 } from '@/lib/email';
 import { verifyUnsubscribeToken } from '@/lib/unsubscribeToken';
 import { verifyEmailToken } from '@/lib/emailToken';
+import { POEM_EMAIL_MEASURE_PX } from '@/lib/poemHtml';
 
 const SITE = 'https://www.blumenouspoetry.com';
+
+/** Outer width of the email shell, as declared in the rendered markup. */
+function shellWidth(html: string): number {
+  const match = html.match(/max-width: (\d+)px; margin: 0 auto; padding: (\d+)px (\d+)px/);
+  if (!match) throw new Error('no email shell found');
+  return Number(match[1]);
+}
+
+/**
+ * Width left for text once the card padding is taken out. The shell's own
+ * padding sits outside its max-width: email has no border-box reset.
+ */
+function shellTextWidth(html: string): number {
+  const shell = html.match(/max-width: (\d+)px; margin: 0 auto/);
+  const card = html.match(/background-color: #ffffff; padding: (\d+)px/);
+  if (!shell || !card) throw new Error('no email shell found');
+  return Number(shell[1]) - 2 * Number(card[1]);
+}
 
 function extractUnsubscribeUrl(body: string): string {
   const match = body.match(/\/api\/unsubscribe\?token=[A-Za-z0-9._-]+/);
@@ -152,6 +171,35 @@ describe('attached poems render the same content the site does', () => {
     // Three paragraphs: line, blank line, indented line
     expect(html.match(/<p style="margin:0/g)).toHaveLength(3);
     expect(html).toContain('  the turn');
+  });
+
+  it('gives the poem the same measure the site gives it, so lines break alike', () => {
+    const html = generatePoemEmailHtml({ ...poem, unsubscribeEmail: 'reader@example.com' });
+
+    expect(shellTextWidth(html)).toBe(POEM_EMAIL_MEASURE_PX);
+  });
+
+  it('leaves plain newsletters at the standard email width', () => {
+    const html = generateNewsletterHtml({
+      subject: 'S',
+      bodyHtml: '<p>b</p>',
+      bodyText: 'b',
+      unsubscribeEmail: 'reader@example.com',
+    });
+
+    expect(shellWidth(html)).toBe(600);
+  });
+
+  it('widens a newsletter that carries a poem', () => {
+    const html = generateNewsletterHtml({
+      subject: 'S',
+      bodyHtml: '<p>b</p>',
+      bodyText: 'b',
+      poem,
+      unsubscribeEmail: 'reader@example.com',
+    });
+
+    expect(shellTextWidth(html)).toBe(POEM_EMAIL_MEASURE_PX);
   });
 
   it('flattens the poem to readable lines in the text alternative', () => {
