@@ -5,6 +5,7 @@ import {
   POEM_FONT_STACK,
   renderPoemHtmlForEmail,
   renderPoemTextForEmail,
+  truncatePoemForEmail,
 } from './poemHtml';
 import { getSiteUrl } from './config';
 import { createUnsubscribeToken } from './unsubscribeToken';
@@ -16,6 +17,26 @@ import { createEmailToken } from './emailToken';
  */
 function buildUnsubscribeUrl(email: string): string {
   return `${getSiteUrl()}/api/unsubscribe?token=${createUnsubscribeToken(email)}`;
+}
+
+/**
+ * An emailed poem is an excerpt: half its lines, then a link to the rest.
+ *
+ * The excerpt is sized against the whole poem so the lines it does show break
+ * where the site breaks them, and the link names the site rather than the
+ * action, so the reader knows where "the rest" lives. A poem short enough to
+ * survive the cut whole is offered plainly instead of teased.
+ */
+function poemExcerpt(content: string) {
+  const { content: excerpt, truncated } = truncatePoemForEmail(content);
+
+  return {
+    html: renderPoemHtmlForEmail(excerpt, { fitTo: content }),
+    text: renderPoemTextForEmail(excerpt),
+    linkLabel: truncated
+      ? `Continue reading on ${new URL(getSiteUrl()).host.replace(/^www\./, '')}`
+      : 'Read on Blumenous Poetry',
+  };
 }
 
 /**
@@ -220,7 +241,7 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
   // Escape HTML entities to prevent injection
   const safeTitle = escapeHtml(title);
 
-  const formattedContent = renderPoemHtmlForEmail(content);
+  const excerpt = poemExcerpt(content);
 
   const formattedMessage = customMessage
     ? customMessage
@@ -235,11 +256,11 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
       </div>
       ` : ''}
 
-      ${formattedContent}
+      ${excerpt.html}
 
       <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e4e4e7;">
         <a href="${poemUrl}" style="color: #2563eb; text-decoration: none;">
-          Read on Blumenous Poetry &rarr;
+          ${excerpt.linkLabel} &rarr;
         </a>
       </div>`;
 
@@ -259,11 +280,13 @@ export function generatePoemEmailText({ title, content, slug, unsubscribeEmail, 
 
   const messageSection = customMessage ? `${customMessage}\n\n---\n\n` : '';
 
-  const body = `${messageSection}${renderPoemTextForEmail(content)}
+  const excerpt = poemExcerpt(content);
+
+  const body = `${messageSection}${excerpt.text}
 
 ---
 
-Read on Blumenous Poetry: ${poemUrl}
+${excerpt.linkLabel}: ${poemUrl}
 `;
 
   return renderEmailTextShell(
@@ -282,15 +305,17 @@ export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEma
   const safeSubject = escapeHtml(subject);
   const safeBodyHtml = sanitizeNewsletterHtml(bodyHtml);
 
-  const poemSection = poem ? `
+  const excerpt = poem ? poemExcerpt(poem.content) : null;
+
+  const poemSection = poem && excerpt ? `
       <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e4e4e7;">
         <h2 style="color: #09090b; font-size: 20px; font-weight: normal; margin: 0 0 16px 0;">
           ${escapeHtml(poem.title)}
         </h2>
-        ${renderPoemHtmlForEmail(poem.content)}
+        ${excerpt.html}
         <div style="margin-top: 24px;">
           <a href="${siteUrl}/poem/${poem.slug}" style="color: #2563eb; text-decoration: none;">
-            Read on Blumenous Poetry &rarr;
+            ${excerpt.linkLabel} &rarr;
           </a>
         </div>
       </div>
@@ -315,14 +340,16 @@ export function generateNewsletterText({ subject, bodyText, poem, unsubscribeEma
   const siteUrl = getSiteUrl();
   const unsubscribeUrl = buildUnsubscribeUrl(unsubscribeEmail);
 
-  const poemSection = poem ? `
+  const excerpt = poem ? poemExcerpt(poem.content) : null;
+
+  const poemSection = poem && excerpt ? `
 ---
 
 ${poem.title}
 
-${renderPoemTextForEmail(poem.content)}
+${excerpt.text}
 
-Read on Blumenous Poetry: ${siteUrl}/poem/${poem.slug}
+${excerpt.linkLabel}: ${siteUrl}/poem/${poem.slug}
 ` : '';
 
   const body = `${bodyText}

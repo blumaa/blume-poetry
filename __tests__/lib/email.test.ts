@@ -141,7 +141,8 @@ describe('attached poems render the same content the site does', () => {
 
   const poem = {
     title: 'Tide',
-    content: '<p>a <em>slow</em> line</p><p><br></p><p>  the turn</p>',
+    // Six lines, so the half an email sends still carries a blank line and an indent.
+    content: '<p>a <em>slow</em> line</p><p><br></p><p>  the turn</p><p>and</p><p><br></p><p>back</p>',
     slug: 'tide',
   };
 
@@ -213,5 +214,58 @@ describe('attached poems render the same content the site does', () => {
 
     expect(text).toContain('a slow line\n\n  the turn');
     expect(text).not.toContain('<p>');
+  });
+});
+
+describe('an emailed poem is an excerpt', () => {
+  beforeEach(() => {
+    process.env.NEXT_PUBLIC_SITE_URL = SITE;
+    process.env.UNSUBSCRIBE_SECRET = 'test-secret-value';
+  });
+
+  const poem = {
+    title: 'Tide',
+    content: '<p>one</p><p>two</p><p>three</p><p>four</p>',
+    slug: 'tide',
+  };
+
+  const newsletter = {
+    subject: 'S',
+    bodyHtml: '<p>b</p>',
+    bodyText: 'b',
+    poem,
+    unsubscribeEmail: 'reader@example.com',
+  };
+
+  const cases: Array<[string, () => string]> = [
+    ['generatePoemEmailHtml', () => generatePoemEmailHtml({ ...poem, unsubscribeEmail: 'reader@example.com' })],
+    ['generatePoemEmailText', () => generatePoemEmailText({ ...poem, unsubscribeEmail: 'reader@example.com' })],
+    ['generateNewsletterHtml', () => generateNewsletterHtml(newsletter)],
+    ['generateNewsletterText', () => generateNewsletterText(newsletter)],
+  ];
+
+  it.each(cases)('%s sends half the poem and links to the rest', (_name, gen) => {
+    const body = gen();
+
+    expect(body).toContain('one');
+    expect(body).toContain('two');
+    expect(body).not.toContain('three');
+    expect(body).not.toContain('four');
+
+    expect(body).toContain('Continue reading on blumenouspoetry.com');
+    expect(body).toContain(`${SITE}/poem/tide`);
+  });
+
+  it('names the site plainly when there is nothing left to cut', () => {
+    const html = generatePoemEmailHtml({
+      title: 'One',
+      content: '<p>only</p>',
+      slug: 'one',
+      unsubscribeEmail: 'reader@example.com',
+    });
+
+    expect(html).toContain('only');
+    expect(html).toContain('Read on Blumenous Poetry');
+    expect(html).not.toContain('Continue reading');
   });
 });

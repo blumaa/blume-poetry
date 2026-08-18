@@ -111,6 +111,60 @@ export function contentToHtml(content: string): string {
     .join('');
 }
 
+/** A <br> alone in a paragraph is the blank line the closing tag already emits. */
+const LONE_BR_PARAGRAPH = /<p([^>]*)>\s*<br\s*\/?>\s*<\/p>/gi;
+
+/** Where one line of a poem ends: a closed block, a soft break, or a rule. */
+const LINE_END = /<\/(?:p|h[1-6]|blockquote|pre|li|div|tr)>|<br\s*\/?>|<hr\s*\/?>/gi;
+
+/** True when a chunk of markup carries something the reader can see. */
+function hasVisibleText(html: string): boolean {
+  return html.replace(/<[^>]+>/g, '').replace(/&nbsp;| /g, ' ').trim() !== '';
+}
+
+/** Split poem markup into the lines the poet wrote, markup and all. */
+function splitPoemLines(html: string): string[] {
+  const boundary = new RegExp(LINE_END.source, 'gi');
+  const lines: string[] = [];
+  let start = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = boundary.exec(html)) !== null) {
+    lines.push(html.slice(start, match.index) + match[0]);
+    start = match.index + match[0].length;
+  }
+
+  const trailing = html.slice(start);
+  if (trailing.trim()) lines.push(trailing);
+
+  return lines;
+}
+
+/**
+ * Cut a poem in half for email: an email carries the opening, the site carries
+ * the whole. The excerpt never ends on a blank line, so the cut reads as a
+ * pause in the poem rather than as an empty page.
+ *
+ * A cut can leave a tag open — half a stanza, half a paragraph of soft breaks.
+ * Both email renderers sanitize what they are given, and that pass closes them.
+ *
+ * `truncated` is false when there was nothing to hold back, so the caller can
+ * say "read on the site" instead of promising a rest that does not exist.
+ */
+export function truncatePoemForEmail(content: string): { content: string; truncated: boolean } {
+  if (!content || !content.trim()) return { content, truncated: false };
+
+  const html = contentToHtml(content).replace(LONE_BR_PARAGRAPH, '<p$1></p>');
+  const lines = splitPoemLines(html);
+
+  const half = lines.slice(0, Math.ceil(lines.length / 2));
+  while (half.length && !hasVisibleText(half[half.length - 1])) half.pop();
+
+  if (!half.length || half.length === lines.length) return { content, truncated: false };
+
+  return { content: half.join(''), truncated: true };
+}
+
 /**
  * Render a poem for an HTML email.
  *
@@ -118,8 +172,12 @@ export function contentToHtml(content: string): string {
  * because `white-space: pre-wrap` already preserves indentation and nbsp breaks
  * mobile wrapping, but Outlook's Word engine ignores pre-wrap, so nbsp is the
  * only thing holding indentation there.
+ *
+ * `fitTo` is the text the font size is measured against, for callers rendering
+ * an excerpt: size belongs to the whole poem, so an excerpt's lines break where
+ * the site breaks them rather than growing to fill the space the cut freed.
  */
-export function renderPoemHtmlForEmail(content: string): string {
+export function renderPoemHtmlForEmail(content: string, { fitTo }: { fitTo?: string } = {}): string {
   if (!content || !content.trim()) return '';
 
   const styled = sanitizeHtml(contentToHtml(content), {
@@ -152,7 +210,7 @@ export function renderPoemHtmlForEmail(content: string): string {
     ),
   });
 
-  return `<div style="${wrapperStyle(emailFontSizePx(content))}">${styled}</div>`;
+  return `<div style="${wrapperStyle(emailFontSizePx(fitTo ?? content))}">${styled}</div>`;
 }
 
 const HTML_ENTITIES: Record<string, string> = {
@@ -177,8 +235,7 @@ export function renderPoemTextForEmail(content: string): string {
   }
 
   return sanitizePoemHtml(content)
-    // A <br> alone in a paragraph is the blank line the closing tag already emits.
-    .replace(/<p([^>]*)>\s*<br\s*\/?>\s*<\/p>/gi, '<p$1></p>')
+    .replace(LONE_BR_PARAGRAPH, '<p$1></p>')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(p|div|h[1-6]|li|blockquote|pre)>/gi, '\n')
     .replace(/<[^>]+>/g, '')

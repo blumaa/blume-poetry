@@ -3,6 +3,7 @@ import {
   contentToHtml,
   renderPoemHtmlForEmail,
   renderPoemTextForEmail,
+  truncatePoemForEmail,
 } from '@/lib/poemHtml';
 import { POEM_MIN_FONT_PX, estimateLongestLineEm, fitFontSizePx } from '@/lib/poemFit';
 
@@ -140,5 +141,73 @@ describe('renderPoemTextForEmail', () => {
 
   it('passes legacy plain text through unchanged', () => {
     expect(renderPoemTextForEmail('one\ntwo')).toBe('one\ntwo');
+  });
+});
+
+describe('truncatePoemForEmail', () => {
+  it('keeps the first half of the poem and reports the cut', () => {
+    const { content, truncated } = truncatePoemForEmail('<p>one</p><p>two</p><p>three</p><p>four</p>');
+
+    expect(content).toBe('<p>one</p><p>two</p>');
+    expect(truncated).toBe(true);
+  });
+
+  it('rounds an odd count up, so the reader gets the larger half', () => {
+    const { content } = truncatePoemForEmail('<p>one</p><p>two</p><p>three</p>');
+
+    expect(content).toBe('<p>one</p><p>two</p>');
+  });
+
+  it('counts a blank line as a line and never ends the excerpt on one', () => {
+    const { content } = truncatePoemForEmail('<p>one</p><p><br></p><p>two</p><p>three</p>');
+
+    expect(content).toBe('<p>one</p>');
+  });
+
+  it('counts soft breaks inside a paragraph as lines', () => {
+    const { content } = truncatePoemForEmail('<p>one<br>two<br>three<br>four</p>');
+
+    expect(content).toBe('<p>one<br>two<br>');
+  });
+
+  it('splits legacy plain-text content the same way', () => {
+    const { content, truncated } = truncatePoemForEmail('one\ntwo\nthree\nfour');
+
+    expect(content).toBe('<p>one</p><p>two</p>');
+    expect(truncated).toBe(true);
+  });
+
+  it('leaves a one-line poem whole', () => {
+    const { content, truncated } = truncatePoemForEmail('<p>only</p>');
+
+    expect(content).toBe('<p>only</p>');
+    expect(truncated).toBe(false);
+  });
+
+  it('leaves empty content alone', () => {
+    expect(truncatePoemForEmail('')).toEqual({ content: '', truncated: false });
+  });
+
+  it('renders as valid markup once truncated mid-paragraph', () => {
+    const { content } = truncatePoemForEmail('<p>one<br>two<br>three<br>four</p>');
+
+    expect(renderPoemHtmlForEmail(content)).toContain('</p>');
+  });
+});
+
+describe('renderPoemHtmlForEmail fitTo', () => {
+  const longLine = 'a line long enough that it has to shrink to hold its lineation in one column';
+
+  function fontSize(html: string): number {
+    return Number(html.match(/font-size:(\d+(?:\.\d+)?)px/)![1]);
+  }
+
+  it('sizes an excerpt to the whole poem, so shown lines break where the site breaks them', () => {
+    const whole = `<p>short</p><p>${longLine}</p>`;
+    const excerpt = '<p>short</p>';
+
+    expect(fontSize(renderPoemHtmlForEmail(excerpt, { fitTo: whole }))).toBe(
+      fontSize(renderPoemHtmlForEmail(whole))
+    );
   });
 });
