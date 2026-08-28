@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ThemeToggle } from './ThemeToggle';
+import { LoginButton } from './LoginButton';
 
 interface MobileHeaderProps {
   onMenuClick: () => void;
@@ -44,6 +45,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
       {/* Right side buttons */}
       <div className="shrink-0 flex items-center">
         <ThemeToggle />
+        <LoginButton className="text-secondary" />
       </div>
     </header>
   );
