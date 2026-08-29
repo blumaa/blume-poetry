@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { SideNav, SideNavItem } from '@/components/mds';
 import type { TreeNode, Poem } from '@/lib/poems';
 import { TreeItem } from './TreeItem';
+import styles from './SidebarNav.module.css';
 
 interface SidebarNavProps {
   tree: TreeNode[];
@@ -23,10 +24,10 @@ export function SidebarNav({
   onSearchResultClick,
 }: SidebarNavProps) {
   return (
-    <SideNav label="Poems" className="flex-1 overflow-y-auto p-2">
+    <SideNav label="Poems" className={styles.nav}>
       {searchResults ? (
         <div>
-          <div className="px-3 py-2 text-xs text-tertiary uppercase tracking-wide">
+          <div className={styles.resultsHeader}>
             {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
           </div>
           {searchResults.map((poem) => (

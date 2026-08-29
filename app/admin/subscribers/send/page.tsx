@@ -9,6 +9,7 @@ import { PoemContent } from '@/components/PoemContent';
 import { sanitizeNewsletterHtml } from '@/lib/sanitize';
 import { contentToHtml } from '@/lib/poemHtml';
 import type { Poem } from '@/lib/supabase/types';
+import styles from './page.module.css';
 
 export default function SendNewsletterPage() {
   const [poems, setPoems] = useState<Poem[]>([]);
@@ -149,16 +150,16 @@ export default function SendNewsletterPage() {
   const sanitizedBodyHtml = useMemo(() => sanitizeNewsletterHtml(bodyHtml), [bodyHtml]);
 
   if (isLoading) {
-    return <div className="text-tertiary">Loading...</div>;
+    return <div className={styles.loadingText}>Loading...</div>;
   }
 
   return (
     <div>
-      <h1 className="text-2xl mb-6 text-primary">Send Newsletter</h1>
+      <h1 className={styles.title}>Send Newsletter</h1>
 
       {/* Mobile tab toggle. Panels stay outside Tabs: on desktop both show
           side by side, which TabPanel's single-active rule can't express. */}
-      <div className="lg:hidden mb-6">
+      <div className={styles.mobileTabs}>
         <Tabs value={mobileTab} onChange={(value) => setMobileTab(value as 'compose' | 'preview')}>
           <TabList label="Newsletter editor">
             <Tab value="compose">Compose</Tab>
@@ -167,9 +168,9 @@ export default function SendNewsletterPage() {
         </Tabs>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className={styles.grid}>
         {/* Left: Compose */}
-        <div className={`space-y-6 ${mobileTab !== 'compose' ? 'hidden lg:block' : ''}`}>
+        <div className={`${styles.composePane} ${mobileTab !== 'compose' ? styles.paneHidden : ''}`}>
           {/* Subject */}
           <Field label="Subject">
             <Input
@@ -181,15 +182,15 @@ export default function SendNewsletterPage() {
 
           {/* Body */}
           <div>
-            <label className="block text-sm font-medium mb-2 text-primary">
+            <label className={styles.fieldLabel}>
               Body
             </label>
-            <div className="bg-surface border border-border rounded-lg p-4">
+            <div className={styles.editorWrap}>
               <RichTextEditor
                 ref={editorRef}
                 onChange={handleEditorChange}
                 minHeight="200px"
-                className="min-h-[200px]"
+                className={styles.editorMinHeight}
               />
             </div>
           </div>
@@ -207,23 +208,23 @@ export default function SendNewsletterPage() {
           </Field>
 
           {/* Subscriber Info */}
-          <div className="p-4 bg-surface-secondary rounded-lg">
-            <div className="text-sm text-tertiary">
-              Active subscribers: <strong className="text-primary">{subscriberCount}</strong>
+          <div className={styles.subscriberInfo}>
+            <div className={styles.subscriberInfoText}>
+              Active subscribers: <strong className={styles.subscriberCount}>{subscriberCount}</strong>
             </div>
           </div>
 
           {/* Test Email */}
-          <div className="p-4 border border-border rounded-lg">
-            <h3 className="font-medium mb-3 text-primary">Send Test Email</h3>
-            <div className="flex flex-col sm:flex-row gap-2">
+          <div className={styles.testEmailBox}>
+            <h3 className={styles.testEmailHeading}>Send Test Email</h3>
+            <div className={styles.testEmailRow}>
               <Input
                 type="email"
                 aria-label="Test email address"
                 value={testEmail}
                 onChange={(e) => setTestEmail(e.target.value)}
                 placeholder="test@example.com"
-                className="flex-1"
+                className={styles.testEmailInput}
               />
               <Button variant="secondary" onClick={handleSendTest} loading={isSending}>
                 Send Test
@@ -232,7 +233,7 @@ export default function SendNewsletterPage() {
           </div>
 
           {/* Send Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <div className={styles.sendButtonsRow}>
             <Button
               onClick={handleSendAllClick}
               loading={isSending}
@@ -247,14 +248,14 @@ export default function SendNewsletterPage() {
         </div>
 
         {/* Right: Preview */}
-        <div className={mobileTab !== 'preview' ? 'hidden lg:block' : ''}>
-          <h3 className="text-sm font-medium mb-3 text-primary">Preview</h3>
-          <div className="bg-surface border border-border rounded-lg p-6 min-h-[400px]">
+        <div className={mobileTab !== 'preview' ? styles.paneHidden : ''}>
+          <h3 className={styles.previewHeading}>Preview</h3>
+          <div className={styles.previewBox}>
             {subject || sanitizedBodyHtml || selectedPoem ? (
               <div>
                 {/* Subject Preview */}
                 {subject && (
-                  <h2 className="text-xl mb-4 pb-4 border-b border-border text-primary">
+                  <h2 className={styles.subjectPreview}>
                     {subject}
                   </h2>
                 )}
@@ -262,32 +263,32 @@ export default function SendNewsletterPage() {
                 {/* Body Preview */}
                 {sanitizedBodyHtml && (
                   <div
-                    className="prose prose-lg max-w-none text-primary [&_p]:mb-0 [&_p]:min-h-[1.5em] leading-relaxed"
+                    className={styles.previewBody}
                     dangerouslySetInnerHTML={{ __html: sanitizedBodyHtml }}
                   />
                 )}
 
                 {/* Poem Preview */}
                 {selectedPoem && (
-                  <div className={bodyHtml ? 'mt-6 pt-6 border-t border-border' : ''}>
-                    <h3 className="text-lg font-medium mb-3 text-primary">
+                  <div className={bodyHtml ? styles.poemPreviewWrap : ''}>
+                    <h3 className={styles.poemPreviewTitle}>
                       {selectedPoem.title}
                     </h3>
                     <PoemContent html={contentToHtml(selectedPoem.content || selectedPoem.plain_text || '')} />
-                    <div className="mt-4 text-sm text-accent">
+                    <div className={styles.poemPreviewCta}>
                       Read on Blumenous Poetry &rarr;
                     </div>
                   </div>
                 )}
 
                 {/* Footer Preview */}
-                <div className="mt-8 pt-4 border-t border-border text-center text-sm text-tertiary">
+                <div className={styles.footerPreview}>
                   <p>Blumenous Poetry</p>
-                  <p className="underline">Unsubscribe</p>
+                  <p className={styles.unsubscribeText}>Unsubscribe</p>
                 </div>
               </div>
             ) : (
-              <div className="text-tertiary text-center pt-20">
+              <div className={styles.previewPlaceholder}>
                 Start composing to see preview
               </div>
             )}

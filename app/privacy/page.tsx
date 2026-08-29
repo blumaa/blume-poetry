@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { PageShell } from '@/components/PageShell';
+import styles from './page.module.css';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | Blumenous Poetry',
@@ -12,43 +13,43 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <PageShell>
-      <article className="page-content max-w-2xl mx-auto px-4 py-8 md:px-6 md:py-12">
-        <header className="mb-8">
-          <h1 className="text-xl md:text-2xl font-normal text-primary leading-tight">
+      <article className={`page-content ${styles.article}`}>
+        <header className={styles.header}>
+          <h1 className={styles.title}>
             Privacy Policy
           </h1>
         </header>
 
-        <div className="prose prose-sm text-primary leading-relaxed space-y-4">
+        <div className={styles.body}>
           <p>
             Blumenous Poetry collects minimal data to provide you with a better experience.
           </p>
 
-          <h2 className="text-lg font-medium mt-6 mb-2">Newsletter Subscription</h2>
+          <h2 className={styles.heading}>Newsletter Subscription</h2>
           <p>
             If you subscribe to the newsletter, we collect your email address to send you
             occasional updates about new poems. You can unsubscribe at any time using the
             link in any email.
           </p>
 
-          <h2 className="text-lg font-medium mt-6 mb-2">Analytics</h2>
+          <h2 className={styles.heading}>Analytics</h2>
           <p>
             We use Vercel Analytics to understand how visitors use the site. This collects
             anonymous usage data and does not track individual users.
           </p>
 
-          <h2 className="text-lg font-medium mt-6 mb-2">Comments and Likes</h2>
+          <h2 className={styles.heading}>Comments and Likes</h2>
           <p>
             Comments and likes are stored to display on the site. Comments include the
             name you provide and your message. No account is required.
           </p>
 
-          <h2 className="text-lg font-medium mt-6 mb-2">Contact</h2>
+          <h2 className={styles.heading}>Contact</h2>
           <p>
             For any privacy concerns, contact{' '}
             <a
               href="mailto:desmond.blume@gmail.com"
-              className="text-accent hover:underline"
+              className={styles.link}
             >
               desmond.blume@gmail.com
             </a>

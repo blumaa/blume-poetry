@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from './AuthProvider';
+import styles from './AdminGuard.module.css';
 
 interface AdminGuardProps {
   children: React.ReactNode;
@@ -20,8 +21,8 @@ export function AdminGuard({ children }: AdminGuardProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-secondary">Loading...</div>
+      <div className={styles.center}>
+        <div className={styles.loadingText}>Loading...</div>
       </div>
     );
   }
@@ -32,10 +33,10 @@ export function AdminGuard({ children }: AdminGuardProps) {
 
   if (!isAdmin) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-xl mb-2">Access Denied</h1>
-          <p className="text-secondary">
+      <div className={styles.center}>
+        <div className={styles.deniedBox}>
+          <h1 className={styles.deniedTitle}>Access Denied</h1>
+          <p className={styles.deniedText}>
             You don&apos;t have permission to access this area.
           </p>
         </div>

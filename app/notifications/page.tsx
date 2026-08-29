@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageShell } from '@/components/PageShell';
 import { NotificationSettings } from './NotificationSettings';
+import styles from './page.module.css';
 
 export const metadata: Metadata = {
   title: 'Email settings | Blumenous Poetry',
@@ -17,8 +18,8 @@ export default async function NotificationsPage({
   const { token, action } = await searchParams;
 
   return (
-    <PageShell contentClassName="flex items-center justify-center px-4 py-12">
-      <div className="text-center max-w-md">
+    <PageShell contentClassName={styles.content}>
+      <div className={styles.inner}>
         {token ? (
           <NotificationSettings
             token={token}
@@ -26,16 +27,16 @@ export default async function NotificationsPage({
           />
         ) : (
           <>
-            <h1 className="text-xl md:text-2xl font-normal text-primary mb-4">
+            <h1 className={styles.title}>
               This link is missing something
             </h1>
-            <p className="text-secondary mb-8">
+            <p className={styles.message}>
               Open the link straight from one of my emails and it&rsquo;ll bring you here with
               your settings.
             </p>
             <Link
               href="/"
-              className="inline-block px-6 py-3 bg-accent text-white rounded hover:bg-accent-hover transition-colors"
+              className={styles.button}
             >
               Return to poems
             </Link>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button, Checkbox, Input, Modal, ModalBody, ModalHeader } from '@/components/mds';
+import styles from './SubscribeModal.module.css';
 
 interface SubscribeModalProps {
   isOpen: boolean;
@@ -62,16 +63,16 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
     >
       <ModalHeader>{isAdmin ? 'Add subscriber' : 'Subscribe to newsletter'}</ModalHeader>
       <ModalBody>
-      <p className="text-secondary mb-6">
+      <p className={styles.description}>
         {isAdmin ? 'Add a new subscriber manually.' : 'Get notified when new poetry is published.'}
       </p>
 
       {status === 'success' ? (
-        <div className="text-center py-4">
-          <div className="text-accent mb-4">
+        <div className={styles.successBox}>
+          <div className={styles.successIcon}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-12 w-12 mx-auto"
+              className={styles.checkIcon}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -84,13 +85,13 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
               />
             </svg>
           </div>
-          <p className="text-primary">{message}</p>
-          <Button variant="ghost" onClick={resetAndClose} className="mt-4">
+          <p className={styles.successMessage}>{message}</p>
+          <Button variant="ghost" onClick={resetAndClose} className={styles.closeButton}>
             Close
           </Button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className={styles.form}>
           <Input
             type="email"
             aria-label="Email address"
@@ -112,7 +113,7 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
             />
           )}
           {status === 'error' && (
-            <p id="modal-subscribe-error" className="text-red-600 text-sm" role="alert">{message}</p>
+            <p id="modal-subscribe-error" className={styles.errorText} role="alert">{message}</p>
           )}
           <Button type="submit" fullWidth loading={status === 'loading'}>
             {status === 'loading' ? (isAdmin ? 'Adding...' : 'Subscribing...') : (isAdmin ? 'Add Subscriber' : 'Subscribe')}

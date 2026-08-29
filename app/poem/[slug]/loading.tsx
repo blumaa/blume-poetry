@@ -1,8 +1,9 @@
 import { SkeletonPoem } from '@/components/Skeleton';
+import styles from './loading.module.css';
 
 export default function PoemLoading() {
   return (
-    <article className="py-8 md:py-12 px-4 md:px-8 max-w-2xl">
+    <article className={styles.article}>
       <SkeletonPoem />
     </article>
   );

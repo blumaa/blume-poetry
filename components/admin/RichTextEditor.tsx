@@ -5,6 +5,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import { useImperativeHandle, forwardRef } from 'react';
 import { contentToHtml } from '@/lib/poemHtml';
+import styles from './RichTextEditor.module.css';
 
 export interface RichTextEditorRef {
   getHTML: () => string;
@@ -42,10 +43,8 @@ function ToolbarButton({
       type="button"
       onClick={onClick}
       title={title}
-      className={`px-3 py-1.5 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 text-sm font-medium rounded transition-colors flex items-center justify-center ${
-        isActive
-          ? 'bg-accent text-white'
-          : 'bg-surface-secondary text-primary hover:bg-hover'
+      className={`${styles.toolbarButton} ${
+        isActive ? styles.toolbarButtonActive : styles.toolbarButtonInactive
       }`}
     >
       {children}
@@ -76,7 +75,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
       },
       editorProps: {
         attributes: {
-          class: `prose prose-lg max-w-none focus:outline-none whitespace-pre-wrap`,
+          class: styles.editorContent,
           style: `min-height: ${minHeight}`,
         },
       },
@@ -96,10 +95,10 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
     }));
 
     return (
-      <div className="flex flex-col">
+      <div className={styles.wrapper}>
         {/* Toolbar */}
         {showToolbar && editor && (
-          <div className="flex gap-1 pb-3 mb-3 border-b border-border">
+          <div className={styles.toolbar}>
             <ToolbarButton
               onClick={() => editor.chain().focus().toggleBold().run()}
               isActive={editor.isActive('bold')}
@@ -126,7 +125,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
 
         <EditorContent
           editor={editor}
-          className={`[&_.ProseMirror]:outline-none [&_.ProseMirror]:text-primary ${className}`}
+          className={`${styles.editorWrapper} ${className}`}
           style={{ minHeight }}
         />
       </div>

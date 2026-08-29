@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { AppBar, Button } from '@/components/mds';
 import { ThemeToggle } from './ThemeToggle';
 import { LoginButton } from './LoginButton';
+import styles from './MobileHeader.module.css';
 
 interface MobileHeaderProps {
   onMenuClick: () => void;
@@ -32,7 +33,7 @@ function MenuIcon() {
 export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
   return (
     <AppBar
-      className="md:hidden fixed top-0 left-0 right-0 z-40 w-full"
+      className={styles.appBar}
       /* No `title`: AppBar renders it as the page h1, which belongs to the
          poem. The site name is a plain home link in the leading slot. */
       leading={
@@ -48,7 +49,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
           </Button>
           <Link
             href="/"
-            className="text-base font-medium text-primary hover:text-secondary transition-colors truncate min-w-0"
+            className={styles.brandLink}
           >
             Blumenous Poetry
           </Link>
@@ -57,7 +58,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
       trailing={
         <>
           <ThemeToggle />
-          <LoginButton className="text-secondary" />
+          <LoginButton className={styles.iconButton} />
         </>
       }
     />

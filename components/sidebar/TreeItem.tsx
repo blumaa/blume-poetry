@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { SideNavItem } from '@/components/mds';
 import type { TreeNode } from '@/lib/poems';
+import styles from './TreeItem.module.css';
 
 function ChevronIcon({ expanded }: { expanded: boolean }) {
   return (
@@ -9,7 +10,7 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
       height="16"
       viewBox="0 0 16 16"
       fill="currentColor"
-      className={`transition-transform ${expanded ? 'rotate-90' : ''}`}
+      className={`${styles.chevron} ${expanded ? styles.chevronExpanded : ''}`}
     >
       <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" />
     </svg>
@@ -54,14 +55,14 @@ export function TreeItem({
     <div>
       <button
         onClick={() => toggleNode(node.id)}
-        className="w-full flex items-center gap-1 py-2 px-3 rounded text-sm text-secondary hover:bg-hover hover:text-primary transition-colors min-h-[44px]"
+        className={styles.folderButton}
         aria-expanded={isExpanded}
         aria-controls={hasChildren ? `tree-children-${node.id}` : undefined}
       >
         <ChevronIcon expanded={isExpanded} />
-        <span className="truncate">{node.label}</span>
+        <span className={styles.label}>{node.label}</span>
         {node.count !== undefined && (
-          <span className="ml-auto text-xs text-tertiary">{node.count}</span>
+          <span className={styles.count}>{node.count}</span>
         )}
       </button>
       {isExpanded && hasChildren && (

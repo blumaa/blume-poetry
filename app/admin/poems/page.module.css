@@ -1,0 +1,77 @@
+.header {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .header {
+    margin-bottom: 1.5rem;
+  }
+}
+
+.headerTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: 1.5rem;
+  }
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .searchInput {
+    max-width: 20rem;
+  }
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem 0;
+  color: var(--text-tertiary);
+}
+
+.emptyLink {
+  color: var(--accent);
+}
+
+.titleCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pinIcon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.poemLink {
+  color: var(--text-primary);
+  transition: color 0.15s ease;
+}
+
+.poemLink:hover {
+  color: var(--accent);
+}
+
+.rowActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}

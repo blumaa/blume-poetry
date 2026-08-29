@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import styles from './NotificationSettings.module.css';
 
 type Preference = { enabled: boolean; unsubscribed: boolean };
 
@@ -84,19 +85,19 @@ export function NotificationSettings({ token, initialAction }: NotificationSetti
   }, [initialAction, token]);
 
   if (state.kind === 'loading') {
-    return <p className="text-secondary">One moment…</p>;
+    return <p className={styles.message}>One moment…</p>;
   }
 
   if (state.kind === 'error') {
     return (
       <>
-        <h1 className="text-xl md:text-2xl font-normal text-primary mb-4">
+        <h1 className={styles.title}>
           This link has expired
         </h1>
-        <p className="text-secondary mb-8">{state.message}</p>
+        <p className={styles.description}>{state.message}</p>
         <Link
           href="/"
-          className="inline-block px-6 py-3 bg-accent text-white rounded hover:bg-accent-hover transition-colors min-h-[44px]"
+          className={styles.button}
         >
           Return to poems
         </Link>
@@ -106,37 +107,37 @@ export function NotificationSettings({ token, initialAction }: NotificationSetti
 
   return (
     <>
-      <h1 className="text-xl md:text-2xl font-normal text-primary mb-4">
+      <h1 className={styles.title}>
         {state.enabled
           ? 'You’ll get an email when a new poem is published'
           : 'You won’t get emails about new poems'}
       </h1>
 
       {state.unsubscribed && (
-        <p className="text-secondary mb-4">
+        <p className={styles.notice}>
           You&rsquo;ve unsubscribed from all emails, so nothing will be sent until you subscribe
           again.
         </p>
       )}
 
-      <p className="text-secondary mb-8">
+      <p className={styles.description}>
         {state.enabled
           ? 'Changed your mind? You can turn these off any time.'
           : 'You can turn them back on whenever you like.'}
       </p>
 
-      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+      <div className={styles.actions}>
         <button
           type="button"
           onClick={() => apply(state.enabled ? 'off' : 'on')}
           disabled={isSaving}
-          className="px-6 py-3 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 min-h-[44px]"
+          className={styles.button}
         >
           {state.enabled ? 'Turn off new-poem emails' : 'Turn on new-poem emails'}
         </button>
         <Link
           href="/"
-          className="px-6 py-3 border border-border text-primary rounded hover:border-accent transition-colors min-h-[44px] flex items-center justify-center"
+          className={styles.buttonOutline}
         >
           Return to poems
         </Link>

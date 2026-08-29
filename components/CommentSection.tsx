@@ -6,6 +6,7 @@ import { Button, ConfirmDialog, Field, Input, Modal, ModalBody, ModalHeader, Tex
 import { SkeletonComment } from '@/components/Skeleton';
 import { isAdminEmail } from '@/lib/config';
 import { getVisitorId } from '@/lib/visitorId';
+import styles from './CommentSection.module.css';
 
 interface Comment {
   id: string;
@@ -98,33 +99,33 @@ export function CommentSection({ slug, isModalOpen = false, onModalClose }: Comm
   return (
     <div>
       {isLoading ? (
-        <div className="mt-8 pt-8 border-t border-border">
+        <div className={styles.divider}>
           <SkeletonComment />
         </div>
       ) : error ? (
-        <div className="mt-8 pt-8 border-t border-border">
-          <p className="text-red-600">{error}</p>
+        <div className={styles.divider}>
+          <p className={styles.errorText}>{error}</p>
         </div>
       ) : comments.length > 0 ? (
-        <div className="mt-8 pt-8 border-t border-border space-y-6">
+        <div className={styles.commentsList}>
           {comments.map((comment) => (
-            <div key={comment.id} className="border-b border-border pb-6 last:border-b-0">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-primary">{comment.author_name}</span>
-                  <span className="text-tertiary text-sm">{formatDate(comment.created_at)}</span>
+            <div key={comment.id} className={styles.commentItem}>
+              <div className={styles.commentHeader}>
+                <div className={styles.commentMeta}>
+                  <span className={styles.author}>{comment.author_name}</span>
+                  <span className={styles.commentDate}>{formatDate(comment.created_at)}</span>
                 </div>
                 {isAdmin && (
                   <button
                     onClick={() => setDeleteTarget(comment)}
-                    className="text-sm text-red-600 hover:text-red-700"
+                    className={styles.deleteButton}
                     aria-label="Delete comment"
                   >
                     Delete
                   </button>
                 )}
               </div>
-              <p className="text-primary whitespace-pre-wrap">{comment.content}</p>
+              <p className={styles.commentContent}>{comment.content}</p>
             </div>
           ))}
         </div>
@@ -228,7 +229,7 @@ function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalPro
     <Modal open={isOpen} onClose={onClose} label="Add a Comment">
       <ModalHeader>Add a Comment</ModalHeader>
       <ModalBody>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className={styles.form}>
         <Field label="Name">
           <Input
             type="text"
@@ -264,7 +265,7 @@ function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalPro
           />
         </div>
 
-        <div className="flex gap-3 justify-end pt-2">
+        <div className={styles.formActions}>
           <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>

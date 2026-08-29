@@ -8,6 +8,7 @@ import { LikeButton } from './LikeButton';
 import { CommentSection, CommentIcon } from './CommentSection';
 import { PoemContent } from './PoemContent';
 import { formatDate } from '@/lib/date';
+import styles from './PoemDisplay.module.css';
 
 interface PoemDisplayProps {
   poem: Poem;
@@ -84,16 +85,16 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
   }, [handleKeyDown, handleTouchStart, handleTouchEnd]);
 
   return (
-    <article key={poem.slug} className="page-content max-w-poem mx-auto px-4 py-8 md:px-6 md:py-12 overflow-x-hidden">
+    <article key={poem.slug} className={`page-content ${styles.article}`}>
       {/* Navigation */}
       {showNavigation && (
-        <nav className="mb-8 pb-4 border-b border-border flex justify-between text-sm gap-4">
+        <nav className={styles.nav}>
           {nextPoem ? (
             <Link
               href={`/poem/${nextPoem.slug}`}
-              className="text-secondary hover:text-primary transition-colors min-h-[44px] flex items-center"
+              className={styles.navLink}
             >
-              <span className="text-tertiary mr-1">←</span>
+              <span className={styles.navArrowLeft}>←</span>
               <span>next poem</span>
             </Link>
           ) : (
@@ -102,10 +103,10 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
           {prevPoem ? (
             <Link
               href={`/poem/${prevPoem.slug}`}
-              className="text-secondary hover:text-primary transition-colors text-right min-h-[44px] flex items-center"
+              className={styles.navLinkRight}
             >
               <span>previous poem</span>
-              <span className="text-tertiary ml-1">→</span>
+              <span className={styles.navArrowRight}>→</span>
             </Link>
           ) : (
             <span />
@@ -114,16 +115,16 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
       )}
 
       {/* Title */}
-      <header className="mb-8">
-        <h1 className="text-2xl md:text-4xl font-normal text-primary leading-tight tracking-tight">
+      <header className={styles.header}>
+        <h1 className={styles.title}>
           {poem.title}
         </h1>
         {poem.subtitle && (
-          <p className="text-base md:text-lg text-secondary mt-1 italic">
+          <p className={styles.subtitle}>
             {poem.subtitle}
           </p>
         )}
-        <time className="text-sm text-tertiary mt-2 block">
+        <time className={styles.date}>
           {formatDate(poem.publishedAt)}
         </time>
       </header>
@@ -132,11 +133,11 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
       <PoemContent html={poem.content} />
 
       {/* Like & Comment Buttons */}
-      <div className="mt-8 flex items-center justify-between">
+      <div className={styles.actionsRow}>
         <LikeButton slug={poem.slug} />
         <button
           onClick={() => setIsCommentModalOpen(true)}
-          className="flex items-center gap-2 px-4 h-[44px] text-sm bg-accent text-white hover:bg-accent-hover rounded transition-colors"
+          className={styles.commentButton}
         >
           <CommentIcon />
           <span>add comment</span>

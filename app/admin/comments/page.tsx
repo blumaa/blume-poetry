@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button, ConfirmDialog, DataTable, useToast } from '@/components/mds';
 import type { Comment } from '@/lib/supabase/types';
+import styles from './page.module.css';
 
 type CommentWithPoem = Comment & {
   poems: { title: string; slug: string } | null;
@@ -55,14 +56,14 @@ export default function AdminCommentsPage() {
 
   return (
     <div>
-      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl text-primary">Comments</h1>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Comments</h1>
       </div>
 
       {isLoading ? (
-        <div className="text-tertiary">Loading comments...</div>
+        <div className={styles.loadingText}>Loading comments...</div>
       ) : comments.length === 0 ? (
-        <div className="text-center py-12 text-tertiary">
+        <div className={styles.emptyState}>
           No comments found.
         </div>
       ) : (
@@ -74,14 +75,14 @@ export default function AdminCommentsPage() {
                 key: 'author',
                 header: 'Author',
                 cell: (comment: CommentWithPoem) => (
-                  <span className="text-primary">{comment.author_name}</span>
+                  <span className={styles.authorCell}>{comment.author_name}</span>
                 ),
               },
               {
                 key: 'content',
                 header: 'Comment',
                 cell: (comment: CommentWithPoem) => (
-                  <span className="block max-w-md truncate">{comment.content}</span>
+                  <span className={styles.contentCell}>{comment.content}</span>
                 ),
               },
               {
@@ -91,12 +92,12 @@ export default function AdminCommentsPage() {
                   comment.poems ? (
                     <Link
                       href={`/poem/${comment.poems.slug}`}
-                      className="text-accent hover:underline"
+                      className={styles.poemLink}
                     >
                       {comment.poems.title}
                     </Link>
                   ) : (
-                    <span className="text-tertiary">Unknown poem</span>
+                    <span className={styles.unknownPoem}>Unknown poem</span>
                   ),
               },
               {
@@ -116,7 +117,7 @@ export default function AdminCommentsPage() {
               </Button>
             )}
           />
-          <div className="py-3 text-sm text-tertiary">
+          <div className={styles.footerCount}>
             {comments.length} comment{comments.length !== 1 ? 's' : ''}
           </div>
         </>

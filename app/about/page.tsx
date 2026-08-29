@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { PageShell } from '@/components/PageShell';
+import styles from './page.module.css';
 
 export const metadata: Metadata = {
   title: 'About | Blumenous Poetry',
@@ -12,15 +13,15 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <PageShell>
-      <article className="page-content max-w-2xl mx-auto px-4 py-8 md:px-6 md:py-12">
-        <header className="mb-8">
-          <h1 className="text-xl md:text-2xl font-normal text-primary leading-tight">
+      <article className={`page-content ${styles.article}`}>
+        <header className={styles.header}>
+          <h1 className={styles.title}>
             About
           </h1>
         </header>
 
-        <div className="poem-content text-primary text-base leading-relaxed">
-          <p className="italic mb-8">
+        <div className={`poem-content ${styles.body}`}>
+          <p className={styles.intro}>
             Blumenous Poetry, by Desmond Blume, is a collection of writings, sometimes dark,
             other times out there, usually influenced by the moon, never far from the truth,
             always full of farce.
@@ -29,7 +30,7 @@ export default function AboutPage() {
           <p>
             <a
               href="mailto:desmond.blume@gmail.com"
-              className="text-accent hover:underline"
+              className={styles.link}
             >
               desmond.blume@gmail.com
             </a>

@@ -7,6 +7,7 @@ import { SubscribeModal } from '@/components/SubscribeModal';
 import { Badge, Button, Checkbox, Chip, ChipGroup, ConfirmDialog, DataTable, useToast } from '@/components/mds';
 import type { Subscriber } from '@/lib/supabase/types';
 import { formatDate } from '@/lib/date';
+import styles from './page.module.css';
 
 export default function AdminSubscribersPage() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
@@ -116,9 +117,9 @@ export default function AdminSubscribersPage() {
   return (
     <div>
       {/* Header - stacks on mobile */}
-      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-2xl text-primary">Subscribers</h1>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <h1 className={styles.title}>Subscribers</h1>
           <Button
             iconOnly
             size="sm"
@@ -142,20 +143,20 @@ export default function AdminSubscribersPage() {
             </Chip>
           </ChipGroup>
         </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={handleExportCSV} className="flex-1 sm:flex-none">
+        <div className={styles.headerRight}>
+          <Button variant="secondary" size="sm" onClick={handleExportCSV} className={styles.headerButton}>
             Export CSV
           </Button>
-          <Button as={Link} href="/admin/subscribers/send" size="sm" className="flex-1 sm:flex-none">
+          <Button as={Link} href="/admin/subscribers/send" size="sm" className={styles.headerButton}>
             Send Newsletter
           </Button>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="text-tertiary">Loading subscribers...</div>
+        <div className={styles.loadingText}>Loading subscribers...</div>
       ) : subscribers.length === 0 ? (
-        <div className="text-center py-12 text-tertiary">
+        <div className={styles.emptyState}>
           No subscribers found.
         </div>
       ) : (
@@ -167,7 +168,7 @@ export default function AdminSubscribersPage() {
                 key: 'email',
                 header: 'Email',
                 cell: (subscriber: Subscriber) => (
-                  <span className="text-primary">{subscriber.email}</span>
+                  <span className={styles.emailCell}>{subscriber.email}</span>
                 ),
               },
               {
@@ -214,7 +215,7 @@ export default function AdminSubscribersPage() {
               </Button>
             )}
           />
-          <div className="py-3 text-sm text-tertiary">
+          <div className={styles.footerCount}>
             {subscribers.length} subscriber{subscribers.length !== 1 ? 's' : ''}
           </div>
         </>

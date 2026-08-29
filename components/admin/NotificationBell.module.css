@@ -1,0 +1,31 @@
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.bellWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.badge {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.popoverPanel {
+  width: 20rem;
+  max-height: 24rem;
+  overflow-y: auto;
+}

@@ -1,0 +1,10 @@
+.article {
+  padding: 2rem 1rem;
+  max-width: 42rem;
+}
+
+@media (min-width: 768px) {
+  .article {
+    padding: 3rem 2rem;
+  }
+}

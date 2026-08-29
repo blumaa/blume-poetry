@@ -4,6 +4,7 @@ import { ThemeToggle } from '../ThemeToggle';
 import { SubscribeButton } from '../SubscribeButton';
 import { InfoButton } from '../InfoButton';
 import { LoginButton } from '../LoginButton';
+import styles from './SidebarHeader.module.css';
 
 interface SidebarHeaderProps {
   variant: 'mobile' | 'desktop';
@@ -43,7 +44,7 @@ function CollapseIcon({ isCollapsed }: { isCollapsed: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={`transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
+      className={`${styles.collapseIcon} ${isCollapsed ? styles.collapseIconRotated : ''}`}
     >
       <path d="M11 17l-5-5 5-5" />
       <path d="M18 17l-5-5 5-5" />
@@ -59,20 +60,20 @@ export function SidebarHeader({
 }: SidebarHeaderProps) {
   if (variant === 'mobile') {
     return (
-      <div className="p-4 border-b border-border flex items-center justify-between">
+      <div className={styles.headerMobile}>
         <Link
           href="/"
           onClick={onClose}
-          className="text-lg font-medium text-primary hover:text-secondary transition-colors h-[44px] flex items-center"
+          className={styles.brandLinkMobile}
         >
           Blumenous Poetry
         </Link>
 
-        <div className="flex items-center">
-          <InfoButton className="text-secondary" />
-          <SubscribeButton className="text-secondary" />
+        <div className={styles.actionsMobile}>
+          <InfoButton className={styles.iconButton} />
+          <SubscribeButton className={styles.iconButton} />
           <ThemeToggle />
-          <LoginButton className="text-secondary" />
+          <LoginButton className={styles.iconButton} />
           <Button
             iconOnly
             variant="ghost"
@@ -87,26 +88,26 @@ export function SidebarHeader({
   }
 
   return (
-    <div className={`p-4 border-b border-border ${isCollapsed ? 'flex flex-col items-center gap-2' : ''}`}>
+    <div className={`${styles.headerDesktop} ${isCollapsed ? styles.headerDesktopCollapsed : ''}`}>
       {!isCollapsed && (
         <Link
           href="/"
-          className="block text-lg font-medium text-primary hover:text-secondary transition-colors truncate mb-3"
+          className={styles.brandLinkDesktop}
         >
           Blumenous Poetry
         </Link>
       )}
 
-      <div className={`flex items-center ${isCollapsed ? 'flex-col gap-2' : 'gap-1'}`}>
-        <InfoButton className="text-secondary" />
-        <SubscribeButton className="text-secondary" />
+      <div className={`${styles.actions} ${isCollapsed ? styles.actionsCollapsed : ''}`}>
+        <InfoButton className={styles.iconButton} />
+        <SubscribeButton className={styles.iconButton} />
         <ThemeToggle />
-        <LoginButton className="text-secondary" />
+        <LoginButton className={styles.iconButton} />
         <Button
           iconOnly
           variant="ghost"
           onClick={onToggleCollapse}
-          className={isCollapsed ? 'order-first' : ''}
+          className={isCollapsed ? styles.orderFirst : ''}
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           title={isCollapsed ? 'Expand' : 'Collapse'}
         >

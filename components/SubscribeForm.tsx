@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button, Checkbox, Input, useToast } from '@/components/mds';
+import styles from './SubscribeForm.module.css';
 
 interface SubscribeFormProps {
   compact?: boolean;
@@ -45,7 +46,7 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
 
   if (status === 'success') {
     return (
-      <div className={`text-secondary ${compact ? 'text-xs' : 'text-center'}`}>
+      <div className={`${styles.successMsg} ${compact ? styles.compactText : styles.centerText}`}>
         Thank you for subscribing!
       </div>
     );
@@ -53,7 +54,7 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
 
   if (compact) {
     return (
-      <form onSubmit={handleSubmit} className="flex gap-1">
+      <form onSubmit={handleSubmit} className={styles.compactForm}>
         <Input
           type="email"
           aria-label="Email address"
@@ -63,7 +64,7 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
           placeholder="your@email.com"
           required
           disabled={status === 'loading'}
-          className="flex-1 min-w-0"
+          className={styles.compactInput}
         />
         <Button type="submit" size="sm" loading={status === 'loading'}>
           Go
@@ -73,8 +74,8 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md mx-auto">
-      <div className="flex flex-col sm:flex-row gap-2">
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <div className={styles.row}>
         <Input
           type="email"
           aria-label="Email address"
@@ -83,14 +84,14 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
           placeholder="your@email.com"
           required
           disabled={status === 'loading'}
-          className="flex-1"
+          className={styles.input}
         />
         <Button type="submit" loading={status === 'loading'}>
           {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
         </Button>
       </div>
 
-      <div className="mt-3">
+      <div className={styles.checkboxRow}>
         <Checkbox
           label="Email me when a new poem is published"
           checked={notifyNewPoems}

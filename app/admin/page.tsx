@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button, Card, CardBody } from '@/components/mds';
 import { SkeletonCard } from '@/components/Skeleton';
+import styles from './page.module.css';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({ poems: 0, subscribers: 0, drafts: 0, comments: 0 });
@@ -42,41 +43,41 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-8">
-        <h1 className="text-2xl text-primary">Dashboard</h1>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Dashboard</h1>
         <Button as={Link} href="/admin/poems/new">
           New Poem
         </Button>
       </div>
 
       {isLoading ? (
-        <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-4 md:overflow-visible md:pb-0">
-          <div className="min-w-[140px] flex-shrink-0 md:min-w-0"><SkeletonCard /></div>
-          <div className="min-w-[140px] flex-shrink-0 md:min-w-0"><SkeletonCard /></div>
-          <div className="min-w-[140px] flex-shrink-0 md:min-w-0"><SkeletonCard /></div>
-          <div className="min-w-[140px] flex-shrink-0 md:min-w-0"><SkeletonCard /></div>
+        <div className={styles.statGrid}>
+          <div className={styles.statCardWrap}><SkeletonCard /></div>
+          <div className={styles.statCardWrap}><SkeletonCard /></div>
+          <div className={styles.statCardWrap}><SkeletonCard /></div>
+          <div className={styles.statCardWrap}><SkeletonCard /></div>
         </div>
       ) : (
-        <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-4 md:overflow-visible md:pb-0">
+        <div className={styles.statGrid}>
           {statCards.map((card) => (
             <Card
               key={card.label}
               as={Link}
               href={card.href}
-              className="min-w-[140px] flex-shrink-0 md:min-w-0"
+              className={styles.statCardWrap}
             >
               <CardBody>
-                <div className="text-3xl font-semibold mb-1 text-primary">{card.value}</div>
-                <div className="text-tertiary text-sm">{card.label}</div>
+                <div className={styles.statValue}>{card.value}</div>
+                <div className={styles.statLabel}>{card.label}</div>
               </CardBody>
             </Card>
           ))}
         </div>
       )}
 
-      <div className="mt-8">
-        <h2 className="text-lg mb-4 text-primary">Quick Actions</h2>
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+      <div className={styles.quickActions}>
+        <h2 className={styles.quickActionsTitle}>Quick Actions</h2>
+        <div className={styles.quickActionsRow}>
           <Button as={Link} href="/admin/poems/new" variant="secondary">
             Create New Poem
           </Button>

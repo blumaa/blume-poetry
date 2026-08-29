@@ -10,6 +10,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ToastProvider } from "@/components/mds";
 import { getSiteUrl } from "@/lib/config";
+import styles from "./layout.module.css";
 
 const sourceSans = Source_Sans_3({
   variable: "--font-inter",
@@ -71,10 +72,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased">
+      <body className={styles.body}>
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 md:focus:left-[calc(var(--sidebar-current-width)+1rem)] focus:z-50 focus:px-4 focus:py-2 focus:bg-surface focus:text-primary focus:border focus:border-border focus:rounded focus:shadow-lg focus:transition-[left] focus:duration-300"
+          className={`sr-only focus:not-sr-only ${styles.skipLink}`}
         >
           Skip to main content
         </a>

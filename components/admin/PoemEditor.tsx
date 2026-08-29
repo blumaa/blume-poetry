@@ -9,27 +9,28 @@ import { PoemContent } from '@/components/PoemContent';
 import { Button, Checkbox, ConfirmDialog, Field, Input, Radio, Tab, TabList, Tabs } from '@/components/mds';
 import { formatDate } from '@/lib/date';
 import type { Poem, NewPoem } from '@/lib/supabase/types';
+import styles from './PoemEditor.module.css';
 
 const RichTextEditor = dynamic(
   () => import('./RichTextEditor').then((m) => m.RichTextEditor),
-  { ssr: false, loading: () => <div className="min-h-[300px] bg-surface border border-border rounded animate-pulse" /> }
+  { ssr: false, loading: () => <div className={styles.previewSkeleton} /> }
 );
 
 // Preview component that matches PoemDisplay exactly
 function PoemPreview({ title, subtitle, html }: { title: string; subtitle: string; html: string }) {
   return (
-    <article className="max-w-poem mx-auto">
+    <article className={styles.previewArticle}>
       {/* Title */}
-      <header className="mb-8">
-        <h1 className="text-xl md:text-2xl font-normal text-primary leading-tight">
+      <header className={styles.previewHeader}>
+        <h1 className={styles.previewTitle}>
           {title || 'Untitled'}
         </h1>
         {subtitle && (
-          <p className="text-base md:text-lg text-secondary mt-1 italic">
+          <p className={styles.previewSubtitle}>
             {subtitle}
           </p>
         )}
-        <time className="text-sm text-tertiary mt-2 block">
+        <time className={styles.previewTime}>
           {formatDate(new Date())}
         </time>
       </header>
@@ -190,7 +191,7 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className={styles.form}>
       {/* Title */}
       <Field label="Title">
         <Input
@@ -211,11 +212,11 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
       </Field>
 
       {/* Status and Date Row */}
-      <div className="flex flex-col sm:flex-row gap-6">
+      <div className={styles.statusDateRow}>
         {/* Status */}
         <fieldset>
-          <legend className="block text-sm font-medium mb-2 text-primary">Status</legend>
-          <div className="flex gap-4">
+          <legend className={styles.statusLegend}>Status</legend>
+          <div className={styles.radioRow}>
             <Radio
               name="status"
               label="Draft"
@@ -232,7 +233,7 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
         </fieldset>
 
         {/* Published Date */}
-        <div className="flex-1">
+        <div className={styles.dateField}>
           <Field label="Published Date">
             <Input
               type="datetime-local"
@@ -251,7 +252,7 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
           label={
             <>
               Email subscribers about this poem
-              <span className="block text-sm text-tertiary">
+              <span className={styles.notifyHint}>
                 Goes to everyone with new-poem emails turned on. Only ever sent once per poem.
               </span>
             </>
@@ -272,12 +273,12 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
       </Tabs>
 
       {/* Content */}
-      <div className="bg-surface border border-border rounded-lg p-6">
+      <div className={styles.contentBox}>
         {isPreview ? (
           contentHtml ? (
             <PoemPreview title={title} subtitle={subtitle} html={contentHtml} />
           ) : (
-            <div className="text-tertiary text-center py-12">
+            <div className={styles.emptyContent}>
               No content yet...
             </div>
           )
@@ -287,18 +288,18 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
             content={contentHtml}
             onChange={handleEditorChange}
             minHeight="300px"
-            className="min-h-[300px]"
+            className={styles.editorMinHeight}
           />
         )}
       </div>
 
       {/* Error */}
       {error && (
-        <div className="text-red-600 text-sm">{error}</div>
+        <div className={styles.errorText}>{error}</div>
       )}
 
       {/* Actions */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+      <div className={styles.actionsRow}>
         <Button onClick={handleSaveClick} loading={isSaving}>
           {isNew ? 'Create Poem' : 'Save Changes'}
         </Button>

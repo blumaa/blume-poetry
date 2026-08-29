@@ -4,6 +4,7 @@ import { useEffect, useState, use } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { PoemEditor } from '@/components/admin/PoemEditor';
 import type { Poem } from '@/lib/supabase/types';
+import styles from './page.module.css';
 
 interface EditPoemPageProps {
   params: Promise<{ id: string }>;
@@ -37,20 +38,20 @@ export default function EditPoemPage({ params }: EditPoemPageProps) {
   }, [id]);
 
   if (isLoading) {
-    return <div className="text-tertiary">Loading poem...</div>;
+    return <div className={styles.stateMessage}>Loading poem...</div>;
   }
 
   if (error) {
-    return <div className="text-red-600">Error: {error}</div>;
+    return <div className={styles.errorText}>Error: {error}</div>;
   }
 
   if (!poem) {
-    return <div className="text-tertiary">Poem not found</div>;
+    return <div className={styles.stateMessage}>Poem not found</div>;
   }
 
   return (
     <div>
-      <h1 className="text-2xl mb-6 text-primary">Edit Poem</h1>
+      <h1 className={styles.title}>Edit Poem</h1>
       <PoemEditor poem={poem} />
     </div>
   );

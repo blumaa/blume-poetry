@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button, Popover, PopoverBody, PopoverHeader } from '@/components/mds';
 import { NotificationList, type Notification } from './NotificationList';
+import styles from './NotificationBell.module.css';
 
 const LAST_SEEN_KEY = 'admin_notifications_last_seen';
 
@@ -112,7 +113,7 @@ export function NotificationBell() {
 
   return (
     <>
-      <span className="relative inline-flex">
+      <span className={styles.bellWrap}>
         <Button
           ref={anchorRef}
           iconOnly
@@ -120,7 +121,7 @@ export function NotificationBell() {
           onClick={handleOpen}
           aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -130,7 +131,7 @@ export function NotificationBell() {
           </svg>
         </Button>
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center pointer-events-none">
+          <span className={styles.badge}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -142,7 +143,7 @@ export function NotificationBell() {
         anchorRef={anchorRef}
         label="Notifications"
         placement="bottom-end"
-        className="w-80 max-h-96 overflow-y-auto"
+        className={styles.popoverPanel}
       >
         <PopoverHeader onClose={() => setIsOpen(false)} closeLabel="Close notifications">
           Notifications

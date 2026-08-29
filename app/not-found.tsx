@@ -1,19 +1,20 @@
 import { PageShell } from '@/components/PageShell';
 import Link from 'next/link';
+import styles from './not-found.module.css';
 
 export default function NotFound() {
   return (
-    <PageShell contentClassName="flex items-center justify-center px-4 py-12">
-      <div className="text-center max-w-md">
-        <h1 className="text-xl md:text-2xl font-normal text-primary mb-4">
+    <PageShell contentClassName={styles.content}>
+      <div className={styles.inner}>
+        <h1 className={styles.title}>
           Page not found
         </h1>
-        <p className="text-secondary mb-8">
+        <p className={styles.message}>
           The poem you are looking for may have moved or does not exist.
         </p>
         <Link
           href="/"
-          className="inline-flex items-center px-6 py-3 bg-accent text-white rounded hover:bg-accent-hover transition-colors min-h-[44px]"
+          className={styles.button}
         >
           Return to latest poem
         </Link>

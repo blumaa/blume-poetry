@@ -8,6 +8,7 @@ import { Badge, Button, Chip, ChipGroup, ConfirmDialog, DataTable, Input, useToa
 import type { Poem } from '@/lib/supabase/types';
 import { SkeletonList } from '@/components/Skeleton';
 import { formatDate } from '@/lib/date';
+import styles from './page.module.css';
 
 export default function AdminPoemsPage() {
   const [poems, setPoems] = useState<Poem[]>([]);
@@ -117,14 +118,14 @@ export default function AdminPoemsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-4 md:mb-6 space-y-3">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl md:text-2xl text-primary">Poems</h1>
+      <div className={styles.header}>
+        <div className={styles.headerTop}>
+          <h1 className={styles.title}>Poems</h1>
           <Button as={Link} href="/admin/poems/new" size="sm">
             New Poem
           </Button>
         </div>
-        <div className="space-y-3">
+        <div className={styles.filters}>
           <ChipGroup>
             <Chip selected={!statusFilter} onClick={() => router.push('/admin/poems')}>
               All
@@ -151,7 +152,7 @@ export default function AdminPoemsPage() {
             onChange={(e) => setSearch(e.target.value)}
             onClear={() => setSearch('')}
             clearLabel="Clear search"
-            className="md:max-w-xs"
+            className={styles.searchInput}
           />
         </div>
       </div>
@@ -159,11 +160,11 @@ export default function AdminPoemsPage() {
       {isLoading ? (
         <SkeletonList count={8} />
       ) : poems.length === 0 ? (
-        <div className="text-center py-12 text-tertiary">
-          No poems found. <Link href="/admin/poems/new" className="text-accent">Create your first poem</Link>
+        <div className={styles.emptyState}>
+          No poems found. <Link href="/admin/poems/new" className={styles.emptyLink}>Create your first poem</Link>
         </div>
       ) : filteredPoems.length === 0 ? (
-        <div className="text-center py-12 text-tertiary">
+        <div className={styles.emptyState}>
           No poems matching &ldquo;{search}&rdquo;
         </div>
       ) : (
@@ -174,15 +175,15 @@ export default function AdminPoemsPage() {
               key: 'title',
               header: 'Title',
               cell: (poem: Poem) => (
-                <span className="flex items-center gap-2">
+                <span className={styles.titleCell}>
                   {poem.pinned && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-accent flex-shrink-0" aria-label="Pinned">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={styles.pinIcon} aria-label="Pinned">
                       <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
                     </svg>
                   )}
                   <Link
                     href={`/poem/${poem.slug}`}
-                    className="text-primary hover:text-accent transition-colors"
+                    className={styles.poemLink}
                     target="_blank"
                   >
                     {poem.title}
@@ -210,7 +211,7 @@ export default function AdminPoemsPage() {
           rowLabel={(poem) => poem.title}
           actionsHeader="Actions"
           rowActions={(poem) => (
-            <div className="flex gap-2 justify-end">
+            <div className={styles.rowActions}>
               <Button
                 variant="secondary"
                 size="sm"

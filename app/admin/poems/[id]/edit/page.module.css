@@ -1,0 +1,13 @@
+.stateMessage {
+  color: var(--text-tertiary);
+}
+
+.errorText {
+  color: var(--color-error);
+}
+
+.title {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+}

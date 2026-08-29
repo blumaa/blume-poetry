@@ -1,4 +1,5 @@
 import { Input } from '@/components/mds';
+import styles from './SidebarSearch.module.css';
 
 interface SidebarSearchProps {
   id: string;
@@ -8,7 +9,7 @@ interface SidebarSearchProps {
 
 export function SidebarSearch({ id, value, onChange }: SidebarSearchProps) {
   return (
-    <div className="p-3 border-b border-border">
+    <div className={styles.searchWrap}>
       <Input
         id={id}
         type="search"

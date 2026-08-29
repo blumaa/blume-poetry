@@ -1,0 +1,55 @@
+.article {
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 2rem 1rem;
+}
+
+@media (min-width: 768px) {
+  .article {
+    padding: 3rem 1.5rem;
+  }
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  line-height: 1.25;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: 1.5rem;
+  }
+}
+
+.body {
+  color: var(--text-primary);
+  line-height: 1.625;
+}
+
+/* space-y-4: gap between siblings; headings override with their own margin below */
+.body > * + * {
+  margin-top: 1rem;
+}
+
+.heading {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+}
+
+.link {
+  color: var(--accent);
+}
+
+.link:hover {
+  text-decoration: underline;
+}

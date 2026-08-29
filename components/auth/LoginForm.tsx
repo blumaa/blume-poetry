@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button, Field, Input, PasswordInput, useToast } from '@/components/mds';
+import styles from './LoginForm.module.css';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
@@ -40,7 +41,7 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-sm mx-auto">
+    <form onSubmit={handleSubmit} className={styles.form}>
       <Field label="Email" required>
         <Input
           type="email"
