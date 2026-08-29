@@ -96,8 +96,8 @@ export function SidebarHeader({
             <path d="M18 17l-5-5 5-5" />
           </svg>
         </button>
-        {isCollapsed && <ThemeToggle />}
         {isCollapsed && <LoginButton className="text-secondary" />}
+        {isCollapsed && <ThemeToggle />}
         {isCollapsed && <SubscribeButton className="text-secondary" />}
         {isCollapsed && <InfoButton className="text-secondary" />}
       </div>
