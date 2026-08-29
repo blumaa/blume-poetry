@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { ConfirmModal } from '@/components/ConfirmModal';
-import { useToast } from '@/components/Toast';
+import { ConfirmDialog, useToast } from '@/components/mds';
 import type { Comment } from '@/lib/supabase/types';
 
 type CommentWithPoem = Comment & {
@@ -15,8 +14,7 @@ export default function AdminCommentsPage() {
   const [comments, setComments] = useState<CommentWithPoem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<CommentWithPoem | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   const fetchComments = useCallback(async () => {
     const supabase = createClient();
@@ -41,24 +39,18 @@ export default function AdminCommentsPage() {
     setDeleteTarget(comment);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!deleteTarget) return;
-
-    setIsDeleting(true);
-    const res = await fetch(`/api/admin/comments/${deleteTarget.id}`, {
+  const handleDeleteConfirm = async (target: CommentWithPoem) => {
+    const res = await fetch(`/api/admin/comments/${target.id}`, {
       method: 'DELETE',
     });
 
-    if (res.ok) {
-      setComments((current) => current.filter((c) => c.id !== deleteTarget.id));
-      showToast('Comment deleted', 'success');
-      setDeleteTarget(null);
-      setIsDeleting(false);
-    } else {
+    if (!res.ok) {
       const body = await res.json().catch(() => ({ error: 'Failed to delete comment' }));
-      showToast(body.error || 'Failed to delete comment', 'error');
-      setIsDeleting(false);
+      throw new Error(body.error || 'Failed to delete comment');
     }
+
+    setComments((current) => current.filter((c) => c.id !== target.id));
+    toast({ title: 'Comment deleted', tone: 'success' });
   };
 
   return (
@@ -163,15 +155,15 @@ export default function AdminCommentsPage() {
       )}
 
       {/* Delete confirmation modal */}
-      <ConfirmModal
-        isOpen={!!deleteTarget}
+      <ConfirmDialog
+        target={deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
         title="Delete Comment"
-        message={`Are you sure you want to delete this comment by "${deleteTarget?.author_name}"? This action cannot be undone.`}
-        confirmText="Delete"
-        variant="danger"
-        isLoading={isDeleting}
+        description={`Are you sure you want to delete this comment by "${deleteTarget?.author_name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        tone="danger"
       />
     </div>
   );

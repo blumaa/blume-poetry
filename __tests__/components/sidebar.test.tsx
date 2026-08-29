@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { Sidebar } from '@/components/Sidebar';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { ToastProvider } from '@/components/Toast';
+import { ToastProvider } from '@/components/mds';
 import type { TreeNode } from '@/lib/poems';
 
 jest.mock('next/navigation', () => ({
@@ -30,7 +30,7 @@ const tree: TreeNode[] = [
 function renderSidebar(props: Partial<React.ComponentProps<typeof Sidebar>> = {}) {
   return render(
     <ThemeProvider>
-      <ToastProvider>
+      <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
         <Sidebar tree={tree} {...props} />
       </ToastProvider>
     </ThemeProvider>

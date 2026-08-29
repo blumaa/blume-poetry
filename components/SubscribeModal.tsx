@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Modal } from './Modal';
+import { Modal, ModalBody, ModalHeader } from '@/components/mds';
 
 interface SubscribeModalProps {
   isOpen: boolean;
@@ -55,8 +55,13 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={resetAndClose}>
-      <h2 className="sr-only">{isAdmin ? 'Add subscriber' : 'Subscribe to newsletter'}</h2>
+    <Modal
+      open={isOpen}
+      onClose={resetAndClose}
+      label={isAdmin ? 'Add subscriber' : 'Subscribe to newsletter'}
+    >
+      <ModalHeader>{isAdmin ? 'Add subscriber' : 'Subscribe to newsletter'}</ModalHeader>
+      <ModalBody>
       <p className="text-secondary mb-6">
         {isAdmin ? 'Add a new subscriber manually.' : 'Get notified when new poetry is published.'}
       </p>
@@ -130,6 +135,7 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
           </button>
         </form>
       )}
+      </ModalBody>
     </Modal>
   );
 }

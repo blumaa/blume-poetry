@@ -4,8 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { ConfirmModal } from '@/components/ConfirmModal';
-import { useToast } from '@/components/Toast';
+import { ConfirmDialog, useToast } from '@/components/mds';
 import type { Poem } from '@/lib/supabase/types';
 import { SkeletonList } from '@/components/Skeleton';
 import { formatDate } from '@/lib/date';
@@ -15,10 +14,9 @@ export default function AdminPoemsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Poem | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get('status');
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   const filteredPoems = poems
     .filter((poem) =>
@@ -38,12 +36,12 @@ export default function AdminPoemsPage() {
       sessionStorage.removeItem('toast');
       try {
         const { message, type } = JSON.parse(toastData);
-        showToast(message, type);
+        toast({ title: message, tone: type === 'error' ? 'danger' : 'success' });
       } catch {
         // Invalid toast data, ignore
       }
     }
-  }, [showToast]);
+  }, [toast]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -80,7 +78,7 @@ export default function AdminPoemsPage() {
       .eq('id', poem.id);
 
     if (pinError) {
-      showToast(pinError.message, 'error');
+      toast({ title: pinError.message, tone: 'danger' });
     } else {
       setPoems((current) =>
         current.map((p) => (p.id === poem.id ? { ...p, pinned: newPinned } : p))
@@ -90,7 +88,7 @@ export default function AdminPoemsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paths: [] }),
       });
-      showToast(newPinned ? `"${poem.title}" pinned` : `"${poem.title}" unpinned`, 'success');
+      toast({ title: newPinned ? `"${poem.title}" pinned` : `"${poem.title}" unpinned`, tone: 'success' });
     }
   };
 
@@ -98,27 +96,21 @@ export default function AdminPoemsPage() {
     setDeleteTarget(poem);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!deleteTarget) return;
-
-    setIsDeleting(true);
+  const handleDeleteConfirm = async (target: Poem) => {
     const supabase = createClient();
-    const { error: deleteError } = await supabase.from('poems').delete().eq('id', deleteTarget.id);
+    const { error: deleteError } = await supabase.from('poems').delete().eq('id', target.id);
 
     if (deleteError) {
-      showToast(deleteError.message, 'error');
-      setIsDeleting(false);
-    } else {
-      setPoems((currentPoems) => currentPoems.filter((p) => p.id !== deleteTarget.id));
-      await fetch('/api/admin/revalidate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paths: [`/poem/${deleteTarget.slug}`] }),
-      });
-      showToast(`"${deleteTarget.title}" deleted`, 'success');
-      setDeleteTarget(null);
-      setIsDeleting(false);
+      throw new Error(deleteError.message);
     }
+
+    setPoems((currentPoems) => currentPoems.filter((p) => p.id !== target.id));
+    await fetch('/api/admin/revalidate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paths: [`/poem/${target.slug}`] }),
+    });
+    toast({ title: `"${target.title}" deleted`, tone: 'success' });
   };
 
   return (
@@ -327,15 +319,15 @@ export default function AdminPoemsPage() {
       )}
 
       {/* Delete confirmation modal */}
-      <ConfirmModal
-        isOpen={!!deleteTarget}
+      <ConfirmDialog
+        target={deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
         title="Delete Poem"
-        message={`Are you sure you want to delete "${deleteTarget?.title}"? This action cannot be undone.`}
-        confirmText="Delete"
-        variant="danger"
-        isLoading={isDeleting}
+        description={`Are you sure you want to delete "${deleteTarget?.title}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        tone="danger"
       />
     </div>
   );

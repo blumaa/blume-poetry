@@ -1,6 +1,7 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AdminCommentsPage from '@/app/admin/comments/page';
+import { ToastProvider } from '@/components/mds';
 
 const mockOrder = jest.fn();
 const mockSelect = jest.fn(() => ({ order: mockOrder }));
@@ -12,28 +13,18 @@ jest.mock('@/lib/supabase/client', () => ({
   }),
 }));
 
-const mockShowToast = jest.fn();
-jest.mock('@/components/Toast', () => ({
-  useToast: () => ({ showToast: mockShowToast }),
-}));
+function renderPage() {
+  return render(
+    <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
+      <AdminCommentsPage />
+    </ToastProvider>
+  );
+}
 
-jest.mock('@/components/ConfirmModal', () => ({
-  ConfirmModal: ({
-    isOpen,
-    onConfirm,
-    title,
-  }: {
-    isOpen: boolean;
-    onConfirm: () => void;
-    title: string;
-  }) =>
-    isOpen ? (
-      <div>
-        <p>{title}</p>
-        <button onClick={onConfirm}>Confirm Delete</button>
-      </div>
-    ) : null,
-}));
+async function confirmInDialog(user: ReturnType<typeof userEvent.setup>) {
+  const dialog = await screen.findByRole('alertdialog');
+  await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
+}
 
 const comments = [
   {
@@ -64,7 +55,7 @@ describe('AdminCommentsPage', () => {
   });
 
   it('renders both comments with author and content visible', async () => {
-    render(<AdminCommentsPage />);
+    renderPage();
 
     expect((await screen.findAllByText('Alice')).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Lovely poem').length).toBeGreaterThan(0);
@@ -79,12 +70,12 @@ describe('AdminCommentsPage', () => {
     });
     const user = userEvent.setup();
 
-    render(<AdminCommentsPage />);
+    renderPage();
     await screen.findAllByText('Alice');
 
     const deleteButtons = screen.getAllByRole('button', { name: 'Delete' });
     await user.click(deleteButtons[0]);
-    await user.click(screen.getByText('Confirm Delete'));
+    await confirmInDialog(user);
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith('/api/admin/comments/c1', {
@@ -100,12 +91,12 @@ describe('AdminCommentsPage', () => {
     });
     const user = userEvent.setup();
 
-    render(<AdminCommentsPage />);
+    renderPage();
     await screen.findAllByText('Alice');
 
     const deleteButtons = screen.getAllByRole('button', { name: 'Delete' });
     await user.click(deleteButtons[0]);
-    await user.click(screen.getByText('Confirm Delete'));
+    await confirmInDialog(user);
 
     await waitFor(() => {
       expect(screen.queryByText('Alice')).not.toBeInTheDocument();

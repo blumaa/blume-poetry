@@ -1,10 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useToast } from '@/components/Toast';
 import { createClient } from '@/lib/supabase/client';
-import { ConfirmModal } from '@/components/ConfirmModal';
-import { Modal } from '@/components/Modal';
+import { ConfirmDialog, Modal, ModalBody, ModalHeader, useToast } from '@/components/mds';
 import { SkeletonComment } from '@/components/Skeleton';
 import { isAdminEmail } from '@/lib/config';
 import { getVisitorId } from '@/lib/visitorId';
@@ -55,8 +53,7 @@ export function CommentSection({ slug, isModalOpen = false, onModalClose }: Comm
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Comment | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   useEffect(() => {
     const supabase = createClient();
@@ -84,29 +81,18 @@ export function CommentSection({ slug, isModalOpen = false, onModalClose }: Comm
     onModalClose?.();
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!deleteTarget) return;
+  const handleDeleteConfirm = async (target: Comment) => {
+    const res = await fetch(`/api/admin/comments/${target.id}`, {
+      method: 'DELETE',
+    });
 
-    setIsDeleting(true);
-    try {
-      const res = await fetch(`/api/admin/comments/${deleteTarget.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        showToast(data.error || 'Failed to delete comment', 'error');
-        return;
-      }
-
-      setComments((prev) => prev.filter((c) => c.id !== deleteTarget.id));
-      showToast('Comment deleted', 'success');
-      setDeleteTarget(null);
-    } catch {
-      showToast('Failed to delete comment', 'error');
-    } finally {
-      setIsDeleting(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: 'Failed to delete comment' }));
+      throw new Error(data.error || 'Failed to delete comment');
     }
+
+    setComments((prev) => prev.filter((c) => c.id !== target.id));
+    toast({ title: 'Comment deleted', tone: 'success' });
   };
 
   return (
@@ -151,15 +137,15 @@ export function CommentSection({ slug, isModalOpen = false, onModalClose }: Comm
         onCommentAdded={handleNewComment}
       />
 
-      <ConfirmModal
-        isOpen={!!deleteTarget}
+      <ConfirmDialog
+        target={deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
         title="Delete Comment"
-        message={`Are you sure you want to delete this comment by "${deleteTarget?.author_name}"?`}
-        confirmText="Delete"
-        variant="danger"
-        isLoading={isDeleting}
+        description={`Are you sure you want to delete this comment by "${deleteTarget?.author_name}"?`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        tone="danger"
       />
     </div>
   );
@@ -178,7 +164,7 @@ function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalPro
   const [honeypot, setHoneypot] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const formLoadTime = useRef(Date.now());
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   useEffect(() => {
     const savedName = localStorage.getItem('comment_name');
@@ -197,7 +183,7 @@ function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalPro
     e.preventDefault();
 
     if (!name.trim() || !content.trim()) {
-      showToast('Please fill in both name and comment', 'error');
+      toast({ title: 'Please fill in both name and comment', tone: 'danger' });
       return;
     }
 
@@ -222,24 +208,26 @@ function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalPro
       const data = await res.json();
 
       if (!res.ok) {
-        showToast(data.error || 'Failed to post comment', 'error');
+        toast({ title: data.error || 'Failed to post comment', tone: 'danger' });
         return;
       }
 
       if (data.comment) {
         onCommentAdded(data.comment);
         setContent('');
-        showToast('Comment posted!', 'success');
+        toast({ title: 'Comment posted!', tone: 'success' });
       }
     } catch {
-      showToast('Failed to post comment. Please try again.', 'error');
+      toast({ title: 'Failed to post comment. Please try again.', tone: 'danger' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add a Comment">
+    <Modal open={isOpen} onClose={onClose} label="Add a Comment">
+      <ModalHeader>Add a Comment</ModalHeader>
+      <ModalBody>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="comment-name" className="block text-sm font-medium mb-1 text-primary">
@@ -303,6 +291,7 @@ function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalPro
           </button>
         </div>
       </form>
+      </ModalBody>
     </Modal>
   );
 }

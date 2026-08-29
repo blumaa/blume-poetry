@@ -3,9 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { ConfirmModal } from '@/components/ConfirmModal';
 import { SubscribeModal } from '@/components/SubscribeModal';
-import { useToast } from '@/components/Toast';
+import { ConfirmDialog, useToast } from '@/components/mds';
 import type { Subscriber } from '@/lib/supabase/types';
 import { formatDate } from '@/lib/date';
 
@@ -14,10 +13,9 @@ export default function AdminSubscribersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'active' | 'unsubscribed'>('active');
   const [deleteTarget, setDeleteTarget] = useState<Subscriber | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [savingNotifyId, setSavingNotifyId] = useState<string | null>(null);
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   const fetchSubscribers = useCallback(async () => {
     const supabase = createClient();
@@ -48,22 +46,16 @@ export default function AdminSubscribersPage() {
     setDeleteTarget(subscriber);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!deleteTarget) return;
-
-    setIsDeleting(true);
+  const handleDeleteConfirm = async (target: Subscriber) => {
     const supabase = createClient();
-    const { error: deleteError } = await supabase.from('subscribers').delete().eq('id', deleteTarget.id);
+    const { error: deleteError } = await supabase.from('subscribers').delete().eq('id', target.id);
 
     if (deleteError) {
-      showToast(deleteError.message, 'error');
-      setIsDeleting(false);
-    } else {
-      setSubscribers((current) => current.filter((s) => s.id !== deleteTarget.id));
-      showToast(`"${deleteTarget.email}" deleted`, 'success');
-      setDeleteTarget(null);
-      setIsDeleting(false);
+      throw new Error(deleteError.message);
     }
+
+    setSubscribers((current) => current.filter((s) => s.id !== target.id));
+    toast({ title: `"${target.email}" deleted`, tone: 'success' });
   };
 
   /**
@@ -83,19 +75,19 @@ export default function AdminSubscribersPage() {
     setSavingNotifyId(null);
 
     if (error) {
-      showToast(error.message, 'error');
+      toast({ title: error.message, tone: 'danger' });
       return;
     }
 
     setSubscribers((current) =>
       current.map((s) => (s.id === subscriber.id ? { ...s, notify_new_poems: next } : s))
     );
-    showToast(
-      next
+    toast({
+      title: next
         ? `"${subscriber.email}" will get new-poem emails`
         : `"${subscriber.email}" will not get new-poem emails`,
-      'success'
-    );
+      tone: 'success',
+    });
   };
 
   const handleExportCSV = () => {
@@ -113,12 +105,12 @@ export default function AdminSubscribersPage() {
     a.download = `subscribers-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast(`Exported ${subscribers.length} subscribers`, 'success');
+    toast({ title: `Exported ${subscribers.length} subscribers`, tone: 'success' });
   };
 
   const handleAddSuccess = () => {
     fetchSubscribers();
-    showToast('Subscriber added', 'success');
+    toast({ title: 'Subscriber added', tone: 'success' });
   };
 
   return (
@@ -302,15 +294,15 @@ export default function AdminSubscribersPage() {
       )}
 
       {/* Delete confirmation modal */}
-      <ConfirmModal
-        isOpen={!!deleteTarget}
+      <ConfirmDialog
+        target={deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
         title="Delete Subscriber"
-        message={`Are you sure you want to delete "${deleteTarget?.email}"? This action cannot be undone.`}
-        confirmText="Delete"
-        variant="danger"
-        isLoading={isDeleting}
+        description={`Are you sure you want to delete "${deleteTarget?.email}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        tone="danger"
       />
 
       {/* Add subscriber modal */}

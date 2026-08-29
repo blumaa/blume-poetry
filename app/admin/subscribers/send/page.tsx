@@ -4,9 +4,9 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { RichTextEditor, RichTextEditorRef } from '@/components/admin/RichTextEditor';
-import { ConfirmModal } from '@/components/ConfirmModal';
+import { ConfirmDialog } from '@/components/mds';
 import { PoemContent } from '@/components/PoemContent';
-import { useToast } from '@/components/Toast';
+import { useToast } from '@/components/mds';
 import { sanitizeNewsletterHtml } from '@/lib/sanitize';
 import { contentToHtml } from '@/lib/poemHtml';
 import type { Poem } from '@/lib/supabase/types';
@@ -25,7 +25,7 @@ export default function SendNewsletterPage() {
   const [mobileTab, setMobileTab] = useState<'compose' | 'preview'>('compose');
   const router = useRouter();
   const editorRef = useRef<RichTextEditorRef>(null);
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   useEffect(() => {
     const supabase = createClient();
@@ -61,15 +61,15 @@ export default function SendNewsletterPage() {
 
   const handleSendTest = async () => {
     if (!subject.trim()) {
-      showToast('Please enter a subject', 'error');
+      toast({ title: 'Please enter a subject', tone: 'danger' });
       return;
     }
     if (!bodyText.trim()) {
-      showToast('Please enter body content', 'error');
+      toast({ title: 'Please enter body content', tone: 'danger' });
       return;
     }
     if (!testEmail) {
-      showToast('Please enter a test email', 'error');
+      toast({ title: 'Please enter a test email', tone: 'danger' });
       return;
     }
 
@@ -91,12 +91,12 @@ export default function SendNewsletterPage() {
       const data = await response.json();
 
       if (response.ok) {
-        showToast('Test email sent', 'success');
+        toast({ title: 'Test email sent', tone: 'success' });
       } else {
-        showToast(data.error || 'Failed to send test email', 'error');
+        toast({ title: data.error || 'Failed to send test email', tone: 'danger' });
       }
     } catch {
-      showToast('An unexpected error occurred', 'error');
+      toast({ title: 'An unexpected error occurred', tone: 'danger' });
     } finally {
       setIsSending(false);
     }
@@ -104,11 +104,11 @@ export default function SendNewsletterPage() {
 
   const handleSendAllClick = () => {
     if (!subject.trim()) {
-      showToast('Please enter a subject', 'error');
+      toast({ title: 'Please enter a subject', tone: 'danger' });
       return;
     }
     if (!bodyText.trim()) {
-      showToast('Please enter body content', 'error');
+      toast({ title: 'Please enter body content', tone: 'danger' });
       return;
     }
     setShowSendConfirm(true);
@@ -133,12 +133,12 @@ export default function SendNewsletterPage() {
       const data = await response.json();
 
       if (response.ok) {
-        showToast(data.message, 'success');
+        toast({ title: data.message, tone: 'success' });
       } else {
-        showToast(data.error || 'Failed to send emails', 'error');
+        toast({ title: data.error || 'Failed to send emails', tone: 'danger' });
       }
     } catch {
-      showToast('An unexpected error occurred', 'error');
+      toast({ title: 'An unexpected error occurred', tone: 'danger' });
     } finally {
       setIsSending(false);
     }
@@ -334,15 +334,15 @@ export default function SendNewsletterPage() {
       </div>
 
       {/* Send confirmation modal */}
-      <ConfirmModal
-        isOpen={showSendConfirm}
+      <ConfirmDialog
+        open={showSendConfirm}
         onClose={() => setShowSendConfirm(false)}
         onConfirm={handleSendAllConfirm}
         title="Send Newsletter"
-        message={`Are you sure you want to send this newsletter to ${subscriberCount} subscriber${subscriberCount !== 1 ? 's' : ''}? This action cannot be undone.`}
-        confirmText="Send Newsletter"
-        variant="warning"
-        isLoading={isSending}
+        description={`Are you sure you want to send this newsletter to ${subscriberCount} subscriber${subscriberCount !== 1 ? 's' : ''}? This action cannot be undone.`}
+        confirmLabel="Send Newsletter"
+        cancelLabel="Cancel"
+        tone="warning"
       />
     </div>
   );

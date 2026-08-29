@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import type { RichTextEditorRef } from './RichTextEditor';
 import { PoemContent } from '@/components/PoemContent';
-import { ConfirmModal } from '@/components/ConfirmModal';
+import { ConfirmDialog } from '@/components/mds';
 import { formatDate } from '@/lib/date';
 import type { Poem, NewPoem } from '@/lib/supabase/types';
 
@@ -346,18 +346,15 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
         </button>
       </div>
 
-      <ConfirmModal
-        isOpen={showNotifyConfirm}
+      <ConfirmDialog
+        open={showNotifyConfirm}
         onClose={() => setShowNotifyConfirm(false)}
-        onConfirm={() => {
-          setShowNotifyConfirm(false);
-          handleSave();
-        }}
+        onConfirm={() => handleSave()}
         title="Email subscribers?"
-        message={`Saving will publish "${title.trim() || 'this poem'}" and email every subscriber who has new-poem emails turned on. Email can't be recalled.`}
-        confirmText="Save and send"
-        variant="warning"
-        isLoading={isSaving}
+        description={`Saving will publish "${title.trim() || 'this poem'}" and email every subscriber who has new-poem emails turned on. Email can't be recalled.`}
+        confirmLabel="Save and send"
+        cancelLabel="Cancel"
+        tone="warning"
       />
     </div>
   );

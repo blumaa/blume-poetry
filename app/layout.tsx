@@ -8,7 +8,7 @@ import "./tokens/brand-blume.css";
 import "@mond-design-system/react/styles.css";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { ToastProvider } from "@/components/Toast";
+import { ToastProvider } from "@/components/mds";
 import { getSiteUrl } from "@/lib/config";
 
 const sourceSans = Source_Sans_3({
@@ -79,7 +79,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <ThemeProvider>
-          <ToastProvider>
+          <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
             {children}
           </ToastProvider>
         </ThemeProvider>

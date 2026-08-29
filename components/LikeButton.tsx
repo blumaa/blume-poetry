@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Skeleton } from '@/components/Skeleton';
+import { Skeleton } from '@/components/mds';
 import { getVisitorId } from '@/lib/visitorId';
 
 interface LikeButtonProps {
@@ -63,7 +63,7 @@ export function LikeButton({ slug }: LikeButtonProps) {
   };
 
   if (isLoading) {
-    return <Skeleton className="h-[44px] w-20 rounded" />;
+    return <Skeleton variant="rect" width="5rem" height="44px" />;
   }
 
   return (

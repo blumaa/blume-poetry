@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useToast } from '@/components/Toast';
+import { useToast } from '@/components/mds';
 
 interface SubscribeFormProps {
   compact?: boolean;
@@ -14,7 +14,7 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
   // preference is one click away from any email they get.
   const [notifyNewPoems, setNotifyNewPoems] = useState(true);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,15 +31,15 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
 
       if (response.ok) {
         setStatus('success');
-        showToast('Thank you for subscribing!', 'success');
+        toast({ title: 'Thank you for subscribing!', tone: 'success' });
         setEmail('');
       } else {
         setStatus('idle');
-        showToast(data.error || 'Failed to subscribe', 'error');
+        toast({ title: data.error || 'Failed to subscribe', tone: 'danger' });
       }
     } catch {
       setStatus('idle');
-      showToast('An unexpected error occurred', 'error');
+      toast({ title: 'An unexpected error occurred', tone: 'danger' });
     }
   };
 
