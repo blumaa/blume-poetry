@@ -1,11 +1,23 @@
+import type { Metadata } from 'next';
 import { LoginForm } from '@/components/auth/LoginForm';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Login | Blumenous Poetry',
 };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect('/admin');
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
