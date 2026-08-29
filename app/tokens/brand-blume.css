@@ -1,0 +1,184 @@
+/* Blumenous Poetry brand, as the Mond Design System reads it.
+   Loads AFTER @mond-design-system/tokens/styles.css, so every re-point wins.
+
+   Palette is the site's existing newsprint theme (globals.css): white page,
+   zinc neutrals, eggplant accent. Light block re-declares every semantic
+   token — a missing alias silently falls through to the mond default. Dark
+   block re-points only what flips.
+
+   Status colors deviate from the raw feedback colors in globals.css where
+   those fail WCAG AA as fills under white text (amber/green were 2–3:1);
+   AA-safe rungs of the same hues are used instead. */
+:root {
+  color-scheme: light;
+
+  /* fonts — one family everywhere, same as --font-sans in globals.css */
+  --mds-font-display: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --mds-font-body: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --mds-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* text */
+  --mds-text-primary: #09090b;
+  --mds-text-secondary: #27272a;
+  --mds-text-muted: #52525b;
+  --mds-text-inverse: #fafafa;
+  --mds-text-accent: var(--mds-accent);
+  --mds-text-on-media: #ffffff;
+
+  /* surfaces */
+  --mds-surface-page: #ffffff;
+  --mds-surface-card: #f8f8f8;
+  --mds-surface-raised: #ffffff;
+  --mds-surface-sunken: #f0f0f1;
+  --mds-surface-inverse: #09090b;
+  --mds-surface-media: #141414;
+  --mds-surface-selected: #ece2e8;
+
+  /* borders + controls */
+  --mds-border-subtle: #e4e4e7;
+  --mds-border-strong: #d4d4d8;
+  --mds-control-border: #6e6e73;
+  --mds-button-border: var(--mds-control-border);
+  --mds-button-secondary-fg: var(--mds-text-primary);
+  --mds-control-knob: #ffffff;
+
+  /* action — primary fill is the eggplant accent, as the site's buttons are */
+  --mds-action-bg: #614051;
+  --mds-action-fg: #ffffff;
+  --mds-action-bg-hover: #4a3040;
+  --mds-action-bg-active: #3a2632;
+  --mds-action-disabled-bg: #d9d9d6;
+  --mds-action-disabled-fg: #6e6e73;
+
+  /* accent — eggplant */
+  --mds-accent: #614051;
+  --mds-accent-contrast: #ffffff;
+  --mds-accent-hover: #4a3040;
+  --mds-accent-soft: #ece2e8;
+
+  /* highlight — one-accent brand, aliases stay */
+  --mds-highlight: var(--mds-accent);
+  --mds-highlight-contrast: var(--mds-accent-contrast);
+  --mds-highlight-hover: var(--mds-accent-hover);
+  --mds-highlight-soft: var(--mds-accent-soft);
+
+  /* avatar identity tints */
+  --mds-avatar-tone-1: #dbe7db;
+  --mds-avatar-tone-2: #dee7fa;
+  --mds-avatar-tone-3: #f2e4d7;
+  --mds-avatar-tone-4: #e8e3d1;
+  --mds-avatar-tone-5: #ece2e8;
+
+  /* status */
+  --mds-status-danger: #dc2626;
+  --mds-status-danger-contrast: #ffffff;
+  --mds-status-danger-soft: #fbe4e4;
+  --mds-status-warning: #b45309;
+  --mds-status-warning-contrast: #ffffff;
+  --mds-status-warning-soft: #f8ecd9;
+  --mds-status-success: #15803d;
+  --mds-status-success-contrast: #ffffff;
+  --mds-status-success-soft: #ddefe2;
+
+  /* focus */
+  --mds-focus-ring-color: #614051;
+
+  /* overlays — fixed backdrops, most do not flip with theme */
+  --mds-scrim: rgb(0 0 0 / 0.5);
+  --mds-scrim-strong: rgb(0 0 0 / 0.7);
+  --mds-overlay: rgb(15 15 15 / 0.45);
+  --mds-on-media-dim: rgb(255 255 255 / 0.55);
+  --mds-on-media-border: rgb(255 255 255 / 0.55);
+  --mds-on-media-focus-ring: #cbb2c0;
+  --mds-on-media-surface-hover: rgb(255 255 255 / 0.16);
+  --mds-on-media-surface-active: rgb(255 255 255 / 0.28);
+
+  /* shadow tint */
+  --mds-shadow-rgb: 20 20 20;
+
+  /* geometry — mond defaults; the site's rounded-lg reads as radius rungs */
+  --mds-radius-card: var(--mds-radius-6);
+  --mds-radius-control: var(--mds-radius-4);
+  --mds-radius-media: var(--mds-radius-5);
+  --mds-radius-sheet: var(--mds-radius-7);
+  --mds-radius-tag: var(--mds-radius-2);
+
+  --mds-pad-page-y: var(--mds-space-4);
+  --mds-gap-tight: var(--mds-space-2);
+  --mds-stack-section: var(--mds-space-8);
+
+  --mds-control-h-sm: 32px;
+  --mds-control-h-md: 38px;
+  --mds-control-h-lg: 46px;
+  --mds-icon-sm: 16px;
+  --mds-icon-md: 20px;
+  --mds-icon-lg: 24px;
+  --mds-icon-btn-size: 38px;
+  --mds-check-size: 22px;
+  --mds-switch-w: 44px;
+  --mds-switch-h: 26px;
+  --mds-switch-knob: 20px;
+
+  --mds-avatar-sm: 30px;
+  --mds-avatar-md: 38px;
+  --mds-avatar-lg: 46px;
+  --mds-tabbar-h: 66px;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --mds-text-primary: #e4e4e7;
+  --mds-text-secondary: #a1a1aa;
+  --mds-text-muted: #8b8b93;
+  --mds-text-inverse: #121212;
+
+  --mds-surface-page: #121212;
+  --mds-surface-card: #1e1e1e;
+  --mds-surface-raised: #262626;
+  --mds-surface-sunken: #0e0e0e;
+  --mds-surface-inverse: #e4e4e7;
+  --mds-surface-selected: #3a2d35;
+
+  --mds-border-subtle: #3f3f46;
+  --mds-border-strong: #52525b;
+  --mds-control-border: #8a8a8a;
+  --mds-button-border: var(--mds-control-border);
+  --mds-button-secondary-fg: var(--mds-text-primary);
+
+  --mds-action-bg: #8b5a6b;
+  --mds-action-fg: #ffffff;
+  --mds-action-bg-hover: #9c6b7c;
+  --mds-action-bg-active: #7a4d5c;
+  --mds-action-disabled-bg: #3a3a3a;
+  --mds-action-disabled-fg: #969692;
+
+  /* accent lifts on dark surfaces so contrast holds */
+  --mds-accent: #b58fa2;
+  --mds-accent-contrast: #2e1e27;
+  --mds-accent-hover: #c6a5b5;
+  --mds-accent-soft: #3a2d35;
+
+  --mds-avatar-tone-1: #263226;
+  --mds-avatar-tone-2: #26334d;
+  --mds-avatar-tone-3: #3d2f24;
+  --mds-avatar-tone-4: #38331f;
+  --mds-avatar-tone-5: #3a2d35;
+
+  --mds-status-danger: #f28b82;
+  --mds-status-danger-contrast: #401110;
+  --mds-status-danger-soft: #3c2422;
+  --mds-status-warning: #f5c542;
+  --mds-status-warning-contrast: #402d00;
+  --mds-status-warning-soft: #3b3020;
+  --mds-status-success: #7fd99a;
+  --mds-status-success-contrast: #0b3a1e;
+  --mds-status-success-soft: #223b2b;
+
+  --mds-focus-ring-color: #b58fa2;
+
+  --mds-scrim: rgb(0 0 0 / 0.6);
+  --mds-overlay: rgb(0 0 0 / 0.55);
+
+  --mds-shadow-rgb: 0 0 0;
+}
