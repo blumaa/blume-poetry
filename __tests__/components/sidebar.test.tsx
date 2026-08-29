@@ -56,7 +56,7 @@ describe('Sidebar', () => {
     const activeLinks = screen.getAllByRole('link', { name: 'Poem B' });
     expect(activeLinks.length).toBeGreaterThan(0);
     activeLinks.forEach((link) => {
-      expect(link.className).toMatch(/bg-active/);
+      expect(link).toHaveAttribute('aria-current', 'page');
     });
   });
 

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SideNavItem } from '@/components/mds';
 import type { TreeNode } from '@/lib/poems';
 
 function ChevronIcon({ expanded }: { expanded: boolean }) {
@@ -37,28 +38,23 @@ export function TreeItem({
 
   if (node.type === 'poem') {
     return (
-      <Link
+      <SideNavItem
+        as={Link}
         href={`/poem/${node.slug}`}
+        label={node.label}
+        active={node.slug === activeSlug}
         onClick={() => onNavigate?.(node.slug!, node.label)}
-        className={`block py-2 px-3 rounded text-sm truncate transition-colors min-h-[44px] flex items-center ${
-          node.slug === activeSlug
-            ? 'bg-active text-primary'
-            : 'text-secondary hover:bg-hover hover:text-primary'
-        }`}
-        style={{ paddingLeft: `${depth * 12 + 12}px` }}
-        title={node.label}
-      >
-        {node.label}
-      </Link>
+      />
     );
   }
 
+  // Folders stay hand-rolled: SideNavGroup has a static heading, and the
+  // poem tree needs a collapsible disclosure.
   return (
     <div>
       <button
         onClick={() => toggleNode(node.id)}
         className="w-full flex items-center gap-1 py-2 px-3 rounded text-sm text-secondary hover:bg-hover hover:text-primary transition-colors min-h-[44px]"
-        style={{ paddingLeft: `${depth * 12 + 12}px` }}
         aria-expanded={isExpanded}
         aria-controls={hasChildren ? `tree-children-${node.id}` : undefined}
       >
@@ -69,7 +65,7 @@ export function TreeItem({
         )}
       </button>
       {isExpanded && hasChildren && (
-        <div id={`tree-children-${node.id}`} role="group">
+        <div id={`tree-children-${node.id}`} role="group" style={{ paddingLeft: `${(depth + 1) * 12}px` }}>
           {node.children!.map((child) => (
             <TreeItem
               key={child.id}

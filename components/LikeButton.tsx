@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Skeleton } from '@/components/mds';
+import { CountButton, Skeleton } from '@/components/mds';
 import { getVisitorId } from '@/lib/visitorId';
 
 interface LikeButtonProps {
@@ -67,15 +67,15 @@ export function LikeButton({ slug }: LikeButtonProps) {
   }
 
   return (
-    <button
+    <CountButton
       onClick={handleClick}
-      className="flex items-center gap-2 px-4 h-[44px] border border-border rounded transition-colors text-secondary hover:border-tertiary"
-      aria-label={hasLiked ? 'Unlike this poem' : 'Like this poem'}
-      aria-pressed={hasLiked}
+      icon={<HeartIcon filled={hasLiked} />}
+      label={hasLiked ? 'Unlike this poem' : 'Like this poem'}
+      active={hasLiked}
+      loading={isToggling}
     >
-      <HeartIcon filled={hasLiked} />
-      <span>{count}</span>
-    </button>
+      {count}
+    </CountButton>
   );
 }
 

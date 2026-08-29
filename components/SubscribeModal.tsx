@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Modal, ModalBody, ModalHeader } from '@/components/mds';
+import { Button, Checkbox, Input, Modal, ModalBody, ModalHeader } from '@/components/mds';
 
 interface SubscribeModalProps {
   isOpen: boolean;
@@ -85,54 +85,38 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
             </svg>
           </div>
           <p className="text-primary">{message}</p>
-          <button
-            onClick={resetAndClose}
-            className="mt-4 px-4 py-2 text-secondary hover:text-primary transition-colors min-h-[44px]"
-          >
+          <Button variant="ghost" onClick={resetAndClose} className="mt-4">
             Close
-          </button>
+          </Button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="modal-subscribe-email" className="sr-only">
-              Email address
-            </label>
-            <input
-              id="modal-subscribe-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              required
-              autoFocus
-              aria-describedby={status === 'error' ? 'modal-subscribe-error' : undefined}
-              className="w-full px-4 py-3 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors min-h-[44px]"
+          <Input
+            type="email"
+            aria-label="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            required
+            autoFocus
+            invalid={status === 'error'}
+            aria-describedby={status === 'error' ? 'modal-subscribe-error' : undefined}
+            disabled={status === 'loading'}
+          />
+          {!isAdmin && (
+            <Checkbox
+              label="Email me when a new poem is published"
+              checked={notifyNewPoems}
+              onChange={(e) => setNotifyNewPoems(e.target.checked)}
               disabled={status === 'loading'}
             />
-          </div>
-          {!isAdmin && (
-            <label className="flex items-start gap-2 text-sm text-secondary cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notifyNewPoems}
-                onChange={(e) => setNotifyNewPoems(e.target.checked)}
-                disabled={status === 'loading'}
-                className="accent-accent mt-0.5"
-              />
-              <span>Email me when a new poem is published</span>
-            </label>
           )}
           {status === 'error' && (
             <p id="modal-subscribe-error" className="text-red-600 text-sm" role="alert">{message}</p>
           )}
-          <button
-            type="submit"
-            disabled={status === 'loading'}
-            className="w-full px-4 py-3 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 font-medium min-h-[44px]"
-          >
+          <Button type="submit" fullWidth loading={status === 'loading'}>
             {status === 'loading' ? (isAdmin ? 'Adding...' : 'Subscribing...') : (isAdmin ? 'Add Subscriber' : 'Subscribe')}
-          </button>
+          </Button>
         </form>
       )}
       </ModalBody>

@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/components/mds';
 import { useTheme } from './ThemeProvider';
 
 interface ThemeToggleProps {
@@ -14,9 +15,11 @@ export function ThemeToggle({ className = '' }: ThemeToggleProps) {
   };
 
   return (
-    <button
+    <Button
+      iconOnly
+      variant="ghost"
       onClick={handleToggle}
-      className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors hover:bg-hover ${className}`}
+      className={className}
       aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
     >
       {theme === 'light' ? (
@@ -58,6 +61,6 @@ export function ThemeToggle({ className = '' }: ThemeToggleProps) {
           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
         </svg>
       )}
-    </button>
+    </Button>
   );
 }

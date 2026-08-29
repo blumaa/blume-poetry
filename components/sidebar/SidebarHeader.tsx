@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Button } from '@/components/mds';
 import { ThemeToggle } from '../ThemeToggle';
 import { SubscribeButton } from '../SubscribeButton';
 import { InfoButton } from '../InfoButton';
@@ -9,6 +10,45 @@ interface SidebarHeaderProps {
   isCollapsed?: boolean;
   onClose?: () => void;
   onToggleCollapse?: () => void;
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function CollapseIcon({ isCollapsed }: { isCollapsed: boolean }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
+    >
+      <path d="M11 17l-5-5 5-5" />
+      <path d="M18 17l-5-5 5-5" />
+    </svg>
+  );
 }
 
 export function SidebarHeader({
@@ -33,26 +73,14 @@ export function SidebarHeader({
           <SubscribeButton className="text-secondary" />
           <ThemeToggle />
           <LoginButton className="text-secondary" />
-          <button
+          <Button
+            iconOnly
+            variant="ghost"
             onClick={onClose}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-secondary hover:text-primary hover:bg-hover transition-colors"
             aria-label="Close navigation menu"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+            <CloseIcon />
+          </Button>
         </div>
       </div>
     );
@@ -74,28 +102,16 @@ export function SidebarHeader({
         <SubscribeButton className="text-secondary" />
         <ThemeToggle />
         <LoginButton className="text-secondary" />
-        <button
+        <Button
+          iconOnly
+          variant="ghost"
           onClick={onToggleCollapse}
-          className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-secondary hover:text-primary hover:bg-hover transition-colors ${isCollapsed ? 'order-first' : ''}`}
+          className={isCollapsed ? 'order-first' : ''}
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           title={isCollapsed ? 'Expand' : 'Collapse'}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={`transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
-          >
-            <path d="M11 17l-5-5 5-5" />
-            <path d="M18 17l-5-5 5-5" />
-          </svg>
-        </button>
+          <CollapseIcon isCollapsed={isCollapsed} />
+        </Button>
       </div>
     </div>
   );

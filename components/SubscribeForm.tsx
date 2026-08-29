@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useToast } from '@/components/mds';
+import { Button, Checkbox, Input, useToast } from '@/components/mds';
 
 interface SubscribeFormProps {
   compact?: boolean;
@@ -54,26 +54,20 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
   if (compact) {
     return (
       <form onSubmit={handleSubmit} className="flex gap-1">
-        <label htmlFor="subscribe-email-compact" className="sr-only">
-          Email address
-        </label>
-        <input
-          id="subscribe-email-compact"
+        <Input
           type="email"
+          aria-label="Email address"
+          size="sm"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
           required
-          className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent min-h-[44px]"
           disabled={status === 'loading'}
+          className="flex-1 min-w-0"
         />
-        <button
-          type="submit"
-          disabled={status === 'loading'}
-          className="px-3 py-1.5 text-sm bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 shrink-0 min-h-[44px]"
-        >
-          {status === 'loading' ? '...' : 'Go'}
-        </button>
+        <Button type="submit" size="sm" loading={status === 'loading'}>
+          Go
+        </Button>
       </form>
     );
   }
@@ -81,38 +75,29 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
   return (
     <form onSubmit={handleSubmit} className="max-w-md mx-auto">
       <div className="flex flex-col sm:flex-row gap-2">
-        <label htmlFor="subscribe-email" className="sr-only">
-          Email address
-        </label>
-        <input
-          id="subscribe-email"
+        <Input
           type="email"
+          aria-label="Email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
           required
-          className="flex-1 px-4 py-3 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 min-h-[44px]"
           disabled={status === 'loading'}
+          className="flex-1"
         />
-        <button
-          type="submit"
-          disabled={status === 'loading'}
-          className="px-6 py-3 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 min-h-[44px] font-medium"
-        >
+        <Button type="submit" loading={status === 'loading'}>
           {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
-        </button>
+        </Button>
       </div>
 
-      <label className="flex items-start gap-2 mt-3 text-sm text-secondary cursor-pointer">
-        <input
-          type="checkbox"
+      <div className="mt-3">
+        <Checkbox
+          label="Email me when a new poem is published"
           checked={notifyNewPoems}
           onChange={(e) => setNotifyNewPoems(e.target.checked)}
           disabled={status === 'loading'}
-          className="accent-accent mt-0.5"
         />
-        <span>Email me when a new poem is published</span>
-      </label>
+      </div>
     </form>
   );
 }

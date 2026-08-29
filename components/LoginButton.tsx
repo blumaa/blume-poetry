@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Button } from '@/components/mds';
 
 interface LoginButtonProps {
   className?: string;
@@ -6,9 +7,12 @@ interface LoginButtonProps {
 
 export function LoginButton({ className = '' }: LoginButtonProps) {
   return (
-    <Link
+    <Button
+      iconOnly
+      variant="ghost"
+      as={Link}
       href="/login"
-      className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors hover:bg-hover ${className}`}
+      className={className}
       aria-label="Admin login"
       title="Admin login"
     >
@@ -28,6 +32,6 @@ export function LoginButton({ className = '' }: LoginButtonProps) {
         <path d="M7 19V6a3 3 0 0 0-3-3h0" />
         <circle cx="17" cy="17" r="3" />
       </svg>
-    </Link>
+    </Button>
   );
 }

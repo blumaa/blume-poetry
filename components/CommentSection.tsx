@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { ConfirmDialog, Modal, ModalBody, ModalHeader, useToast } from '@/components/mds';
+import { Button, ConfirmDialog, Field, Input, Modal, ModalBody, ModalHeader, Textarea, useToast } from '@/components/mds';
 import { SkeletonComment } from '@/components/Skeleton';
 import { isAdminEmail } from '@/lib/config';
 import { getVisitorId } from '@/lib/visitorId';
@@ -229,35 +229,26 @@ function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalPro
       <ModalHeader>Add a Comment</ModalHeader>
       <ModalBody>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="comment-name" className="block text-sm font-medium mb-1 text-primary">
-            Name
-          </label>
-          <input
-            id="comment-name"
+        <Field label="Name">
+          <Input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
             maxLength={100}
-            className="w-full px-3 py-2 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent min-h-[44px]"
           />
-        </div>
+        </Field>
 
-        <div>
-          <label htmlFor="comment-content" className="block text-sm font-medium mb-1 text-primary">
-            Comment
-          </label>
-          <textarea
-            id="comment-content"
+        <Field label="Comment">
+          <Textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Share your thoughts..."
             rows={4}
             maxLength={2000}
-            className="w-full px-3 py-2 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent resize-y min-h-[100px]"
+            showCount
           />
-        </div>
+        </Field>
 
         {/* Honeypot field */}
         <div className="sr-only" aria-hidden="true">
@@ -274,21 +265,12 @@ function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalPro
         </div>
 
         <div className="flex gap-3 justify-end pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="px-4 py-2 border border-border rounded hover:bg-hover transition-colors text-primary min-h-[44px]"
-          >
+          <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 min-h-[44px]"
-          >
+          </Button>
+          <Button type="submit" loading={isSubmitting}>
             {isSubmitting ? 'Posting...' : 'Post Comment'}
-          </button>
+          </Button>
         </div>
       </form>
       </ModalBody>
