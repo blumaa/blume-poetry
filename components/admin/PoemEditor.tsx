@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import type { RichTextEditorRef } from './RichTextEditor';
 import { PoemContent } from '@/components/PoemContent';
-import { ConfirmDialog } from '@/components/mds';
+import { Button, Checkbox, ConfirmDialog, Field, Input, Radio, Tab, TabList, Tabs } from '@/components/mds';
 import { formatDate } from '@/lib/date';
 import type { Poem, NewPoem } from '@/lib/supabase/types';
 
@@ -192,116 +192,84 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
   return (
     <div className="space-y-6">
       {/* Title */}
-      <div>
-        <label htmlFor="title" className="block text-sm font-medium mb-2 text-primary">
-          Title
-        </label>
-        <input
-          id="title"
-          type="text"
+      <Field label="Title">
+        <Input
+          size="lg"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Poem title..."
-          className="w-full px-4 py-3 text-xl border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
-      </div>
+      </Field>
 
       {/* Subtitle */}
-      <div>
-        <label htmlFor="subtitle" className="block text-sm font-medium mb-2 text-primary">
-          Subtitle <span className="text-tertiary font-normal">(optional)</span>
-        </label>
-        <input
-          id="subtitle"
-          type="text"
+      <Field label="Subtitle" hint="Optional">
+        <Input
           value={subtitle}
           onChange={(e) => setSubtitle(e.target.value)}
           placeholder="Optional subtitle..."
-          className="w-full px-4 py-3 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
-      </div>
+      </Field>
 
       {/* Status and Date Row */}
       <div className="flex flex-col sm:flex-row gap-6">
         {/* Status */}
-        <div>
-          <label className="block text-sm font-medium mb-2 text-primary">Status</label>
+        <fieldset>
+          <legend className="block text-sm font-medium mb-2 text-primary">Status</legend>
           <div className="flex gap-4">
-            <label className="flex items-center gap-2 cursor-pointer text-primary">
-              <input
-                type="radio"
-                name="status"
-                value="draft"
-                checked={status === 'draft'}
-                onChange={() => setStatus('draft')}
-                className="accent-accent"
-              />
-              <span>Draft</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer text-primary">
-              <input
-                type="radio"
-                name="status"
-                value="published"
-                checked={status === 'published'}
-                onChange={() => setStatus('published')}
-                className="accent-accent"
-              />
-              <span>Published</span>
-            </label>
+            <Radio
+              name="status"
+              label="Draft"
+              checked={status === 'draft'}
+              onChange={() => setStatus('draft')}
+            />
+            <Radio
+              name="status"
+              label="Published"
+              checked={status === 'published'}
+              onChange={() => setStatus('published')}
+            />
           </div>
-        </div>
+        </fieldset>
 
         {/* Published Date */}
         <div className="flex-1">
-          <label htmlFor="published-date" className="block text-sm font-medium mb-2 text-primary">
-            Published Date
-          </label>
-          <input
-            id="published-date"
-            type="datetime-local"
-            value={publishedAt}
-            onChange={(e) => setPublishedAt(e.target.value)}
-            className="px-4 py-2 border border-border rounded bg-surface text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-          />
+          <Field label="Published Date">
+            <Input
+              type="datetime-local"
+              value={publishedAt}
+              onChange={(e) => setPublishedAt(e.target.value)}
+            />
+          </Field>
         </div>
       </div>
 
       {/* Notify subscribers */}
       {canNotify && (
-        <div>
-          <label className="flex items-start gap-2 cursor-pointer text-primary">
-            <input
-              type="checkbox"
-              checked={notifySubscribers}
-              onChange={(e) => setNotifyOverride(e.target.checked)}
-              className="accent-accent mt-1"
-            />
-            <span>
+        <Checkbox
+          checked={notifySubscribers}
+          onChange={(e) => setNotifyOverride(e.target.checked)}
+          label={
+            <>
               Email subscribers about this poem
               <span className="block text-sm text-tertiary">
                 Goes to everyone with new-poem emails turned on. Only ever sent once per poem.
               </span>
-            </span>
-          </label>
-        </div>
+            </>
+          }
+        />
       )}
 
-      {/* Editor / Preview Toggle */}
-      <div className="flex items-center gap-4 border-b border-border pb-2">
-        <button
-          onClick={() => setIsPreview(false)}
-          className={`px-3 py-1 text-sm ${!isPreview ? 'text-accent border-b-2 border-accent' : 'text-tertiary'}`}
-        >
-          Edit
-        </button>
-        <button
-          onClick={() => setIsPreview(true)}
-          className={`px-3 py-1 text-sm ${isPreview ? 'text-accent border-b-2 border-accent' : 'text-tertiary'}`}
-        >
-          Preview
-        </button>
-      </div>
+      {/* Editor / Preview toggle. No TabPanel: both views share the one
+          container below, which renders conditionally. */}
+      <Tabs
+        value={isPreview ? 'preview' : 'edit'}
+        onChange={(value) => setIsPreview(value === 'preview')}
+      >
+        <TabList label="Poem editor">
+          <Tab value="edit">Edit</Tab>
+          <Tab value="preview">Preview</Tab>
+        </TabList>
+      </Tabs>
 
       {/* Content */}
       <div className="bg-surface border border-border rounded-lg p-6">
@@ -331,19 +299,12 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-        <button
-          onClick={handleSaveClick}
-          disabled={isSaving}
-          className="px-6 py-3 sm:py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
-        >
-          {isSaving ? 'Saving...' : isNew ? 'Create Poem' : 'Save Changes'}
-        </button>
-        <button
-          onClick={() => router.back()}
-          className="px-6 py-3 sm:py-2 border border-border rounded hover:border-accent transition-colors text-primary"
-        >
+        <Button onClick={handleSaveClick} loading={isSaving}>
+          {isNew ? 'Create Poem' : 'Save Changes'}
+        </Button>
+        <Button variant="secondary" onClick={() => router.back()}>
           Cancel
-        </button>
+        </Button>
       </div>
 
       <ConfirmDialog

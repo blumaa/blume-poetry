@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { Button, Card, CardBody } from '@/components/mds';
 import { SkeletonCard } from '@/components/Skeleton';
 
 export default function AdminDashboard() {
@@ -43,12 +44,9 @@ export default function AdminDashboard() {
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-8">
         <h1 className="text-2xl text-primary">Dashboard</h1>
-        <Link
-          href="/admin/poems/new"
-          className="px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors text-center sm:w-auto"
-        >
+        <Button as={Link} href="/admin/poems/new">
           New Poem
-        </Link>
+        </Button>
       </div>
 
       {isLoading ? (
@@ -61,14 +59,17 @@ export default function AdminDashboard() {
       ) : (
         <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-4 md:overflow-visible md:pb-0">
           {statCards.map((card) => (
-            <Link
+            <Card
               key={card.label}
+              as={Link}
               href={card.href}
-              className="min-w-[140px] flex-shrink-0 md:min-w-0 p-5 bg-surface rounded-lg border border-border hover:border-accent transition-colors"
+              className="min-w-[140px] flex-shrink-0 md:min-w-0"
             >
-              <div className="text-3xl font-semibold mb-1 text-primary">{card.value}</div>
-              <div className="text-tertiary text-sm">{card.label}</div>
-            </Link>
+              <CardBody>
+                <div className="text-3xl font-semibold mb-1 text-primary">{card.value}</div>
+                <div className="text-tertiary text-sm">{card.label}</div>
+              </CardBody>
+            </Card>
           ))}
         </div>
       )}
@@ -76,18 +77,12 @@ export default function AdminDashboard() {
       <div className="mt-8">
         <h2 className="text-lg mb-4 text-primary">Quick Actions</h2>
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <Link
-            href="/admin/poems/new"
-            className="px-4 py-3 sm:py-2 border border-border rounded hover:border-accent transition-colors text-primary text-center"
-          >
+          <Button as={Link} href="/admin/poems/new" variant="secondary">
             Create New Poem
-          </Link>
-          <Link
-            href="/admin/subscribers/send"
-            className="px-4 py-3 sm:py-2 border border-border rounded hover:border-accent transition-colors text-primary text-center"
-          >
+          </Button>
+          <Button as={Link} href="/admin/subscribers/send" variant="secondary">
             Send Newsletter
-          </Link>
+          </Button>
         </div>
       </div>
     </div>

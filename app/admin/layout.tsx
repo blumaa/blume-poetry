@@ -2,17 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { AdminGuard } from '@/components/auth/AdminGuard';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/admin/NotificationBell';
+import { Button, Menu, MenuItem, TabBar, TabBarItem } from '@/components/mds';
 
 function AdminNav() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
-  const [showMobileMore, setShowMobileMore] = useState(false);
 
   const isActive = (href: string) => {
     if (href === '/admin') return pathname === '/admin';
@@ -72,6 +71,7 @@ function AdminNav() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={isActive(item.href) ? 'page' : undefined}
                   className={`text-sm transition-colors ${
                     isActive(item.href)
                       ? 'text-primary'
@@ -87,12 +87,9 @@ function AdminNav() {
             <NotificationBell />
             <ThemeToggle className="text-secondary" />
             <span className="text-sm text-tertiary ml-2">{user?.email}</span>
-            <button
-              onClick={signOut}
-              className="text-sm text-secondary hover:text-primary transition-colors ml-2"
-            >
+            <Button variant="ghost" size="sm" onClick={signOut} className="ml-2">
               Sign Out
-            </button>
+            </Button>
           </div>
         </div>
       </nav>
@@ -105,57 +102,39 @@ function AdminNav() {
         <div className="flex items-center gap-1">
           <NotificationBell />
           <ThemeToggle className="text-secondary" />
-          <button
-            onClick={() => setShowMobileMore(!showMobileMore)}
-            className="p-2 text-secondary hover:text-primary transition-colors"
-            aria-label="More options"
+          <Menu
+            label="Account"
+            trigger={
+              <Button iconOnly variant="ghost" aria-label="More options">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                </svg>
+              </Button>
+            }
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-            </svg>
-          </button>
-        </div>
-      </nav>
-
-      {/* Mobile more dropdown */}
-      {showMobileMore && (
-        <div className="md:hidden fixed inset-0 z-50" onClick={() => setShowMobileMore(false)}>
-          <div className="absolute top-14 right-4 bg-surface border border-border rounded-lg shadow-lg py-2 min-w-[180px]">
             <div className="px-4 py-2 text-xs text-tertiary truncate border-b border-border">
               {user?.email}
             </div>
-            <button
-              onClick={() => {
-                setShowMobileMore(false);
-                signOut();
-              }}
-              className="w-full text-left px-4 py-2.5 text-sm text-primary hover:bg-hover transition-colors"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Mobile bottom tab bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-border pb-[env(safe-area-inset-bottom)]">
-        <div className="flex items-stretch">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-xs transition-colors ${
-                isActive(item.href)
-                  ? 'text-accent font-medium'
-                  : 'text-tertiary'
-              }`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </Link>
-          ))}
+            <MenuItem onSelect={signOut}>Sign Out</MenuItem>
+          </Menu>
         </div>
       </nav>
+
+      {/* Mobile bottom tab bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40">
+        <TabBar label="Admin">
+          {navItems.map((item) => (
+            <TabBarItem
+              key={item.href}
+              as={Link}
+              href={item.href}
+              label={item.label}
+              icon={item.icon}
+              active={isActive(item.href)}
+            />
+          ))}
+        </TabBar>
+      </div>
     </>
   );
 }

@@ -4,9 +4,8 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { RichTextEditor, RichTextEditorRef } from '@/components/admin/RichTextEditor';
-import { ConfirmDialog } from '@/components/mds';
+import { Button, ConfirmDialog, Field, Input, Select, Tab, TabList, Tabs, useToast } from '@/components/mds';
 import { PoemContent } from '@/components/PoemContent';
-import { useToast } from '@/components/mds';
 import { sanitizeNewsletterHtml } from '@/lib/sanitize';
 import { contentToHtml } from '@/lib/poemHtml';
 import type { Poem } from '@/lib/supabase/types';
@@ -157,47 +156,28 @@ export default function SendNewsletterPage() {
     <div>
       <h1 className="text-2xl mb-6 text-primary">Send Newsletter</h1>
 
-      {/* Mobile tab toggle */}
-      <div className="lg:hidden flex border-b border-border mb-6">
-        <button
-          onClick={() => setMobileTab('compose')}
-          className={`flex-1 px-3 py-2.5 text-sm font-medium transition-colors ${
-            mobileTab === 'compose'
-              ? 'text-accent border-b-2 border-accent'
-              : 'text-tertiary'
-          }`}
-        >
-          Compose
-        </button>
-        <button
-          onClick={() => setMobileTab('preview')}
-          className={`flex-1 px-3 py-2.5 text-sm font-medium transition-colors ${
-            mobileTab === 'preview'
-              ? 'text-accent border-b-2 border-accent'
-              : 'text-tertiary'
-          }`}
-        >
-          Preview
-        </button>
+      {/* Mobile tab toggle. Panels stay outside Tabs: on desktop both show
+          side by side, which TabPanel's single-active rule can't express. */}
+      <div className="lg:hidden mb-6">
+        <Tabs value={mobileTab} onChange={(value) => setMobileTab(value as 'compose' | 'preview')}>
+          <TabList label="Newsletter editor">
+            <Tab value="compose">Compose</Tab>
+            <Tab value="preview">Preview</Tab>
+          </TabList>
+        </Tabs>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left: Compose */}
         <div className={`space-y-6 ${mobileTab !== 'compose' ? 'hidden lg:block' : ''}`}>
           {/* Subject */}
-          <div>
-            <label htmlFor="subject" className="block text-sm font-medium mb-2 text-primary">
-              Subject
-            </label>
-            <input
-              id="subject"
-              type="text"
+          <Field label="Subject">
+            <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Newsletter subject..."
-              className="w-full px-4 py-2 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
-          </div>
+          </Field>
 
           {/* Body */}
           <div>
@@ -215,24 +195,16 @@ export default function SendNewsletterPage() {
           </div>
 
           {/* Poem Attachment (Optional) */}
-          <div>
-            <label htmlFor="poem" className="block text-sm font-medium mb-2 text-primary">
-              Attach Poem <span className="text-tertiary font-normal">(optional)</span>
-            </label>
-            <select
-              id="poem"
-              value={selectedPoemId}
-              onChange={(e) => setSelectedPoemId(e.target.value)}
-              className="w-full px-4 py-2 border border-border rounded bg-surface text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-            >
+          <Field label="Attach Poem" hint="Optional">
+            <Select value={selectedPoemId} onChange={(e) => setSelectedPoemId(e.target.value)}>
               <option value="">None</option>
               {poems.map((poem) => (
                 <option key={poem.id} value={poem.id}>
                   {poem.title}
                 </option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </Field>
 
           {/* Subscriber Info */}
           <div className="p-4 bg-surface-secondary rounded-lg">
@@ -245,42 +217,32 @@ export default function SendNewsletterPage() {
           <div className="p-4 border border-border rounded-lg">
             <h3 className="font-medium mb-3 text-primary">Send Test Email</h3>
             <div className="flex flex-col sm:flex-row gap-2">
-              <label htmlFor="test-email" className="sr-only">
-                Test email address
-              </label>
-              <input
-                id="test-email"
+              <Input
                 type="email"
+                aria-label="Test email address"
                 value={testEmail}
                 onChange={(e) => setTestEmail(e.target.value)}
                 placeholder="test@example.com"
-                className="flex-1 px-3 py-2 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                className="flex-1"
               />
-              <button
-                onClick={handleSendTest}
-                disabled={isSending}
-                className="px-4 py-2 border border-border rounded hover:border-accent transition-colors disabled:opacity-50 text-primary whitespace-nowrap"
-              >
-                {isSending ? 'Sending...' : 'Send Test'}
-              </button>
+              <Button variant="secondary" onClick={handleSendTest} loading={isSending}>
+                Send Test
+              </Button>
             </div>
           </div>
 
           {/* Send Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-            <button
+            <Button
               onClick={handleSendAllClick}
-              disabled={isSending || subscriberCount === 0}
-              className="px-6 py-3 sm:py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
+              loading={isSending}
+              disabled={subscriberCount === 0}
             >
-              {isSending ? 'Sending...' : `Send to ${subscriberCount} Subscribers`}
-            </button>
-            <button
-              onClick={() => router.back()}
-              className="px-6 py-3 sm:py-2 border border-border rounded hover:border-accent transition-colors text-primary"
-            >
+              {`Send to ${subscriberCount} Subscribers`}
+            </Button>
+            <Button variant="secondary" onClick={() => router.back()}>
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
 

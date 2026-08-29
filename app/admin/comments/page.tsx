@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { ConfirmDialog, useToast } from '@/components/mds';
+import { Button, ConfirmDialog, DataTable, useToast } from '@/components/mds';
 import type { Comment } from '@/lib/supabase/types';
 
 type CommentWithPoem = Comment & {
@@ -67,89 +67,57 @@ export default function AdminCommentsPage() {
         </div>
       ) : (
         <>
-          {/* Mobile card list */}
-          <div className="md:hidden space-y-3">
-            {comments.map((comment) => (
-              <div key={comment.id} className="bg-surface rounded-lg border border-border p-4">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <span className="text-primary font-medium text-sm truncate">{comment.author_name}</span>
-                  <span className="text-xs text-tertiary flex-shrink-0">
-                    {new Date(comment.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-                <p className="text-sm text-secondary mb-3">{comment.content}</p>
-                <div className="flex items-center justify-between gap-2">
-                  {comment.poems ? (
+          <DataTable
+            label="Comments"
+            columns={[
+              {
+                key: 'author',
+                header: 'Author',
+                cell: (comment: CommentWithPoem) => (
+                  <span className="text-primary">{comment.author_name}</span>
+                ),
+              },
+              {
+                key: 'content',
+                header: 'Comment',
+                cell: (comment: CommentWithPoem) => (
+                  <span className="block max-w-md truncate">{comment.content}</span>
+                ),
+              },
+              {
+                key: 'poem',
+                header: 'Poem',
+                cell: (comment: CommentWithPoem) =>
+                  comment.poems ? (
                     <Link
                       href={`/poem/${comment.poems.slug}`}
-                      className="text-sm text-accent hover:underline truncate"
+                      className="text-accent hover:underline"
                     >
                       {comment.poems.title}
                     </Link>
                   ) : (
-                    <span className="text-sm text-tertiary">Unknown poem</span>
-                  )}
-                  <button
-                    onClick={() => handleDeleteClick(comment)}
-                    className="px-3 py-1.5 text-sm border border-red-300 text-red-600 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-            <div className="py-3 text-sm text-tertiary text-center">
-              {comments.length} comment{comments.length !== 1 ? 's' : ''}
-            </div>
-          </div>
-
-          {/* Desktop table */}
-          <div className="hidden md:block bg-surface rounded-lg border border-border overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-surface-secondary">
-                <tr>
-                  <th className="text-left p-4 font-medium text-primary">Author</th>
-                  <th className="text-left p-4 font-medium text-primary">Comment</th>
-                  <th className="text-left p-4 font-medium text-primary">Poem</th>
-                  <th className="text-left p-4 font-medium text-primary">Date</th>
-                  <th className="text-right p-4 font-medium text-primary">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {comments.map((comment) => (
-                  <tr key={comment.id} className="border-t border-border">
-                    <td className="p-4 text-primary">{comment.author_name}</td>
-                    <td className="p-4 text-secondary max-w-md truncate">{comment.content}</td>
-                    <td className="p-4">
-                      {comment.poems ? (
-                        <Link
-                          href={`/poem/${comment.poems.slug}`}
-                          className="text-accent hover:underline"
-                        >
-                          {comment.poems.title}
-                        </Link>
-                      ) : (
-                        <span className="text-tertiary">Unknown poem</span>
-                      )}
-                    </td>
-                    <td className="p-4 text-tertiary">
-                      {new Date(comment.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="p-4 text-right">
-                      <button
-                        onClick={() => handleDeleteClick(comment)}
-                        className="px-3 py-1 text-sm border border-red-300 text-red-600 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="p-4 bg-surface-secondary border-t border-border text-sm text-tertiary">
-              {comments.length} comment{comments.length !== 1 ? 's' : ''}
-            </div>
+                    <span className="text-tertiary">Unknown poem</span>
+                  ),
+              },
+              {
+                key: 'date',
+                header: 'Date',
+                cell: (comment: CommentWithPoem) =>
+                  new Date(comment.created_at).toLocaleDateString(),
+              },
+            ]}
+            rows={comments}
+            rowKey={(comment) => comment.id}
+            rowLabel={(comment) => `Comment by ${comment.author_name}`}
+            actionsHeader="Actions"
+            rowActions={(comment) => (
+              <Button variant="danger" size="sm" onClick={() => handleDeleteClick(comment)}>
+                Delete
+              </Button>
+            )}
+          />
+          <div className="py-3 text-sm text-tertiary">
+            {comments.length} comment{comments.length !== 1 ? 's' : ''}
           </div>
         </>
       )}
