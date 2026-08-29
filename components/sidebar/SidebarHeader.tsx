@@ -76,7 +76,7 @@ export function SidebarHeader({
         <LoginButton className="text-secondary" />
         <button
           onClick={onToggleCollapse}
-          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-secondary hover:text-primary hover:bg-hover transition-colors"
+          className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-secondary hover:text-primary hover:bg-hover transition-colors ${isCollapsed ? 'order-first' : ''}`}
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           title={isCollapsed ? 'Expand' : 'Collapse'}
         >
