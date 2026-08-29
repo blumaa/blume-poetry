@@ -70,10 +70,10 @@ export function SidebarHeader({
       )}
 
       <div className={`flex items-center ${isCollapsed ? 'flex-col gap-2' : 'gap-1'}`}>
-        {!isCollapsed && <InfoButton className="text-secondary" />}
-        {!isCollapsed && <SubscribeButton className="text-secondary" />}
-        {!isCollapsed && <ThemeToggle />}
-        {!isCollapsed && <LoginButton className="text-secondary" />}
+        <InfoButton className="text-secondary" />
+        <SubscribeButton className="text-secondary" />
+        <ThemeToggle />
+        <LoginButton className="text-secondary" />
         <button
           onClick={onToggleCollapse}
           className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-secondary hover:text-primary hover:bg-hover transition-colors"
@@ -96,10 +96,6 @@ export function SidebarHeader({
             <path d="M18 17l-5-5 5-5" />
           </svg>
         </button>
-        {isCollapsed && <LoginButton className="text-secondary" />}
-        {isCollapsed && <ThemeToggle />}
-        {isCollapsed && <SubscribeButton className="text-secondary" />}
-        {isCollapsed && <InfoButton className="text-secondary" />}
       </div>
     </div>
   );
