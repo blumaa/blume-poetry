@@ -37,7 +37,7 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
         router.push(`/poem/${nextPoem.slug}`);
       }
     },
-    [router, prevPoem, nextPoem, poem.slug]
+    [router, prevPoem, nextPoem]
   );
 
   // Swipe navigation
@@ -70,7 +70,7 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
       touchStartX.current = null;
       touchStartY.current = null;
     },
-    [router, prevPoem, nextPoem, poem.slug]
+    [router, prevPoem, nextPoem]
   );
 
   useEffect(() => {

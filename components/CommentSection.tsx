@@ -131,12 +131,15 @@ export function CommentSection({ slug, isModalOpen = false, onModalClose }: Comm
         </div>
       ) : null}
 
-      <CommentModal
-        isOpen={isModalOpen}
-        onClose={() => onModalClose?.()}
-        slug={slug}
-        onCommentAdded={handleNewComment}
-      />
+      {/* Mounted only while open so state (saved name, spam timer) seeds
+          fresh on each open via initializers instead of effects. */}
+      {isModalOpen && (
+        <CommentModal
+          onClose={() => onModalClose?.()}
+          slug={slug}
+          onCommentAdded={handleNewComment}
+        />
+      )}
 
       <ConfirmDialog
         target={deleteTarget}
@@ -153,32 +156,24 @@ export function CommentSection({ slug, isModalOpen = false, onModalClose }: Comm
 }
 
 interface CommentModalProps {
-  isOpen: boolean;
   onClose: () => void;
   slug: string;
   onCommentAdded: (comment: Comment) => void;
 }
 
-function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalProps) {
-  const [name, setName] = useState('');
+/* Mounted per open (see call site), so initializers run at open time. */
+function CommentModal({ onClose, slug, onCommentAdded }: CommentModalProps) {
+  const [name, setName] = useState(() => localStorage.getItem('comment_name') ?? '');
   const [content, setContent] = useState('');
   const [honeypot, setHoneypot] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const formLoadTime = useRef(Date.now());
+  // Spam check: server rejects submits too soon after the form appeared.
+  const formLoadTime = useRef(0);
   const { toast } = useToast();
 
   useEffect(() => {
-    const savedName = localStorage.getItem('comment_name');
-    if (savedName) {
-      setName(savedName);
-    }
+    formLoadTime.current = Date.now();
   }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      formLoadTime.current = Date.now();
-    }
-  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,7 +221,7 @@ function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalPro
   };
 
   return (
-    <Modal open={isOpen} onClose={onClose} label="Add a Comment">
+    <Modal open onClose={onClose} label="Add a Comment">
       <ModalHeader>Add a Comment</ModalHeader>
       <ModalBody>
       <form onSubmit={handleSubmit} className={styles.form}>

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button, ConfirmDialog, DataTable, useToast } from '@/components/mds';
 import type { Comment } from '@/lib/supabase/types';
@@ -17,24 +17,23 @@ export default function AdminCommentsPage() {
   const [deleteTarget, setDeleteTarget] = useState<CommentWithPoem | null>(null);
   const { toast } = useToast();
 
-  const fetchComments = useCallback(async () => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('comments')
-      .select('*, poems(title, slug)')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching comments:', error);
-    } else {
-      setComments((data as CommentWithPoem[]) || []);
-    }
-    setIsLoading(false);
-  }, []);
-
   useEffect(() => {
+    async function fetchComments() {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*, poems(title, slug)')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching comments:', error);
+      } else {
+        setComments((data as CommentWithPoem[]) || []);
+      }
+      setIsLoading(false);
+    }
     fetchComments();
-  }, [fetchComments]);
+  }, []);
 
   const handleDeleteClick = (comment: CommentWithPoem) => {
     setDeleteTarget(comment);

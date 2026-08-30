@@ -4,7 +4,6 @@ import Link from 'next/link';
 import styles from './error.module.css';
 
 export default function PoemError({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };

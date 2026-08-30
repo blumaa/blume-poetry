@@ -77,9 +77,9 @@ export function Sidebar({
     if (isMobile && onClose) {
       onClose();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     // Intentionally only depend on pathname to close sidebar on navigation,
     // not on isMobile/onClose which would cause unnecessary closures
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   const toggleNode = (id: string) => {

@@ -1,13 +1,35 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { SubscribeModal } from '@/components/SubscribeModal';
 import { Badge, Button, Checkbox, Chip, ChipGroup, ConfirmDialog, DataTable, useToast } from '@/components/mds';
 import type { Subscriber } from '@/lib/supabase/types';
 import { formatDate } from '@/lib/date';
 import styles from './page.module.css';
+
+async function loadSubscribers(
+  filter: 'all' | 'active' | 'unsubscribed'
+): Promise<Subscriber[] | null> {
+  const supabase = createClient();
+  let query = supabase
+    .from('subscribers')
+    .select('*')
+    .order('subscribed_at', { ascending: false });
+
+  if (filter !== 'all') {
+    query = query.eq('status', filter);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching subscribers:', error);
+    return null;
+  }
+  return (data as Subscriber[]) || [];
+}
 
 export default function AdminSubscribersPage() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
@@ -18,30 +40,12 @@ export default function AdminSubscribersPage() {
   const [savingNotifyId, setSavingNotifyId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchSubscribers = useCallback(async () => {
-    const supabase = createClient();
-    let query = supabase
-      .from('subscribers')
-      .select('*')
-      .order('subscribed_at', { ascending: false });
-
-    if (filter !== 'all') {
-      query = query.eq('status', filter);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Error fetching subscribers:', error);
-    } else {
-      setSubscribers((data as Subscriber[]) || []);
-    }
-    setIsLoading(false);
-  }, [filter]);
-
   useEffect(() => {
-    fetchSubscribers();
-  }, [fetchSubscribers]);
+    loadSubscribers(filter).then((data) => {
+      if (data) setSubscribers(data);
+      setIsLoading(false);
+    });
+  }, [filter]);
 
   const handleDeleteClick = (subscriber: Subscriber) => {
     setDeleteTarget(subscriber);
@@ -109,9 +113,10 @@ export default function AdminSubscribersPage() {
     toast({ title: `Exported ${subscribers.length} subscribers`, tone: 'success' });
   };
 
-  const handleAddSuccess = () => {
-    fetchSubscribers();
+  const handleAddSuccess = async () => {
     toast({ title: 'Subscriber added', tone: 'success' });
+    const data = await loadSubscribers(filter);
+    if (data) setSubscribers(data);
   };
 
   return (

@@ -3,7 +3,6 @@
 import styles from './error.module.css';
 
 export default function AdminError({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };
