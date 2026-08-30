@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 
@@ -22,34 +23,25 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
+async function checkAdmin(): Promise<boolean> {
+  const res = await fetch('/api/auth/check-admin');
+  const data = await res.json();
+  return data.isAdmin ?? false;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [sessionLoaded, setSessionLoaded] = useState(false);
 
+  /* The session is a push-based subscription, not a query: onAuthStateChange
+     keeps `user` current, and the admin check re-runs per user id below. */
   useEffect(() => {
     const supabase = createClient();
-
-    async function checkAdmin() {
-      try {
-        const res = await fetch('/api/auth/check-admin');
-        const data = await res.json();
-        setIsAdmin(data.isAdmin ?? false);
-      } catch {
-        setIsAdmin(false);
-      } finally {
-        setIsLoading(false);
-      }
-    }
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        checkAdmin();
-      } else {
-        setIsLoading(false);
-      }
+      setSessionLoaded(true);
     });
 
     // Listen for auth changes
@@ -57,16 +49,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        checkAdmin();
-      } else {
-        setIsAdmin(false);
-        setIsLoading(false);
-      }
+      setSessionLoaded(true);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const { data: isAdminResult, isPending: isAdminPending } = useQuery({
+    queryKey: ['auth', 'is-admin', user?.id],
+    queryFn: checkAdmin,
+    enabled: !!user,
+  });
+
+  const isAdmin = !!user && (isAdminResult ?? false);
+  const isLoading = !sessionLoaded || (!!user && isAdminPending);
 
   const signOut = async () => {
     const supabase = createClient();
