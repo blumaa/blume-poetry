@@ -27,6 +27,7 @@ export default function AboutPage() {
             always full of farce.
           </p>
 
+          <p></p>
           <p>
             <a
               href="mailto:desmond.blume@gmail.com"
