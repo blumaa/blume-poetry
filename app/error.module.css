@@ -1,0 +1,38 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.content {
+  text-align: center;
+  max-width: 28rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.message {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.button {
+  padding: 0.5rem 1.5rem;
+  min-height: 44px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 0.25rem;
+  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.button:hover {
+  background: var(--accent-hover);
+}

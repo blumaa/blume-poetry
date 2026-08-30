@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { SubscribeForm } from '../SubscribeForm';
+import styles from './SidebarFooter.module.css';
 
 interface SidebarFooterProps {
   hint: ReactNode;
@@ -7,12 +8,12 @@ interface SidebarFooterProps {
 
 export function SidebarFooter({ hint }: SidebarFooterProps) {
   return (
-    <div className="p-3 border-t border-border">
-      <div className="mb-4">
-        <p className="text-xs text-tertiary mb-2">Subscribe</p>
+    <div className={styles.footer}>
+      <div className={styles.subscribeBlock}>
+        <p className={styles.subscribeLabel}>Subscribe</p>
         <SubscribeForm compact />
       </div>
-      <div className="text-xs text-tertiary">{hint}</div>
+      <div className={styles.hint}>{hint}</div>
     </div>
   );
 }

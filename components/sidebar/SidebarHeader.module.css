@@ -1,0 +1,83 @@
+.headerMobile {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brandLinkMobile {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: color 0.2s ease;
+  height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.brandLinkMobile:hover {
+  color: var(--text-secondary);
+}
+
+.actionsMobile {
+  display: flex;
+  align-items: center;
+}
+
+.headerDesktop {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.headerDesktopCollapsed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.brandLinkDesktop {
+  display: block;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: color 0.2s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 0.75rem;
+}
+
+.brandLinkDesktop:hover {
+  color: var(--text-secondary);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.actionsCollapsed {
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.orderFirst {
+  order: -1;
+}
+
+.iconButton {
+  color: var(--text-secondary);
+}
+
+.collapseIcon {
+  transition: transform 0.2s ease;
+}
+
+.collapseIconRotated {
+  transform: rotate(180deg);
+}

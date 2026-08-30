@@ -30,6 +30,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = createClient();
 
+    async function checkAdmin() {
+      try {
+        const res = await fetch('/api/auth/check-admin');
+        const data = await res.json();
+        setIsAdmin(data.isAdmin ?? false);
+      } catch {
+        setIsAdmin(false);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       setUser(session?.user ?? null);
@@ -55,18 +67,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const checkAdmin = async () => {
-    try {
-      const res = await fetch('/api/auth/check-admin');
-      const data = await res.json();
-      setIsAdmin(data.isAdmin ?? false);
-    } catch {
-      setIsAdmin(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const signOut = async () => {
     const supabase = createClient();

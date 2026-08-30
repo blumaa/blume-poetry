@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageShell } from '@/components/PageShell';
+import styles from './page.module.css';
 
 export const metadata: Metadata = {
   title: 'Unsubscribed | Blumenous Poetry',
@@ -9,12 +10,12 @@ export const metadata: Metadata = {
 
 export default function UnsubscribePage() {
   return (
-    <PageShell contentClassName="flex items-center justify-center px-4 py-12">
-      <div className="text-center max-w-md">
-        <div className="text-accent mb-6">
+    <PageShell contentClassName={styles.content}>
+      <div className={styles.inner}>
+        <div className={styles.iconWrap}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-16 w-16 mx-auto"
+            className={styles.icon}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -27,15 +28,15 @@ export default function UnsubscribePage() {
             />
           </svg>
         </div>
-        <h1 className="text-xl md:text-2xl font-normal text-primary mb-4">
+        <h1 className={styles.title}>
           You&apos;ve been unsubscribed
         </h1>
-        <p className="text-secondary mb-8">
+        <p className={styles.message}>
           You will no longer receive email updates from Blumenous Poetry.
         </p>
         <Link
           href="/"
-          className="inline-block px-6 py-3 bg-accent text-white rounded hover:bg-accent-hover transition-colors"
+          className={styles.button}
         >
           Return to poems
         </Link>

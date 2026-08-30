@@ -1,0 +1,65 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar {
+  display: flex;
+  gap: 0.25rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.toolbarButton {
+  padding: 0.375rem 0.75rem;
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.25rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .toolbarButton {
+    min-width: 0;
+    min-height: 0;
+  }
+}
+
+.toolbarButtonActive {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.toolbarButtonInactive {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.toolbarButtonInactive:hover {
+  background: var(--bg-hover);
+}
+
+/* Applied by Tiptap directly to the ProseMirror contenteditable DOM node via
+   editorProps.attributes.class (not a JSX className). No typography plugin is
+   installed, so the original `prose prose-lg` were inert; this reproduces the
+   remaining rules. */
+.editorContent {
+  max-width: none;
+  white-space: pre-wrap;
+}
+
+.editorContent:focus {
+  outline: none;
+}
+
+/* ProseMirror is a class Tiptap adds itself, not scoped by CSS Modules. */
+.editorWrapper :global(.ProseMirror) {
+  outline: none;
+  color: var(--text-primary);
+}

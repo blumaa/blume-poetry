@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { sanitizePoemHtml } from '@/lib/sanitize';
 import { estimateLongestLineEm } from '@/lib/poemFit';
+import styles from './PoemContent.module.css';
 
 /**
  * PoemContent - Renders poem HTML with proper formatting and whitespace preservation.
@@ -45,7 +46,7 @@ export function PoemContent({ html, className = '' }: PoemContentProps) {
       style={{ '--poem-line': estimateLongestLineEm(sanitizedHtml) } as CSSProperties}
     >
       <div
-        className={`poem-content text-primary ${className}`}
+        className={`poem-content ${styles.text} ${className}`}
         dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
       />
     </div>

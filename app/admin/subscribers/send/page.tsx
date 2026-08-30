@@ -4,12 +4,12 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { RichTextEditor, RichTextEditorRef } from '@/components/admin/RichTextEditor';
-import { ConfirmModal } from '@/components/ConfirmModal';
+import { Button, ConfirmDialog, Field, Input, Select, Tab, TabList, Tabs, useToast } from '@/components/mds';
 import { PoemContent } from '@/components/PoemContent';
-import { useToast } from '@/components/Toast';
 import { sanitizeNewsletterHtml } from '@/lib/sanitize';
 import { contentToHtml } from '@/lib/poemHtml';
 import type { Poem } from '@/lib/supabase/types';
+import styles from './page.module.css';
 
 export default function SendNewsletterPage() {
   const [poems, setPoems] = useState<Poem[]>([]);
@@ -25,7 +25,7 @@ export default function SendNewsletterPage() {
   const [mobileTab, setMobileTab] = useState<'compose' | 'preview'>('compose');
   const router = useRouter();
   const editorRef = useRef<RichTextEditorRef>(null);
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   useEffect(() => {
     const supabase = createClient();
@@ -61,15 +61,15 @@ export default function SendNewsletterPage() {
 
   const handleSendTest = async () => {
     if (!subject.trim()) {
-      showToast('Please enter a subject', 'error');
+      toast({ title: 'Please enter a subject', tone: 'danger' });
       return;
     }
     if (!bodyText.trim()) {
-      showToast('Please enter body content', 'error');
+      toast({ title: 'Please enter body content', tone: 'danger' });
       return;
     }
     if (!testEmail) {
-      showToast('Please enter a test email', 'error');
+      toast({ title: 'Please enter a test email', tone: 'danger' });
       return;
     }
 
@@ -91,12 +91,12 @@ export default function SendNewsletterPage() {
       const data = await response.json();
 
       if (response.ok) {
-        showToast('Test email sent', 'success');
+        toast({ title: 'Test email sent', tone: 'success' });
       } else {
-        showToast(data.error || 'Failed to send test email', 'error');
+        toast({ title: data.error || 'Failed to send test email', tone: 'danger' });
       }
     } catch {
-      showToast('An unexpected error occurred', 'error');
+      toast({ title: 'An unexpected error occurred', tone: 'danger' });
     } finally {
       setIsSending(false);
     }
@@ -104,11 +104,11 @@ export default function SendNewsletterPage() {
 
   const handleSendAllClick = () => {
     if (!subject.trim()) {
-      showToast('Please enter a subject', 'error');
+      toast({ title: 'Please enter a subject', tone: 'danger' });
       return;
     }
     if (!bodyText.trim()) {
-      showToast('Please enter body content', 'error');
+      toast({ title: 'Please enter body content', tone: 'danger' });
       return;
     }
     setShowSendConfirm(true);
@@ -133,12 +133,12 @@ export default function SendNewsletterPage() {
       const data = await response.json();
 
       if (response.ok) {
-        showToast(data.message, 'success');
+        toast({ title: data.message, tone: 'success' });
       } else {
-        showToast(data.error || 'Failed to send emails', 'error');
+        toast({ title: data.error || 'Failed to send emails', tone: 'danger' });
       }
     } catch {
-      showToast('An unexpected error occurred', 'error');
+      toast({ title: 'An unexpected error occurred', tone: 'danger' });
     } finally {
       setIsSending(false);
     }
@@ -150,149 +150,112 @@ export default function SendNewsletterPage() {
   const sanitizedBodyHtml = useMemo(() => sanitizeNewsletterHtml(bodyHtml), [bodyHtml]);
 
   if (isLoading) {
-    return <div className="text-tertiary">Loading...</div>;
+    return <div className={styles.loadingText}>Loading...</div>;
   }
 
   return (
     <div>
-      <h1 className="text-2xl mb-6 text-primary">Send Newsletter</h1>
+      <h1 className={styles.title}>Send Newsletter</h1>
 
-      {/* Mobile tab toggle */}
-      <div className="lg:hidden flex border-b border-border mb-6">
-        <button
-          onClick={() => setMobileTab('compose')}
-          className={`flex-1 px-3 py-2.5 text-sm font-medium transition-colors ${
-            mobileTab === 'compose'
-              ? 'text-accent border-b-2 border-accent'
-              : 'text-tertiary'
-          }`}
-        >
-          Compose
-        </button>
-        <button
-          onClick={() => setMobileTab('preview')}
-          className={`flex-1 px-3 py-2.5 text-sm font-medium transition-colors ${
-            mobileTab === 'preview'
-              ? 'text-accent border-b-2 border-accent'
-              : 'text-tertiary'
-          }`}
-        >
-          Preview
-        </button>
+      {/* Mobile tab toggle. Panels stay outside Tabs: on desktop both show
+          side by side, which TabPanel's single-active rule can't express. */}
+      <div className={styles.mobileTabs}>
+        <Tabs value={mobileTab} onChange={(value) => setMobileTab(value as 'compose' | 'preview')}>
+          <TabList label="Newsletter editor">
+            <Tab value="compose">Compose</Tab>
+            <Tab value="preview">Preview</Tab>
+          </TabList>
+        </Tabs>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className={styles.grid}>
         {/* Left: Compose */}
-        <div className={`space-y-6 ${mobileTab !== 'compose' ? 'hidden lg:block' : ''}`}>
+        <div className={`${styles.composePane} ${mobileTab !== 'compose' ? styles.paneHidden : ''}`}>
           {/* Subject */}
-          <div>
-            <label htmlFor="subject" className="block text-sm font-medium mb-2 text-primary">
-              Subject
-            </label>
-            <input
-              id="subject"
-              type="text"
+          <Field label="Subject">
+            <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Newsletter subject..."
-              className="w-full px-4 py-2 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
-          </div>
+          </Field>
 
           {/* Body */}
           <div>
-            <label className="block text-sm font-medium mb-2 text-primary">
+            <label className={styles.fieldLabel}>
               Body
             </label>
-            <div className="bg-surface border border-border rounded-lg p-4">
+            <div className={styles.editorWrap}>
               <RichTextEditor
                 ref={editorRef}
                 onChange={handleEditorChange}
                 minHeight="200px"
-                className="min-h-[200px]"
+                className={styles.editorMinHeight}
               />
             </div>
           </div>
 
           {/* Poem Attachment (Optional) */}
-          <div>
-            <label htmlFor="poem" className="block text-sm font-medium mb-2 text-primary">
-              Attach Poem <span className="text-tertiary font-normal">(optional)</span>
-            </label>
-            <select
-              id="poem"
-              value={selectedPoemId}
-              onChange={(e) => setSelectedPoemId(e.target.value)}
-              className="w-full px-4 py-2 border border-border rounded bg-surface text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-            >
+          <Field label="Attach Poem" hint="Optional">
+            <Select value={selectedPoemId} onChange={(e) => setSelectedPoemId(e.target.value)}>
               <option value="">None</option>
               {poems.map((poem) => (
                 <option key={poem.id} value={poem.id}>
                   {poem.title}
                 </option>
               ))}
-            </select>
-          </div>
+            </Select>
+          </Field>
 
           {/* Subscriber Info */}
-          <div className="p-4 bg-surface-secondary rounded-lg">
-            <div className="text-sm text-tertiary">
-              Active subscribers: <strong className="text-primary">{subscriberCount}</strong>
+          <div className={styles.subscriberInfo}>
+            <div className={styles.subscriberInfoText}>
+              Active subscribers: <strong className={styles.subscriberCount}>{subscriberCount}</strong>
             </div>
           </div>
 
           {/* Test Email */}
-          <div className="p-4 border border-border rounded-lg">
-            <h3 className="font-medium mb-3 text-primary">Send Test Email</h3>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <label htmlFor="test-email" className="sr-only">
-                Test email address
-              </label>
-              <input
-                id="test-email"
+          <div className={styles.testEmailBox}>
+            <h3 className={styles.testEmailHeading}>Send Test Email</h3>
+            <div className={styles.testEmailRow}>
+              <Input
                 type="email"
+                aria-label="Test email address"
                 value={testEmail}
                 onChange={(e) => setTestEmail(e.target.value)}
                 placeholder="test@example.com"
-                className="flex-1 px-3 py-2 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                className={styles.testEmailInput}
               />
-              <button
-                onClick={handleSendTest}
-                disabled={isSending}
-                className="px-4 py-2 border border-border rounded hover:border-accent transition-colors disabled:opacity-50 text-primary whitespace-nowrap"
-              >
-                {isSending ? 'Sending...' : 'Send Test'}
-              </button>
+              <Button variant="secondary" onClick={handleSendTest} loading={isSending}>
+                Send Test
+              </Button>
             </div>
           </div>
 
           {/* Send Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-            <button
+          <div className={styles.sendButtonsRow}>
+            <Button
               onClick={handleSendAllClick}
-              disabled={isSending || subscriberCount === 0}
-              className="px-6 py-3 sm:py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
+              loading={isSending}
+              disabled={subscriberCount === 0}
             >
-              {isSending ? 'Sending...' : `Send to ${subscriberCount} Subscribers`}
-            </button>
-            <button
-              onClick={() => router.back()}
-              className="px-6 py-3 sm:py-2 border border-border rounded hover:border-accent transition-colors text-primary"
-            >
+              {`Send to ${subscriberCount} Subscribers`}
+            </Button>
+            <Button variant="secondary" onClick={() => router.back()}>
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Right: Preview */}
-        <div className={mobileTab !== 'preview' ? 'hidden lg:block' : ''}>
-          <h3 className="text-sm font-medium mb-3 text-primary">Preview</h3>
-          <div className="bg-surface border border-border rounded-lg p-6 min-h-[400px]">
+        <div className={mobileTab !== 'preview' ? styles.paneHidden : ''}>
+          <h3 className={styles.previewHeading}>Preview</h3>
+          <div className={styles.previewBox}>
             {subject || sanitizedBodyHtml || selectedPoem ? (
               <div>
                 {/* Subject Preview */}
                 {subject && (
-                  <h2 className="text-xl mb-4 pb-4 border-b border-border text-primary">
+                  <h2 className={styles.subjectPreview}>
                     {subject}
                   </h2>
                 )}
@@ -300,32 +263,32 @@ export default function SendNewsletterPage() {
                 {/* Body Preview */}
                 {sanitizedBodyHtml && (
                   <div
-                    className="prose prose-lg max-w-none text-primary [&_p]:mb-0 [&_p]:min-h-[1.5em] leading-relaxed"
+                    className={styles.previewBody}
                     dangerouslySetInnerHTML={{ __html: sanitizedBodyHtml }}
                   />
                 )}
 
                 {/* Poem Preview */}
                 {selectedPoem && (
-                  <div className={bodyHtml ? 'mt-6 pt-6 border-t border-border' : ''}>
-                    <h3 className="text-lg font-medium mb-3 text-primary">
+                  <div className={bodyHtml ? styles.poemPreviewWrap : ''}>
+                    <h3 className={styles.poemPreviewTitle}>
                       {selectedPoem.title}
                     </h3>
                     <PoemContent html={contentToHtml(selectedPoem.content || selectedPoem.plain_text || '')} />
-                    <div className="mt-4 text-sm text-accent">
+                    <div className={styles.poemPreviewCta}>
                       Read on Blumenous Poetry &rarr;
                     </div>
                   </div>
                 )}
 
                 {/* Footer Preview */}
-                <div className="mt-8 pt-4 border-t border-border text-center text-sm text-tertiary">
+                <div className={styles.footerPreview}>
                   <p>Blumenous Poetry</p>
-                  <p className="underline">Unsubscribe</p>
+                  <p className={styles.unsubscribeText}>Unsubscribe</p>
                 </div>
               </div>
             ) : (
-              <div className="text-tertiary text-center pt-20">
+              <div className={styles.previewPlaceholder}>
                 Start composing to see preview
               </div>
             )}
@@ -334,15 +297,15 @@ export default function SendNewsletterPage() {
       </div>
 
       {/* Send confirmation modal */}
-      <ConfirmModal
-        isOpen={showSendConfirm}
+      <ConfirmDialog
+        open={showSendConfirm}
         onClose={() => setShowSendConfirm(false)}
         onConfirm={handleSendAllConfirm}
         title="Send Newsletter"
-        message={`Are you sure you want to send this newsletter to ${subscriberCount} subscriber${subscriberCount !== 1 ? 's' : ''}? This action cannot be undone.`}
-        confirmText="Send Newsletter"
-        variant="warning"
-        isLoading={isSending}
+        description={`Are you sure you want to send this newsletter to ${subscriberCount} subscriber${subscriberCount !== 1 ? 's' : ''}? This action cannot be undone.`}
+        confirmLabel="Send Newsletter"
+        cancelLabel="Cancel"
+        tone="warning"
       />
     </div>
   );

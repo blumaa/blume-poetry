@@ -7,6 +7,7 @@ import { SidebarHeader } from './sidebar/SidebarHeader';
 import { SidebarSearch } from './sidebar/SidebarSearch';
 import { SidebarNav } from './sidebar/SidebarNav';
 import { SidebarFooter } from './sidebar/SidebarFooter';
+import styles from './Sidebar.module.css';
 
 // Find path to a poem in the tree (returns parent node IDs)
 function findPoemPath(nodes: TreeNode[], slug: string, path: string[] = []): string[] | null {
@@ -76,9 +77,9 @@ export function Sidebar({
     if (isMobile && onClose) {
       onClose();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     // Intentionally only depend on pathname to close sidebar on navigation,
     // not on isMobile/onClose which would cause unnecessary closures
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   const toggleNode = (id: string) => {
@@ -147,7 +148,7 @@ export function Sidebar({
   // Mobile sidebar
   if (isMobile) {
     return (
-      <aside className={`sidebar-mobile ${isOpen ? 'open' : ''} w-full flex flex-col bg-surface-sidebar fixed left-0 top-0 z-50`}>
+      <aside className={`sidebar-mobile ${isOpen ? 'open' : ''} ${styles.mobileAside}`}>
         <SidebarHeader variant="mobile" onClose={handleCloseMenu} />
 
         <SidebarSearch id="mobile-search-poems" value={search} onChange={handleSearch} />
@@ -170,9 +171,7 @@ export function Sidebar({
   // Desktop sidebar - collapsible
   return (
     <aside
-      className={`h-screen flex flex-col bg-surface-sidebar border-r border-border fixed left-0 top-0 hidden md:flex transition-all duration-300 ${
-        isCollapsed ? 'w-[60px]' : 'w-sidebar'
-      }`}
+      className={`${styles.desktopAside} ${isCollapsed ? styles.collapsed : ''}`}
     >
       <SidebarHeader
         variant="desktop"
@@ -198,9 +197,9 @@ export function Sidebar({
         <SidebarFooter
           hint={
             <>
-              <kbd className="px-1.5 py-0.5 bg-hover rounded text-tertiary">←</kbd>
+              <kbd className={styles.kbd}>←</kbd>
               {' / '}
-              <kbd className="px-1.5 py-0.5 bg-hover rounded text-tertiary">→</kbd>
+              <kbd className={styles.kbd}>→</kbd>
               {' navigate'}
             </>
           }

@@ -2,23 +2,23 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { ConfirmModal } from '@/components/ConfirmModal';
-import { useToast } from '@/components/Toast';
+import { Badge, Button, Chip, ChipGroup, ConfirmDialog, DataTable, Input, useToast } from '@/components/mds';
 import type { Poem } from '@/lib/supabase/types';
 import { SkeletonList } from '@/components/Skeleton';
 import { formatDate } from '@/lib/date';
+import styles from './page.module.css';
 
 export default function AdminPoemsPage() {
   const [poems, setPoems] = useState<Poem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Poem | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get('status');
-  const { showToast } = useToast();
+  const router = useRouter();
+  const { toast } = useToast();
 
   const filteredPoems = poems
     .filter((poem) =>
@@ -38,12 +38,12 @@ export default function AdminPoemsPage() {
       sessionStorage.removeItem('toast');
       try {
         const { message, type } = JSON.parse(toastData);
-        showToast(message, type);
+        toast({ title: message, tone: type === 'error' ? 'danger' : 'success' });
       } catch {
         // Invalid toast data, ignore
       }
     }
-  }, [showToast]);
+  }, [toast]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -80,7 +80,7 @@ export default function AdminPoemsPage() {
       .eq('id', poem.id);
 
     if (pinError) {
-      showToast(pinError.message, 'error');
+      toast({ title: pinError.message, tone: 'danger' });
     } else {
       setPoems((current) =>
         current.map((p) => (p.id === poem.id ? { ...p, pinned: newPinned } : p))
@@ -90,7 +90,7 @@ export default function AdminPoemsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paths: [] }),
       });
-      showToast(newPinned ? `"${poem.title}" pinned` : `"${poem.title}" unpinned`, 'success');
+      toast({ title: newPinned ? `"${poem.title}" pinned` : `"${poem.title}" unpinned`, tone: 'success' });
     }
   };
 
@@ -98,73 +98,61 @@ export default function AdminPoemsPage() {
     setDeleteTarget(poem);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!deleteTarget) return;
-
-    setIsDeleting(true);
+  const handleDeleteConfirm = async (target: Poem) => {
     const supabase = createClient();
-    const { error: deleteError } = await supabase.from('poems').delete().eq('id', deleteTarget.id);
+    const { error: deleteError } = await supabase.from('poems').delete().eq('id', target.id);
 
     if (deleteError) {
-      showToast(deleteError.message, 'error');
-      setIsDeleting(false);
-    } else {
-      setPoems((currentPoems) => currentPoems.filter((p) => p.id !== deleteTarget.id));
-      await fetch('/api/admin/revalidate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paths: [`/poem/${deleteTarget.slug}`] }),
-      });
-      showToast(`"${deleteTarget.title}" deleted`, 'success');
-      setDeleteTarget(null);
-      setIsDeleting(false);
+      throw new Error(deleteError.message);
     }
+
+    setPoems((currentPoems) => currentPoems.filter((p) => p.id !== target.id));
+    await fetch('/api/admin/revalidate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paths: [`/poem/${target.slug}`] }),
+    });
+    toast({ title: `"${target.title}" deleted`, tone: 'success' });
   };
 
   return (
     <div>
       {/* Header */}
-      <div className="mb-4 md:mb-6 space-y-3">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl md:text-2xl text-primary">Poems</h1>
-          <Link
-            href="/admin/poems/new"
-            className="px-3 py-1.5 text-sm bg-accent text-white rounded hover:bg-accent-hover transition-colors"
-          >
+      <div className={styles.header}>
+        <div className={styles.headerTop}>
+          <h1 className={styles.title}>Poems</h1>
+          <Button as={Link} href="/admin/poems/new" size="sm">
             New Poem
-          </Link>
+          </Button>
         </div>
-        <div className="space-y-3">
-          <div className="flex gap-1.5 text-xs md:text-sm">
-            <Link
-              href="/admin/poems"
-              className={`px-2.5 py-1 rounded ${!statusFilter ? 'bg-accent text-white' : 'border border-border text-primary'}`}
-            >
+        <div className={styles.filters}>
+          <ChipGroup>
+            <Chip selected={!statusFilter} onClick={() => router.push('/admin/poems')}>
               All
-            </Link>
-            <Link
-              href="/admin/poems?status=published"
-              className={`px-2.5 py-1 rounded ${statusFilter === 'published' ? 'bg-accent text-white' : 'border border-border text-primary'}`}
+            </Chip>
+            <Chip
+              selected={statusFilter === 'published'}
+              onClick={() => router.push('/admin/poems?status=published')}
             >
               Published
-            </Link>
-            <Link
-              href="/admin/poems?status=draft"
-              className={`px-2.5 py-1 rounded ${statusFilter === 'draft' ? 'bg-accent text-white' : 'border border-border text-primary'}`}
+            </Chip>
+            <Chip
+              selected={statusFilter === 'draft'}
+              onClick={() => router.push('/admin/poems?status=draft')}
             >
               Drafts
-            </Link>
-          </div>
-          <label htmlFor="admin-search-poems" className="sr-only">
-            Search poems
-          </label>
-          <input
-            id="admin-search-poems"
-            type="text"
+            </Chip>
+          </ChipGroup>
+          <Input
+            type="search"
+            size="sm"
+            aria-label="Search poems"
             placeholder="Search poems..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-3 py-2.5 text-sm border border-border rounded-lg bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 md:max-w-xs"
+            onClear={() => setSearch('')}
+            clearLabel="Clear search"
+            className={styles.searchInput}
           />
         </div>
       </div>
@@ -172,170 +160,87 @@ export default function AdminPoemsPage() {
       {isLoading ? (
         <SkeletonList count={8} />
       ) : poems.length === 0 ? (
-        <div className="text-center py-12 text-tertiary">
-          No poems found. <Link href="/admin/poems/new" className="text-accent">Create your first poem</Link>
+        <div className={styles.emptyState}>
+          No poems found. <Link href="/admin/poems/new" className={styles.emptyLink}>Create your first poem</Link>
         </div>
       ) : filteredPoems.length === 0 ? (
-        <div className="text-center py-12 text-tertiary">
+        <div className={styles.emptyState}>
           No poems matching &ldquo;{search}&rdquo;
         </div>
       ) : (
-        <>
-          {/* Mobile card list */}
-          <div className="md:hidden space-y-2">
-            {filteredPoems.map((poem) => (
-              <div key={poem.id} className="bg-surface rounded-lg border border-border px-4 py-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    {poem.pinned && (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-accent flex-shrink-0" aria-label="Pinned">
-                        <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
-                      </svg>
-                    )}
-                    <Link
-                      href={`/poem/${poem.slug}`}
-                      className="text-primary hover:text-accent transition-colors text-sm font-medium truncate"
-                      target="_blank"
-                    >
-                      {poem.title}
-                    </Link>
-                  </div>
-                  <span
-                    className={`px-1.5 py-0.5 text-[10px] font-medium rounded flex-shrink-0 ${
-                      poem.status === 'published'
-                        ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/50 dark:text-emerald-100'
-                        : 'bg-amber-100 text-amber-900 dark:bg-amber-900/50 dark:text-amber-100'
-                    }`}
+        <DataTable
+          label="Poems"
+          columns={[
+            {
+              key: 'title',
+              header: 'Title',
+              cell: (poem: Poem) => (
+                <span className={styles.titleCell}>
+                  {poem.pinned && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={styles.pinIcon} aria-label="Pinned">
+                      <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
+                    </svg>
+                  )}
+                  <Link
+                    href={`/poem/${poem.slug}`}
+                    className={styles.poemLink}
+                    target="_blank"
                   >
-                    {poem.status}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-xs text-tertiary">
-                    {formatDate(poem.published_at)}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleTogglePin(poem)}
-                      className={`p-2 rounded transition-colors ${
-                        poem.pinned ? 'text-accent' : 'text-tertiary hover:text-accent'
-                      }`}
-                      aria-label={poem.pinned ? 'Unpin poem' : 'Pin poem'}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
-                      </svg>
-                    </button>
-                    <Link
-                      href={`/admin/poems/${poem.id}/edit`}
-                      className="px-4 py-1.5 text-sm bg-accent text-white rounded hover:bg-accent-hover transition-colors"
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => handleDeleteClick(poem)}
-                      className="p-2 text-tertiary hover:text-red-500 rounded transition-colors"
-                      aria-label="Delete poem"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Desktop table */}
-          <div className="hidden md:block bg-surface rounded-lg border border-border overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-surface-secondary">
-                <tr>
-                  <th className="text-left p-4 font-medium text-primary">Title</th>
-                  <th className="text-left p-4 font-medium text-primary">Status</th>
-                  <th className="text-left p-4 font-medium text-primary">Published</th>
-                  <th className="text-right p-4 font-medium text-primary">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPoems.map((poem) => (
-                  <tr key={poem.id} className="border-t border-border">
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        {poem.pinned && (
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-accent flex-shrink-0" aria-label="Pinned">
-                            <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
-                          </svg>
-                        )}
-                        <Link
-                          href={`/poem/${poem.slug}`}
-                          className="text-primary hover:text-accent transition-colors"
-                          target="_blank"
-                        >
-                          {poem.title}
-                        </Link>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded ${
-                          poem.status === 'published'
-                            ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/50 dark:text-emerald-100'
-                            : 'bg-amber-100 text-amber-900 dark:bg-amber-900/50 dark:text-amber-100'
-                        }`}
-                      >
-                        {poem.status}
-                      </span>
-                    </td>
-                    <td className="p-4 text-tertiary">
-                      {formatDate(poem.published_at)}
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={() => handleTogglePin(poem)}
-                          className={`px-3 py-1 text-sm border rounded transition-colors ${
-                            poem.pinned
-                              ? 'border-accent text-accent hover:bg-accent/10'
-                              : 'border-border text-primary hover:border-accent'
-                          }`}
-                          aria-label={poem.pinned ? 'Unpin poem' : 'Pin poem'}
-                        >
-                          {poem.pinned ? 'Unpin' : 'Pin'}
-                        </button>
-                        <Link
-                          href={`/admin/poems/${poem.id}/edit`}
-                          className="px-3 py-1 text-sm border border-border rounded hover:border-accent transition-colors text-primary"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => handleDeleteClick(poem)}
-                          className="px-3 py-1 text-sm border border-red-300 text-red-600 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
+                    {poem.title}
+                  </Link>
+                </span>
+              ),
+            },
+            {
+              key: 'status',
+              header: 'Status',
+              cell: (poem: Poem) => (
+                <Badge tone={poem.status === 'published' ? 'success' : 'warning'}>
+                  {poem.status}
+                </Badge>
+              ),
+            },
+            {
+              key: 'published',
+              header: 'Published',
+              cell: (poem: Poem) => formatDate(poem.published_at),
+            },
+          ]}
+          rows={filteredPoems}
+          rowKey={(poem) => poem.id}
+          rowLabel={(poem) => poem.title}
+          actionsHeader="Actions"
+          rowActions={(poem) => (
+            <div className={styles.rowActions}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleTogglePin(poem)}
+                aria-label={poem.pinned ? 'Unpin poem' : 'Pin poem'}
+              >
+                {poem.pinned ? 'Unpin' : 'Pin'}
+              </Button>
+              <Button as={Link} href={`/admin/poems/${poem.id}/edit`} variant="secondary" size="sm">
+                Edit
+              </Button>
+              <Button variant="danger" size="sm" onClick={() => handleDeleteClick(poem)}>
+                Delete
+              </Button>
+            </div>
+          )}
+        />
       )}
 
       {/* Delete confirmation modal */}
-      <ConfirmModal
-        isOpen={!!deleteTarget}
+      <ConfirmDialog
+        target={deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
         title="Delete Poem"
-        message={`Are you sure you want to delete "${deleteTarget?.title}"? This action cannot be undone.`}
-        confirmText="Delete"
-        variant="danger"
-        isLoading={isDeleting}
+        description={`Are you sure you want to delete "${deleteTarget?.title}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        tone="danger"
       />
     </div>
   );

@@ -1,10 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import { Source_Sans_3 } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+/* Order matters: tokens declare, the brand re-points, components read, the app
+   overrides. Do not sort. */
+import "@mond-design-system/tokens/styles.css";
+import "./tokens/brand-blume.css";
+import "@mond-design-system/react/styles.css";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { ToastProvider } from "@/components/Toast";
+import { ToastProvider } from "@/components/mds";
 import { getSiteUrl } from "@/lib/config";
+import styles from "./layout.module.css";
 
 const sourceSans = Source_Sans_3({
   variable: "--font-inter",
@@ -66,15 +72,15 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased">
+      <body className={styles.body}>
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 md:focus:left-[calc(var(--sidebar-current-width)+1rem)] focus:z-50 focus:px-4 focus:py-2 focus:bg-surface focus:text-primary focus:border focus:border-border focus:rounded focus:shadow-lg focus:transition-[left] focus:duration-300"
+          className={`sr-only focus:not-sr-only ${styles.skipLink}`}
         >
           Skip to main content
         </a>
         <ThemeProvider>
-          <ToastProvider>
+          <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
             {children}
           </ToastProvider>
         </ThemeProvider>

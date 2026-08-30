@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import type { TreeNode } from '@/lib/poems';
 import { Sidebar } from './Sidebar';
 import { MobileHeader } from './MobileHeader';
@@ -10,30 +10,41 @@ interface SidebarWrapperProps {
 }
 
 const COLLAPSED_KEY = 'sidebar_collapsed';
+const MOBILE_QUERY = '(max-width: 767px)';
+
+/* Collapsed state lives in localStorage (survives reload); expose it as an
+   external store so reads stay hydration-safe without a setState-in-effect. */
+const collapsedListeners = new Set<() => void>();
+
+function subscribeCollapsed(listener: () => void) {
+  collapsedListeners.add(listener);
+  return () => collapsedListeners.delete(listener);
+}
+
+function readCollapsed() {
+  return localStorage.getItem(COLLAPSED_KEY) === 'true';
+}
+
+function writeCollapsed(value: boolean) {
+  localStorage.setItem(COLLAPSED_KEY, String(value));
+  collapsedListeners.forEach((listener) => listener());
+}
+
+function subscribeMobile(listener: () => void) {
+  const mql = window.matchMedia(MOBILE_QUERY);
+  mql.addEventListener('change', listener);
+  return () => mql.removeEventListener('change', listener);
+}
+
+function readMobile() {
+  return window.matchMedia(MOBILE_QUERY).matches;
+}
 
 export function SidebarWrapper({ tree }: SidebarWrapperProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
-  // Restore collapsed state from localStorage after mount to avoid hydration mismatch
-  useEffect(() => {
-    const stored = localStorage.getItem(COLLAPSED_KEY);
-    if (stored === 'true') {
-      setIsCollapsed(true);
-    }
-  }, []);
-
-  // Detect mobile viewport
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  // Server snapshots: desktop, expanded — matches the server-rendered HTML.
+  const isMobile = useSyncExternalStore(subscribeMobile, readMobile, () => false);
+  const isCollapsed = useSyncExternalStore(subscribeCollapsed, readCollapsed, () => false);
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
@@ -63,9 +74,7 @@ export function SidebarWrapper({ tree }: SidebarWrapperProps) {
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   const toggleCollapse = () => {
-    const newValue = !isCollapsed;
-    setIsCollapsed(newValue);
-    localStorage.setItem(COLLAPSED_KEY, String(newValue));
+    writeCollapsed(!isCollapsed);
   };
 
   return (

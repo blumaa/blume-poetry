@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Button } from '@/components/mds';
 
 interface InfoButtonProps {
   className?: string;
@@ -8,9 +9,12 @@ interface InfoButtonProps {
 
 export function InfoButton({ className = '' }: InfoButtonProps) {
   return (
-    <Link
+    <Button
+      iconOnly
+      variant="ghost"
+      as={Link}
       href="/about"
-      className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-hover transition-colors ${className}`}
+      className={className}
       aria-label="About"
       title="About"
     >
@@ -29,6 +33,6 @@ export function InfoButton({ className = '' }: InfoButtonProps) {
         <line x1="12" y1="16" x2="12" y2="12" />
         <line x1="12" y1="8" x2="12.01" y2="8" />
       </svg>
-    </Link>
+    </Button>
   );
 }

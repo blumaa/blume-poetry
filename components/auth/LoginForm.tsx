@@ -3,14 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { useToast } from '@/components/Toast';
+import { Button, Field, Input, PasswordInput, useToast } from '@/components/mds';
+import styles from './LoginForm.module.css';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,57 +26,44 @@ export function LoginForm() {
       });
 
       if (authError) {
-        showToast(authError.message, 'error');
+        toast({ title: authError.message, tone: 'danger' });
         return;
       }
 
-      showToast('Welcome back!', 'success');
+      toast({ title: 'Welcome back!', tone: 'success' });
       router.push('/admin');
       router.refresh();
     } catch {
-      showToast('An unexpected error occurred', 'error');
+      toast({ title: 'An unexpected error occurred', tone: 'danger' });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-sm mx-auto">
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium mb-1">
-          Email
-        </label>
-        <input
-          id="email"
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <Field label="Email" required>
+        <Input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full px-3 py-2 border border-border rounded bg-surface text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
-      </div>
+      </Field>
 
-      <div>
-        <label htmlFor="password" className="block text-sm font-medium mb-1">
-          Password
-        </label>
-        <input
-          id="password"
-          type="password"
+      <Field label="Password" required>
+        <PasswordInput
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="w-full px-3 py-2 border border-border rounded bg-surface text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          showLabel="Show password"
+          hideLabel="Hide password"
         />
-      </div>
+      </Field>
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full py-2 px-4 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 cursor-pointer"
-      >
-        {isLoading ? 'Signing in...' : 'Sign In'}
-      </button>
+      <Button type="submit" fullWidth loading={isLoading}>
+        Sign In
+      </Button>
     </form>
   );
 }

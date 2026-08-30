@@ -1,7 +1,3 @@
-@import "tailwindcss";
-
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
-
 /* ==========================================================================
    Light Theme (Newsprint) - WCAG AA Compliant
    ========================================================================== */
@@ -90,32 +86,6 @@
 }
 
 /* ==========================================================================
-   Tailwind Theme Mapping
-   ========================================================================== */
-@theme inline {
-  --color-surface: var(--bg-primary);
-  --color-surface-secondary: var(--bg-secondary);
-  --color-surface-sidebar: var(--bg-sidebar);
-  --color-hover: var(--bg-hover);
-  --color-active: var(--bg-active);
-  --color-primary: var(--text-primary);
-  --color-secondary: var(--text-secondary);
-  --color-tertiary: var(--text-tertiary);
-  --color-border: var(--border);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
-  --color-heart: var(--color-heart);
-  --color-success: var(--color-success);
-  --color-error: var(--color-error);
-  --color-warning: var(--color-warning);
-  --color-info: var(--color-info);
-  --width-sidebar: var(--sidebar-width);
-  /* `max-w-poem`: --poem-measure at the 18px desktop poem size, plus the
-     article's 1.5rem side padding, so the column can reach its full measure. */
-  --container-poem: 50.25rem;
-}
-
-/* ==========================================================================
    Accessibility Utilities
    ========================================================================== */
 .sr-only {
@@ -142,12 +112,8 @@
 }
 
 /* ==========================================================================
-   Base Styles
+   Base Styles — reset lives in @mond-design-system/tokens base.css
    ========================================================================== */
-* {
-  box-sizing: border-box;
-}
-
 html {
   height: 100%;
   margin: 0;
@@ -219,97 +185,133 @@ article {
   line-height: 1.8;
 }
 
-/* Poem content renderer - in @layer base to override Tailwind's preflight */
-@layer base {
-  /* The column a poem is fitted to. Sizing it as a query container lets the
-     poem below answer "how wide is the space I have?" in CSS, with no JS and
-     no guess about the viewport. */
-  .poem-fit {
-    container-type: inline-size;
-  }
+/* The column a poem is fitted to. Sizing it as a query container lets the
+   poem below answer "how wide is the space I have?" in CSS, with no JS and
+   no guess about the viewport. */
+.poem-fit {
+  container-type: inline-size;
+}
 
+.poem-content {
+  /* Named rather than inherited: the email renderer mirrors this rule as
+     inline styles, so the family has to be stated where the rest of it is. */
+  font-family: var(--font-sans);
+  /* Size and spacing live here, not in font-size utilities: a `text-lg`
+     utility carries its own line-height and would override the 1.8 the
+     email renderer mirrors.
+
+     The size fits the poem's longest line to the column: `--poem-line` is
+     that line's width in em, measured in lib/poemFit.ts, so dividing the
+     column by it gives the size at which the line just fits. Clamped so a
+     poem is never set larger than its base size and never smaller than
+     --poem-fit-min, where a poem too wide to fit holds and wraps instead.
+     The email renderer applies the same clamp in JavaScript. */
+  font-size: clamp(
+    var(--poem-fit-min),
+    calc(100cqi / var(--poem-line, 0.01)),
+    1rem
+  );
+  line-height: 1.8;
+  /* Size the column to the poem's own longest line rather than to a fixed
+     prose measure: a soft wrap invents a line break the poet didn't write.
+     Poems too wide to fit even at --poem-fit-min (prose poems) wrap here. */
+  width: max-content;
+  /* The column, and only the column. The 42em measure is enforced upstream —
+     `max-w-poem` on the article, the shell width in email — so repeating it
+     here would re-wrap the very lines the font size was just fitted to. */
+  max-width: 100%;
+  overflow-x: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.poem-content p {
+  margin: 0;
+  min-height: 1.8em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.poem-content p:has(br:only-child),
+.poem-content p:empty {
+  min-height: 1.8em;
+}
+
+.poem-content strong,
+.poem-content b {
+  font-weight: 700;
+}
+
+.poem-content em,
+.poem-content i {
+  font-style: italic;
+}
+
+.poem-content u {
+  text-decoration: underline;
+}
+
+@media (min-width: 768px) {
   .poem-content {
-    /* Named rather than inherited: the email renderer mirrors this rule as
-       inline styles, so the family has to be stated where the rest of it is. */
-    font-family: var(--font-sans);
-    /* Size and spacing live here, not in font-size utilities: a `text-lg`
-       utility carries its own line-height and would override the 1.8 the
-       email renderer mirrors.
-
-       The size fits the poem's longest line to the column: `--poem-line` is
-       that line's width in em, measured in lib/poemFit.ts, so dividing the
-       column by it gives the size at which the line just fits. Clamped so a
-       poem is never set larger than its base size and never smaller than
-       --poem-fit-min, where a poem too wide to fit holds and wraps instead.
-       The email renderer applies the same clamp in JavaScript. */
     font-size: clamp(
       var(--poem-fit-min),
       calc(100cqi / var(--poem-line, 0.01)),
-      1rem
+      1.125rem
     );
-    line-height: 1.8;
-    /* Size the column to the poem's own longest line rather than to a fixed
-       prose measure: a soft wrap invents a line break the poet didn't write.
-       Poems too wide to fit even at --poem-fit-min (prose poems) wrap here. */
-    width: max-content;
-    /* The column, and only the column. The 42em measure is enforced upstream —
-       `max-w-poem` on the article, the shell width in email — so repeating it
-       here would re-wrap the very lines the font size was just fitted to. */
-    max-width: 100%;
-    overflow-x: hidden;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-
-  .poem-content p {
-    margin: 0;
-    min-height: 1.8em;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-
-  .poem-content p:has(br:only-child),
-  .poem-content p:empty {
-    min-height: 1.8em;
-  }
-
-  .poem-content strong,
-  .poem-content b {
-    font-weight: 700;
-  }
-
-  .poem-content em,
-  .poem-content i {
-    font-style: italic;
-  }
-
-  .poem-content u {
-    text-decoration: underline;
-  }
-
-  @media (min-width: 768px) {
-    .poem-content {
-      font-size: clamp(
-        var(--poem-fit-min),
-        calc(100cqi / var(--poem-line, 0.01)),
-        1.125rem
-      );
-    }
   }
 }
-
 /* ==========================================================================
    Link Styling
    ========================================================================== */
+/* Preflight-style link reset: UA blue/underline off, links style
+   themselves per component. */
 a {
+  color: inherit;
+  text-decoration: inherit;
   transition: color 0.2s ease;
 }
 
 /* ==========================================================================
    Button Styling - Accessibility
    ========================================================================== */
+/* MDS base.css only sets `font: inherit` on form controls; strip the
+   remaining UA chrome (Tailwind preflight used to do this). */
+button {
+  background-color: transparent;
+  border: 0;
+  padding: 0;
+  appearance: none;
+}
+
+fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+/* Monospace elements keep the surrounding font size (browsers shrink
+   default monospace). */
+code,
+kbd,
+samp,
+pre {
+  font-size: 1em;
+}
+
+/* Headings carry no default size/weight; each component opts in. Matches
+   the preflight rule the site was built against. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
 button,
 [role="button"],
 input[type="submit"],

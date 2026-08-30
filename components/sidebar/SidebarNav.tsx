@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import { SideNav, SideNavItem } from '@/components/mds';
 import type { TreeNode, Poem } from '@/lib/poems';
 import { TreeItem } from './TreeItem';
+import styles from './SidebarNav.module.css';
 
 interface SidebarNavProps {
   tree: TreeNode[];
@@ -22,26 +24,21 @@ export function SidebarNav({
   onSearchResultClick,
 }: SidebarNavProps) {
   return (
-    <nav className="flex-1 overflow-y-auto p-2">
+    <SideNav label="Poems" className={styles.nav}>
       {searchResults ? (
         <div>
-          <div className="px-3 py-2 text-xs text-tertiary uppercase tracking-wide">
+          <div className={styles.resultsHeader}>
             {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
           </div>
           {searchResults.map((poem) => (
-            <Link
+            <SideNavItem
               key={poem.id}
+              as={Link}
               href={`/poem/${poem.slug}`}
+              label={poem.title}
+              active={poem.slug === activeSlug}
               onClick={onSearchResultClick}
-              className={`block py-2 px-3 rounded text-sm truncate transition-colors min-h-[44px] flex items-center ${
-                poem.slug === activeSlug
-                  ? 'bg-active text-primary'
-                  : 'text-secondary hover:bg-hover hover:text-primary'
-              }`}
-              title={poem.title}
-            >
-              {poem.title}
-            </Link>
+            />
           ))}
         </div>
       ) : (
@@ -56,6 +53,6 @@ export function SidebarNav({
           />
         ))
       )}
-    </nav>
+    </SideNav>
   );
 }

@@ -6,30 +6,31 @@ import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import type { RichTextEditorRef } from './RichTextEditor';
 import { PoemContent } from '@/components/PoemContent';
-import { ConfirmModal } from '@/components/ConfirmModal';
+import { Button, Checkbox, ConfirmDialog, Field, Input, Radio, Tab, TabList, Tabs } from '@/components/mds';
 import { formatDate } from '@/lib/date';
 import type { Poem, NewPoem } from '@/lib/supabase/types';
+import styles from './PoemEditor.module.css';
 
 const RichTextEditor = dynamic(
   () => import('./RichTextEditor').then((m) => m.RichTextEditor),
-  { ssr: false, loading: () => <div className="min-h-[300px] bg-surface border border-border rounded animate-pulse" /> }
+  { ssr: false, loading: () => <div className={styles.previewSkeleton} /> }
 );
 
 // Preview component that matches PoemDisplay exactly
 function PoemPreview({ title, subtitle, html }: { title: string; subtitle: string; html: string }) {
   return (
-    <article className="max-w-poem mx-auto">
+    <article className={styles.previewArticle}>
       {/* Title */}
-      <header className="mb-8">
-        <h1 className="text-xl md:text-2xl font-normal text-primary leading-tight">
+      <header className={styles.previewHeader}>
+        <h1 className={styles.previewTitle}>
           {title || 'Untitled'}
         </h1>
         {subtitle && (
-          <p className="text-base md:text-lg text-secondary mt-1 italic">
+          <p className={styles.previewSubtitle}>
             {subtitle}
           </p>
         )}
-        <time className="text-sm text-tertiary mt-2 block">
+        <time className={styles.previewTime}>
           {formatDate(new Date())}
         </time>
       </header>
@@ -190,126 +191,94 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className={styles.form}>
       {/* Title */}
-      <div>
-        <label htmlFor="title" className="block text-sm font-medium mb-2 text-primary">
-          Title
-        </label>
-        <input
-          id="title"
-          type="text"
+      <Field label="Title">
+        <Input
+          size="lg"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Poem title..."
-          className="w-full px-4 py-3 text-xl border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
-      </div>
+      </Field>
 
       {/* Subtitle */}
-      <div>
-        <label htmlFor="subtitle" className="block text-sm font-medium mb-2 text-primary">
-          Subtitle <span className="text-tertiary font-normal">(optional)</span>
-        </label>
-        <input
-          id="subtitle"
-          type="text"
+      <Field label="Subtitle" hint="Optional">
+        <Input
           value={subtitle}
           onChange={(e) => setSubtitle(e.target.value)}
           placeholder="Optional subtitle..."
-          className="w-full px-4 py-3 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         />
-      </div>
+      </Field>
 
       {/* Status and Date Row */}
-      <div className="flex flex-col sm:flex-row gap-6">
+      <div className={styles.statusDateRow}>
         {/* Status */}
-        <div>
-          <label className="block text-sm font-medium mb-2 text-primary">Status</label>
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2 cursor-pointer text-primary">
-              <input
-                type="radio"
-                name="status"
-                value="draft"
-                checked={status === 'draft'}
-                onChange={() => setStatus('draft')}
-                className="accent-accent"
-              />
-              <span>Draft</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer text-primary">
-              <input
-                type="radio"
-                name="status"
-                value="published"
-                checked={status === 'published'}
-                onChange={() => setStatus('published')}
-                className="accent-accent"
-              />
-              <span>Published</span>
-            </label>
+        <fieldset>
+          <legend className={styles.statusLegend}>Status</legend>
+          <div className={styles.radioRow}>
+            <Radio
+              name="status"
+              label="Draft"
+              checked={status === 'draft'}
+              onChange={() => setStatus('draft')}
+            />
+            <Radio
+              name="status"
+              label="Published"
+              checked={status === 'published'}
+              onChange={() => setStatus('published')}
+            />
           </div>
-        </div>
+        </fieldset>
 
         {/* Published Date */}
-        <div className="flex-1">
-          <label htmlFor="published-date" className="block text-sm font-medium mb-2 text-primary">
-            Published Date
-          </label>
-          <input
-            id="published-date"
-            type="datetime-local"
-            value={publishedAt}
-            onChange={(e) => setPublishedAt(e.target.value)}
-            className="px-4 py-2 border border-border rounded bg-surface text-primary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-          />
+        <div className={styles.dateField}>
+          <Field label="Published Date">
+            <Input
+              type="datetime-local"
+              value={publishedAt}
+              onChange={(e) => setPublishedAt(e.target.value)}
+            />
+          </Field>
         </div>
       </div>
 
       {/* Notify subscribers */}
       {canNotify && (
-        <div>
-          <label className="flex items-start gap-2 cursor-pointer text-primary">
-            <input
-              type="checkbox"
-              checked={notifySubscribers}
-              onChange={(e) => setNotifyOverride(e.target.checked)}
-              className="accent-accent mt-1"
-            />
-            <span>
+        <Checkbox
+          checked={notifySubscribers}
+          onChange={(e) => setNotifyOverride(e.target.checked)}
+          label={
+            <>
               Email subscribers about this poem
-              <span className="block text-sm text-tertiary">
+              <span className={styles.notifyHint}>
                 Goes to everyone with new-poem emails turned on. Only ever sent once per poem.
               </span>
-            </span>
-          </label>
-        </div>
+            </>
+          }
+        />
       )}
 
-      {/* Editor / Preview Toggle */}
-      <div className="flex items-center gap-4 border-b border-border pb-2">
-        <button
-          onClick={() => setIsPreview(false)}
-          className={`px-3 py-1 text-sm ${!isPreview ? 'text-accent border-b-2 border-accent' : 'text-tertiary'}`}
-        >
-          Edit
-        </button>
-        <button
-          onClick={() => setIsPreview(true)}
-          className={`px-3 py-1 text-sm ${isPreview ? 'text-accent border-b-2 border-accent' : 'text-tertiary'}`}
-        >
-          Preview
-        </button>
-      </div>
+      {/* Editor / Preview toggle. No TabPanel: both views share the one
+          container below, which renders conditionally. */}
+      <Tabs
+        value={isPreview ? 'preview' : 'edit'}
+        onChange={(value) => setIsPreview(value === 'preview')}
+      >
+        <TabList label="Poem editor">
+          <Tab value="edit">Edit</Tab>
+          <Tab value="preview">Preview</Tab>
+        </TabList>
+      </Tabs>
 
       {/* Content */}
-      <div className="bg-surface border border-border rounded-lg p-6">
+      <div className={styles.contentBox}>
         {isPreview ? (
           contentHtml ? (
             <PoemPreview title={title} subtitle={subtitle} html={contentHtml} />
           ) : (
-            <div className="text-tertiary text-center py-12">
+            <div className={styles.emptyContent}>
               No content yet...
             </div>
           )
@@ -319,45 +288,35 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
             content={contentHtml}
             onChange={handleEditorChange}
             minHeight="300px"
-            className="min-h-[300px]"
+            className={styles.editorMinHeight}
           />
         )}
       </div>
 
       {/* Error */}
       {error && (
-        <div className="text-red-600 text-sm">{error}</div>
+        <div className={styles.errorText}>{error}</div>
       )}
 
       {/* Actions */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-        <button
-          onClick={handleSaveClick}
-          disabled={isSaving}
-          className="px-6 py-3 sm:py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50"
-        >
-          {isSaving ? 'Saving...' : isNew ? 'Create Poem' : 'Save Changes'}
-        </button>
-        <button
-          onClick={() => router.back()}
-          className="px-6 py-3 sm:py-2 border border-border rounded hover:border-accent transition-colors text-primary"
-        >
+      <div className={styles.actionsRow}>
+        <Button onClick={handleSaveClick} loading={isSaving}>
+          {isNew ? 'Create Poem' : 'Save Changes'}
+        </Button>
+        <Button variant="secondary" onClick={() => router.back()}>
           Cancel
-        </button>
+        </Button>
       </div>
 
-      <ConfirmModal
-        isOpen={showNotifyConfirm}
+      <ConfirmDialog
+        open={showNotifyConfirm}
         onClose={() => setShowNotifyConfirm(false)}
-        onConfirm={() => {
-          setShowNotifyConfirm(false);
-          handleSave();
-        }}
+        onConfirm={() => handleSave()}
         title="Email subscribers?"
-        message={`Saving will publish "${title.trim() || 'this poem'}" and email every subscriber who has new-poem emails turned on. Email can't be recalled.`}
-        confirmText="Save and send"
-        variant="warning"
-        isLoading={isSaving}
+        description={`Saving will publish "${title.trim() || 'this poem'}" and email every subscriber who has new-poem emails turned on. Email can't be recalled.`}
+        confirmLabel="Save and send"
+        cancelLabel="Cancel"
+        tone="warning"
       />
     </div>
   );

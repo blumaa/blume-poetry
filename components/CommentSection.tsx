@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useToast } from '@/components/Toast';
 import { createClient } from '@/lib/supabase/client';
-import { ConfirmModal } from '@/components/ConfirmModal';
-import { Modal } from '@/components/Modal';
+import { Button, ConfirmDialog, Field, Input, Modal, ModalBody, ModalHeader, Textarea, useToast } from '@/components/mds';
 import { SkeletonComment } from '@/components/Skeleton';
 import { isAdminEmail } from '@/lib/config';
 import { getVisitorId } from '@/lib/visitorId';
+import styles from './CommentSection.module.css';
 
 interface Comment {
   id: string;
@@ -55,8 +54,7 @@ export function CommentSection({ slug, isModalOpen = false, onModalClose }: Comm
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Comment | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   useEffect(() => {
     const supabase = createClient();
@@ -84,120 +82,104 @@ export function CommentSection({ slug, isModalOpen = false, onModalClose }: Comm
     onModalClose?.();
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!deleteTarget) return;
+  const handleDeleteConfirm = async (target: Comment) => {
+    const res = await fetch(`/api/admin/comments/${target.id}`, {
+      method: 'DELETE',
+    });
 
-    setIsDeleting(true);
-    try {
-      const res = await fetch(`/api/admin/comments/${deleteTarget.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        showToast(data.error || 'Failed to delete comment', 'error');
-        return;
-      }
-
-      setComments((prev) => prev.filter((c) => c.id !== deleteTarget.id));
-      showToast('Comment deleted', 'success');
-      setDeleteTarget(null);
-    } catch {
-      showToast('Failed to delete comment', 'error');
-    } finally {
-      setIsDeleting(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: 'Failed to delete comment' }));
+      throw new Error(data.error || 'Failed to delete comment');
     }
+
+    setComments((prev) => prev.filter((c) => c.id !== target.id));
+    toast({ title: 'Comment deleted', tone: 'success' });
   };
 
   return (
     <div>
       {isLoading ? (
-        <div className="mt-8 pt-8 border-t border-border">
+        <div className={styles.divider}>
           <SkeletonComment />
         </div>
       ) : error ? (
-        <div className="mt-8 pt-8 border-t border-border">
-          <p className="text-red-600">{error}</p>
+        <div className={styles.divider}>
+          <p className={styles.errorText}>{error}</p>
         </div>
       ) : comments.length > 0 ? (
-        <div className="mt-8 pt-8 border-t border-border space-y-6">
+        <div className={styles.commentsList}>
           {comments.map((comment) => (
-            <div key={comment.id} className="border-b border-border pb-6 last:border-b-0">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-primary">{comment.author_name}</span>
-                  <span className="text-tertiary text-sm">{formatDate(comment.created_at)}</span>
+            <div key={comment.id} className={styles.commentItem}>
+              <div className={styles.commentHeader}>
+                <div className={styles.commentMeta}>
+                  <span className={styles.author}>{comment.author_name}</span>
+                  <span className={styles.commentDate}>{formatDate(comment.created_at)}</span>
                 </div>
                 {isAdmin && (
                   <button
                     onClick={() => setDeleteTarget(comment)}
-                    className="text-sm text-red-600 hover:text-red-700"
+                    className={styles.deleteButton}
                     aria-label="Delete comment"
                   >
                     Delete
                   </button>
                 )}
               </div>
-              <p className="text-primary whitespace-pre-wrap">{comment.content}</p>
+              <p className={styles.commentContent}>{comment.content}</p>
             </div>
           ))}
         </div>
       ) : null}
 
-      <CommentModal
-        isOpen={isModalOpen}
-        onClose={() => onModalClose?.()}
-        slug={slug}
-        onCommentAdded={handleNewComment}
-      />
+      {/* Mounted only while open so state (saved name, spam timer) seeds
+          fresh on each open via initializers instead of effects. */}
+      {isModalOpen && (
+        <CommentModal
+          onClose={() => onModalClose?.()}
+          slug={slug}
+          onCommentAdded={handleNewComment}
+        />
+      )}
 
-      <ConfirmModal
-        isOpen={!!deleteTarget}
+      <ConfirmDialog
+        target={deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDeleteConfirm}
         title="Delete Comment"
-        message={`Are you sure you want to delete this comment by "${deleteTarget?.author_name}"?`}
-        confirmText="Delete"
-        variant="danger"
-        isLoading={isDeleting}
+        description={`Are you sure you want to delete this comment by "${deleteTarget?.author_name}"?`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        tone="danger"
       />
     </div>
   );
 }
 
 interface CommentModalProps {
-  isOpen: boolean;
   onClose: () => void;
   slug: string;
   onCommentAdded: (comment: Comment) => void;
 }
 
-function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalProps) {
-  const [name, setName] = useState('');
+/* Mounted per open (see call site), so initializers run at open time. */
+function CommentModal({ onClose, slug, onCommentAdded }: CommentModalProps) {
+  const [name, setName] = useState(() => localStorage.getItem('comment_name') ?? '');
   const [content, setContent] = useState('');
   const [honeypot, setHoneypot] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const formLoadTime = useRef(Date.now());
-  const { showToast } = useToast();
+  // Spam check: server rejects submits too soon after the form appeared.
+  const formLoadTime = useRef(0);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const savedName = localStorage.getItem('comment_name');
-    if (savedName) {
-      setName(savedName);
-    }
+    formLoadTime.current = Date.now();
   }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      formLoadTime.current = Date.now();
-    }
-  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim() || !content.trim()) {
-      showToast('Please fill in both name and comment', 'error');
+      toast({ title: 'Please fill in both name and comment', tone: 'danger' });
       return;
     }
 
@@ -222,54 +204,47 @@ function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalPro
       const data = await res.json();
 
       if (!res.ok) {
-        showToast(data.error || 'Failed to post comment', 'error');
+        toast({ title: data.error || 'Failed to post comment', tone: 'danger' });
         return;
       }
 
       if (data.comment) {
         onCommentAdded(data.comment);
         setContent('');
-        showToast('Comment posted!', 'success');
+        toast({ title: 'Comment posted!', tone: 'success' });
       }
     } catch {
-      showToast('Failed to post comment. Please try again.', 'error');
+      toast({ title: 'Failed to post comment. Please try again.', tone: 'danger' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add a Comment">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="comment-name" className="block text-sm font-medium mb-1 text-primary">
-            Name
-          </label>
-          <input
-            id="comment-name"
+    <Modal open onClose={onClose} label="Add a Comment">
+      <ModalHeader>Add a Comment</ModalHeader>
+      <ModalBody>
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <Field label="Name">
+          <Input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
             maxLength={100}
-            className="w-full px-3 py-2 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent min-h-[44px]"
           />
-        </div>
+        </Field>
 
-        <div>
-          <label htmlFor="comment-content" className="block text-sm font-medium mb-1 text-primary">
-            Comment
-          </label>
-          <textarea
-            id="comment-content"
+        <Field label="Comment">
+          <Textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Share your thoughts..."
             rows={4}
             maxLength={2000}
-            className="w-full px-3 py-2 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent resize-y min-h-[100px]"
+            showCount
           />
-        </div>
+        </Field>
 
         {/* Honeypot field */}
         <div className="sr-only" aria-hidden="true">
@@ -285,24 +260,16 @@ function CommentModal({ isOpen, onClose, slug, onCommentAdded }: CommentModalPro
           />
         </div>
 
-        <div className="flex gap-3 justify-end pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="px-4 py-2 border border-border rounded hover:bg-hover transition-colors text-primary min-h-[44px]"
-          >
+        <div className={styles.formActions}>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 min-h-[44px]"
-          >
+          </Button>
+          <Button type="submit" loading={isSubmitting}>
             {isSubmitting ? 'Posting...' : 'Post Comment'}
-          </button>
+          </Button>
         </div>
       </form>
+      </ModalBody>
     </Modal>
   );
 }

@@ -1,52 +1,66 @@
 'use client';
 
 import Link from 'next/link';
+import { AppBar, Button } from '@/components/mds';
 import { ThemeToggle } from './ThemeToggle';
 import { LoginButton } from './LoginButton';
+import styles from './MobileHeader.module.css';
 
 interface MobileHeaderProps {
   onMenuClick: () => void;
 }
 
+function MenuIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+  );
+}
+
 export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
   return (
-    <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-surface border-b border-border px-2 h-14 flex items-center justify-between w-full overflow-hidden">
-      {/* Hamburger menu button */}
-      <button
-        onClick={onMenuClick}
-        className="shrink-0 w-[44px] h-[44px] flex items-center justify-center rounded-lg transition-colors hover:bg-hover"
-        aria-label="Open navigation menu"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </button>
-
-      {/* Site title */}
-      <Link
-        href="/"
-        className="text-base font-medium text-primary hover:text-secondary transition-colors h-[44px] flex items-center truncate min-w-0"
-      >
-        Blumenous Poetry
-      </Link>
-
-      {/* Right side buttons */}
-      <div className="shrink-0 flex items-center">
-        <ThemeToggle />
-        <LoginButton className="text-secondary" />
-      </div>
-    </header>
+    <AppBar
+      className={styles.appBar}
+      /* No `title`: AppBar renders it as the page h1, which belongs to the
+         poem. The site name is a plain home link in the leading slot. */
+      leading={
+        <>
+          <Button
+            iconOnly
+            variant="ghost"
+            shape="rect"
+            onClick={onMenuClick}
+            aria-label="Open navigation menu"
+          >
+            <MenuIcon />
+          </Button>
+          <Link
+            href="/"
+            className={styles.brandLink}
+          >
+            Blumenous Poetry
+          </Link>
+        </>
+      }
+      trailing={
+        <>
+          <ThemeToggle />
+          <LoginButton className={styles.iconButton} />
+        </>
+      }
+    />
   );
 }

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Modal } from './Modal';
+import { Button, Checkbox, Input, Modal, ModalBody, ModalHeader } from '@/components/mds';
+import styles from './SubscribeModal.module.css';
 
 interface SubscribeModalProps {
   isOpen: boolean;
@@ -55,18 +56,23 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={resetAndClose}>
-      <h2 className="sr-only">{isAdmin ? 'Add subscriber' : 'Subscribe to newsletter'}</h2>
-      <p className="text-secondary mb-6">
+    <Modal
+      open={isOpen}
+      onClose={resetAndClose}
+      label={isAdmin ? 'Add subscriber' : 'Subscribe to newsletter'}
+    >
+      <ModalHeader>{isAdmin ? 'Add subscriber' : 'Subscribe to newsletter'}</ModalHeader>
+      <ModalBody>
+      <p className={styles.description}>
         {isAdmin ? 'Add a new subscriber manually.' : 'Get notified when new poetry is published.'}
       </p>
 
       {status === 'success' ? (
-        <div className="text-center py-4">
-          <div className="text-accent mb-4">
+        <div className={styles.successBox}>
+          <div className={styles.successIcon}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-12 w-12 mx-auto"
+              className={styles.checkIcon}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -79,57 +85,42 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
               />
             </svg>
           </div>
-          <p className="text-primary">{message}</p>
-          <button
-            onClick={resetAndClose}
-            className="mt-4 px-4 py-2 text-secondary hover:text-primary transition-colors min-h-[44px]"
-          >
+          <p className={styles.successMessage}>{message}</p>
+          <Button variant="ghost" onClick={resetAndClose} className={styles.closeButton}>
             Close
-          </button>
+          </Button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="modal-subscribe-email" className="sr-only">
-              Email address
-            </label>
-            <input
-              id="modal-subscribe-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              required
-              autoFocus
-              aria-describedby={status === 'error' ? 'modal-subscribe-error' : undefined}
-              className="w-full px-4 py-3 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors min-h-[44px]"
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <Input
+            type="email"
+            aria-label="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            required
+            autoFocus
+            invalid={status === 'error'}
+            aria-describedby={status === 'error' ? 'modal-subscribe-error' : undefined}
+            disabled={status === 'loading'}
+          />
+          {!isAdmin && (
+            <Checkbox
+              label="Email me when a new poem is published"
+              checked={notifyNewPoems}
+              onChange={(e) => setNotifyNewPoems(e.target.checked)}
               disabled={status === 'loading'}
             />
-          </div>
-          {!isAdmin && (
-            <label className="flex items-start gap-2 text-sm text-secondary cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notifyNewPoems}
-                onChange={(e) => setNotifyNewPoems(e.target.checked)}
-                disabled={status === 'loading'}
-                className="accent-accent mt-0.5"
-              />
-              <span>Email me when a new poem is published</span>
-            </label>
           )}
           {status === 'error' && (
-            <p id="modal-subscribe-error" className="text-red-600 text-sm" role="alert">{message}</p>
+            <p id="modal-subscribe-error" className={styles.errorText} role="alert">{message}</p>
           )}
-          <button
-            type="submit"
-            disabled={status === 'loading'}
-            className="w-full px-4 py-3 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 font-medium min-h-[44px]"
-          >
+          <Button type="submit" fullWidth loading={status === 'loading'}>
             {status === 'loading' ? (isAdmin ? 'Adding...' : 'Subscribing...') : (isAdmin ? 'Add Subscriber' : 'Subscribe')}
-          </button>
+          </Button>
         </form>
       )}
+      </ModalBody>
     </Modal>
   );
 }

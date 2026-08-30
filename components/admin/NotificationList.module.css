@@ -1,0 +1,94 @@
+.iconSm {
+  width: 1rem;
+  height: 1rem;
+}
+
+.iconLg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.iconWrapper {
+  flex-shrink: 0;
+}
+
+.iconWrapperOffset {
+  margin-top: 0.125rem;
+}
+
+.itemLink {
+  display: block;
+  transition: background-color 0.15s ease;
+}
+
+.itemLink:hover {
+  background: var(--bg-hover);
+}
+
+.itemLinkCompact {
+  padding: 0.75rem;
+}
+
+.itemLinkRegular {
+  padding: 1rem;
+}
+
+.itemRow {
+  display: flex;
+  align-items: flex-start;
+}
+
+.itemRowCompact {
+  gap: 0.5rem;
+}
+
+.itemRowRegular {
+  gap: 0.75rem;
+}
+
+.commentIcon {
+  color: #3b82f6;
+}
+
+.likeIcon {
+  color: var(--color-heart);
+}
+
+.itemContent {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.itemText {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.emphasis {
+  font-weight: 500;
+}
+
+.itemPreview {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 0.125rem;
+}
+
+.itemTime {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-top: 0.25rem;
+}
+
+.stateMessage {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+.list > * + * {
+  border-top: 1px solid var(--border);
+}

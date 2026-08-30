@@ -1,5 +1,6 @@
 import { SidebarServer } from '@/components/SidebarServer';
 import { Footer } from '@/components/Footer';
+import styles from './PageShell.module.css';
 
 interface PageShellProps {
   children: React.ReactNode;
@@ -8,12 +9,12 @@ interface PageShellProps {
 }
 
 export function PageShell({ children, contentClassName }: PageShellProps) {
-  const contentClass = contentClassName ? `flex-1 ${contentClassName}` : 'flex-1';
+  const contentClass = contentClassName ? `${styles.content} ${contentClassName}` : styles.content;
 
   return (
-    <div className="min-h-screen has-sidebar">
+    <div className={`has-sidebar ${styles.shell}`}>
       <SidebarServer />
-      <main id="main-content" className="flex-1 flex flex-col">
+      <main id="main-content" className={styles.main}>
         <div className={contentClass}>{children}</div>
         <Footer />
       </main>

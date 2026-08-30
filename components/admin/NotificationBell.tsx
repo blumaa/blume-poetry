@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { Button, Popover, PopoverBody, PopoverHeader } from '@/components/mds';
 import { NotificationList, type Notification } from './NotificationList';
+import styles from './NotificationBell.module.css';
 
 const LAST_SEEN_KEY = 'admin_notifications_last_seen';
 
@@ -11,7 +13,7 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const anchorRef = useRef<HTMLButtonElement>(null);
 
   // Fetch notifications on mount
   useEffect(() => {
@@ -85,18 +87,6 @@ export function NotificationBell() {
     };
   }, []);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const handleOpen = () => {
     setIsOpen(!isOpen);
     if (!isOpen && unreadCount > 0) {
@@ -122,63 +112,52 @@ export function NotificationBell() {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={handleOpen}
-        className="relative p-2 text-secondary hover:text-primary transition-colors"
-        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-          />
-        </svg>
+    <>
+      <span className={styles.bellWrap}>
+        <Button
+          ref={anchorRef}
+          iconOnly
+          variant="ghost"
+          onClick={handleOpen}
+          aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+        >
+          <svg className={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+        </Button>
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+          <span className={styles.badge}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
-      </button>
+      </span>
 
-      {isOpen && (
-        <>
-          {/* Mobile: bottom sheet */}
-          <div className="md:hidden fixed inset-0 z-50">
-            <div className="absolute inset-0 bg-black/50" onClick={() => setIsOpen(false)} />
-            <div className="absolute bottom-0 left-0 right-0 bg-surface rounded-t-2xl max-h-[70vh] overflow-y-auto pb-[env(safe-area-inset-bottom)]" style={{ animation: 'slideUp 0.25s ease-out' }}>
-              <div className="flex justify-center pt-3 pb-1">
-                <div className="w-10 h-1 bg-tertiary/40 rounded-full" />
-              </div>
-              <div className="p-4 border-b border-border">
-                <h3 className="font-medium text-primary">Notifications</h3>
-              </div>
-              <NotificationList
-                notifications={notifications}
-                isLoading={isLoading}
-                onItemClick={() => setIsOpen(false)}
-                formatTime={formatTime}
-              />
-            </div>
-          </div>
-
-          {/* Desktop: dropdown */}
-          <div className="hidden md:block absolute right-0 mt-2 w-80 bg-surface border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-            <div className="p-3 border-b border-border">
-              <h3 className="font-medium text-primary">Notifications</h3>
-            </div>
-            <NotificationList
-              notifications={notifications}
-              isLoading={isLoading}
-              onItemClick={() => setIsOpen(false)}
-              formatTime={formatTime}
-              compact
-            />
-          </div>
-        </>
-      )}
-    </div>
+      <Popover
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        anchorRef={anchorRef}
+        label="Notifications"
+        placement="bottom-end"
+        className={styles.popoverPanel}
+      >
+        <PopoverHeader onClose={() => setIsOpen(false)} closeLabel="Close notifications">
+          Notifications
+        </PopoverHeader>
+        <PopoverBody>
+          <NotificationList
+            notifications={notifications}
+            isLoading={isLoading}
+            onItemClick={() => setIsOpen(false)}
+            formatTime={formatTime}
+            compact
+          />
+        </PopoverBody>
+      </Popover>
+    </>
   );
 }

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useToast } from '@/components/Toast';
+import { Button, Checkbox, Input, useToast } from '@/components/mds';
+import styles from './SubscribeForm.module.css';
 
 interface SubscribeFormProps {
   compact?: boolean;
@@ -14,7 +15,7 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
   // preference is one click away from any email they get.
   const [notifyNewPoems, setNotifyNewPoems] = useState(true);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
-  const { showToast } = useToast();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,21 +32,21 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
 
       if (response.ok) {
         setStatus('success');
-        showToast('Thank you for subscribing!', 'success');
+        toast({ title: 'Thank you for subscribing!', tone: 'success' });
         setEmail('');
       } else {
         setStatus('idle');
-        showToast(data.error || 'Failed to subscribe', 'error');
+        toast({ title: data.error || 'Failed to subscribe', tone: 'danger' });
       }
     } catch {
       setStatus('idle');
-      showToast('An unexpected error occurred', 'error');
+      toast({ title: 'An unexpected error occurred', tone: 'danger' });
     }
   };
 
   if (status === 'success') {
     return (
-      <div className={`text-secondary ${compact ? 'text-xs' : 'text-center'}`}>
+      <div className={`${styles.successMsg} ${compact ? styles.compactText : styles.centerText}`}>
         Thank you for subscribing!
       </div>
     );
@@ -53,66 +54,51 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
 
   if (compact) {
     return (
-      <form onSubmit={handleSubmit} className="flex gap-1">
-        <label htmlFor="subscribe-email-compact" className="sr-only">
-          Email address
-        </label>
-        <input
-          id="subscribe-email-compact"
+      <form onSubmit={handleSubmit} className={styles.compactForm}>
+        <Input
           type="email"
+          aria-label="Email address"
+          size="sm"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
           required
-          className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent min-h-[44px]"
           disabled={status === 'loading'}
+          className={styles.compactInput}
         />
-        <button
-          type="submit"
-          disabled={status === 'loading'}
-          className="px-3 py-1.5 text-sm bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 shrink-0 min-h-[44px]"
-        >
-          {status === 'loading' ? '...' : 'Go'}
-        </button>
+        <Button type="submit" size="sm" loading={status === 'loading'}>
+          Go
+        </Button>
       </form>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md mx-auto">
-      <div className="flex flex-col sm:flex-row gap-2">
-        <label htmlFor="subscribe-email" className="sr-only">
-          Email address
-        </label>
-        <input
-          id="subscribe-email"
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <div className={styles.row}>
+        <Input
           type="email"
+          aria-label="Email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
           required
-          className="flex-1 px-4 py-3 border border-border rounded bg-surface text-primary placeholder:text-tertiary focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 min-h-[44px]"
           disabled={status === 'loading'}
+          className={styles.input}
         />
-        <button
-          type="submit"
-          disabled={status === 'loading'}
-          className="px-6 py-3 bg-accent text-white rounded hover:bg-accent-hover transition-colors disabled:opacity-50 min-h-[44px] font-medium"
-        >
+        <Button type="submit" loading={status === 'loading'}>
           {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
-        </button>
+        </Button>
       </div>
 
-      <label className="flex items-start gap-2 mt-3 text-sm text-secondary cursor-pointer">
-        <input
-          type="checkbox"
+      <div className={styles.checkboxRow}>
+        <Checkbox
+          label="Email me when a new poem is published"
           checked={notifyNewPoems}
           onChange={(e) => setNotifyNewPoems(e.target.checked)}
           disabled={status === 'loading'}
-          className="accent-accent mt-0.5"
         />
-        <span>Email me when a new poem is published</span>
-      </label>
+      </div>
     </form>
   );
 }

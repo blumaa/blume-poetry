@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Skeleton } from '@/components/Skeleton';
+import { CountButton, Skeleton } from '@/components/mds';
 import { getVisitorId } from '@/lib/visitorId';
 
 interface LikeButtonProps {
@@ -63,19 +63,19 @@ export function LikeButton({ slug }: LikeButtonProps) {
   };
 
   if (isLoading) {
-    return <Skeleton className="h-[44px] w-20 rounded" />;
+    return <Skeleton variant="rect" width="5rem" height="44px" />;
   }
 
   return (
-    <button
+    <CountButton
       onClick={handleClick}
-      className="flex items-center gap-2 px-4 h-[44px] border border-border rounded transition-colors text-secondary hover:border-tertiary"
-      aria-label={hasLiked ? 'Unlike this poem' : 'Like this poem'}
-      aria-pressed={hasLiked}
+      icon={<HeartIcon filled={hasLiked} />}
+      label={hasLiked ? 'Unlike this poem' : 'Like this poem'}
+      active={hasLiked}
+      loading={isToggling}
     >
-      <HeartIcon filled={hasLiked} />
-      <span>{count}</span>
-    </button>
+      {count}
+    </CountButton>
   );
 }
 
