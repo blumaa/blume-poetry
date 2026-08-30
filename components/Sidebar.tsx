@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect, useEffectEvent, useRef, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import type { TreeNode, Poem } from '@/lib/poems';
 import { SidebarHeader } from './sidebar/SidebarHeader';
@@ -72,14 +72,16 @@ export function Sidebar({
     return result;
   }, [expandedNodes, activeSlug, tree, manuallyCollapsed]);
 
-  // Close sidebar on navigation (mobile only)
-  useEffect(() => {
+  // Close sidebar on navigation (mobile only). Effect event so the effect
+  // reacts to pathname alone, reading current isMobile/onClose when it fires.
+  const closeOnNavigate = useEffectEvent(() => {
     if (isMobile && onClose) {
       onClose();
     }
-    // Intentionally only depend on pathname to close sidebar on navigation,
-    // not on isMobile/onClose which would cause unnecessary closures
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+
+  useEffect(() => {
+    closeOnNavigate();
   }, [pathname]);
 
   const toggleNode = (id: string) => {
