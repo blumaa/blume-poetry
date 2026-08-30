@@ -1,7 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { renderWithProviders } from '../test-utils';
 import { Sidebar } from '@/components/Sidebar';
-import { ThemeProvider } from '@/components/ThemeProvider';
-import { ToastProvider } from '@/components/mds';
 import type { TreeNode } from '@/lib/poems';
 
 jest.mock('next/navigation', () => ({
@@ -28,13 +28,7 @@ const tree: TreeNode[] = [
 ];
 
 function renderSidebar(props: Partial<React.ComponentProps<typeof Sidebar>> = {}) {
-  return render(
-    <ThemeProvider>
-      <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
-        <Sidebar tree={tree} {...props} />
-      </ToastProvider>
-    </ThemeProvider>
-  );
+  return renderWithProviders(<Sidebar tree={tree} {...props} />);
 }
 
 describe('Sidebar', () => {
@@ -80,5 +74,37 @@ describe('Sidebar', () => {
     renderSidebar({ isMobile: false, isCollapsed: true });
     expect(screen.queryByPlaceholderText('Search poems...')).not.toBeInTheDocument();
     expect(screen.getAllByLabelText('Expand sidebar').length).toBeGreaterThan(0);
+  });
+
+  it('shows debounced search results from the server', async () => {
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        poems: [
+          {
+            id: 'poem-x',
+            slug: 'poem-x',
+            title: 'Found Poem',
+            subtitle: null,
+            content: '',
+            plainText: '',
+            publishedAt: '2026-01-01',
+            url: '/poem/poem-x',
+          },
+        ],
+      }),
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    renderSidebar({ isMobile: false });
+    const user = userEvent.setup();
+
+    const [input] = screen.getAllByPlaceholderText('Search poems...');
+    await user.type(input, 'found');
+
+    expect(await screen.findAllByRole('link', { name: 'Found Poem' })).not.toHaveLength(0);
+    expect(fetchMock).toHaveBeenCalledWith('/api/poems/search?q=found');
+    // Debounce: one request for the whole word, not one per keystroke.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

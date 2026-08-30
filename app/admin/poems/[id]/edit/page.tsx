@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { use } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { PoemEditor } from '@/components/admin/PoemEditor';
 import type { Poem } from '@/lib/supabase/types';
@@ -10,39 +11,32 @@ interface EditPoemPageProps {
   params: Promise<{ id: string }>;
 }
 
+async function fetchPoemById(id: string): Promise<Poem> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('poems')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as Poem;
+}
+
 export default function EditPoemPage({ params }: EditPoemPageProps) {
   const { id } = use(params);
-  const [poem, setPoem] = useState<Poem | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const supabase = createClient();
+  const { data: poem, isPending, error } = useQuery({
+    queryKey: ['admin', 'poems', 'byId', id],
+    queryFn: () => fetchPoemById(id),
+  });
 
-    async function fetchPoem() {
-      const { data, error: fetchError } = await supabase
-        .from('poems')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (fetchError) {
-        setError(fetchError.message);
-      } else {
-        setPoem(data as Poem);
-      }
-      setIsLoading(false);
-    }
-
-    fetchPoem();
-  }, [id]);
-
-  if (isLoading) {
+  if (isPending) {
     return <div className={styles.stateMessage}>Loading poem...</div>;
   }
 
   if (error) {
-    return <div className={styles.errorText}>Error: {error}</div>;
+    return <div className={styles.errorText}>Error: {error.message}</div>;
   }
 
   if (!poem) {

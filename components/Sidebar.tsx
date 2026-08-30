@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect, useEffectEvent } from 'react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { usePathname } from 'next/navigation';
 import type { TreeNode, Poem } from '@/lib/poems';
+import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { SidebarHeader } from './sidebar/SidebarHeader';
 import { SidebarSearch } from './sidebar/SidebarSearch';
 import { SidebarNav } from './sidebar/SidebarNav';
@@ -21,6 +23,13 @@ function findPoemPath(nodes: TreeNode[], slug: string, path: string[] = []): str
     }
   }
   return null;
+}
+
+async function searchPoems(query: string): Promise<Poem[]> {
+  const res = await fetch(`/api/poems/search?q=${encodeURIComponent(query)}`);
+  if (!res.ok) throw new Error('Search failed');
+  const data = await res.json();
+  return data.poems;
 }
 
 interface SidebarProps {
@@ -42,7 +51,17 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const [search, setSearch] = useState('');
-  const [searchResults, setSearchResults] = useState<Poem[] | null>(null);
+  const debouncedQuery = useDebouncedValue(search, 300).trim();
+
+  /* keepPreviousData: old results stay visible while the next query loads,
+     so the list does not flash empty between keystrokes. */
+  const { data: searchData } = useQuery({
+    queryKey: ['poems', 'search', debouncedQuery],
+    queryFn: () => searchPoems(debouncedQuery),
+    enabled: !!debouncedQuery,
+    placeholderData: keepPreviousData,
+  });
+  const searchResults = debouncedQuery ? searchData ?? null : null;
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(
     new Set()
   );
@@ -72,14 +91,16 @@ export function Sidebar({
     return result;
   }, [expandedNodes, activeSlug, tree, manuallyCollapsed]);
 
-  // Close sidebar on navigation (mobile only)
-  useEffect(() => {
+  // Close sidebar on navigation (mobile only). Effect event so the effect
+  // reacts to pathname alone, reading current isMobile/onClose when it fires.
+  const closeOnNavigate = useEffectEvent(() => {
     if (isMobile && onClose) {
       onClose();
     }
-    // Intentionally only depend on pathname to close sidebar on navigation,
-    // not on isMobile/onClose which would cause unnecessary closures
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+
+  useEffect(() => {
+    closeOnNavigate();
   }, [pathname]);
 
   const toggleNode = (id: string) => {
@@ -103,29 +124,6 @@ export function Sidebar({
       setExpandedNodes((prev) => new Set([...prev, id]));
     }
   };
-
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleSearch = useCallback((query: string) => {
-    setSearch(query);
-
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    if (!query.trim()) {
-      setSearchResults(null);
-      return;
-    }
-
-    searchTimeoutRef.current = setTimeout(async () => {
-      const res = await fetch(`/api/poems/search?q=${encodeURIComponent(query)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSearchResults(data.poems);
-      }
-    }, 300);
-  }, []);
 
   const handleTreeNavigate = () => {
     if (isMobile && onClose) {
@@ -151,7 +149,7 @@ export function Sidebar({
       <aside className={`sidebar-mobile ${isOpen ? 'open' : ''} ${styles.mobileAside}`}>
         <SidebarHeader variant="mobile" onClose={handleCloseMenu} />
 
-        <SidebarSearch id="mobile-search-poems" value={search} onChange={handleSearch} />
+        <SidebarSearch id="mobile-search-poems" value={search} onChange={setSearch} />
 
         <SidebarNav
           tree={tree}
@@ -180,7 +178,7 @@ export function Sidebar({
       />
 
       {!isCollapsed && (
-        <SidebarSearch id="desktop-search-poems" value={search} onChange={handleSearch} />
+        <SidebarSearch id="desktop-search-poems" value={search} onChange={setSearch} />
       )}
 
       {!isCollapsed && (

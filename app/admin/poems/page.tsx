@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { Badge, Button, Chip, ChipGroup, ConfirmDialog, DataTable, Input, useToast } from '@/components/mds';
 import type { Poem } from '@/lib/supabase/types';
@@ -10,15 +11,84 @@ import { SkeletonList } from '@/components/Skeleton';
 import { formatDate } from '@/lib/date';
 import styles from './page.module.css';
 
+async function fetchAdminPoems(statusFilter: string | null): Promise<Poem[]> {
+  const supabase = createClient();
+  let query = supabase
+    .from('poems')
+    .select('*')
+    .order('published_at', { ascending: false });
+
+  if (statusFilter === 'draft' || statusFilter === 'published') {
+    query = query.eq('status', statusFilter);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw new Error(error.message);
+  return (data as Poem[]) || [];
+}
+
+async function updatePoemPinned(id: string, pinned: boolean): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from('poems').update({ pinned }).eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+async function deletePoem(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from('poems').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+async function revalidatePaths(paths: string[]): Promise<void> {
+  await fetch('/api/admin/revalidate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paths }),
+  });
+}
+
 export default function AdminPoemsPage() {
-  const [poems, setPoems] = useState<Poem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Poem | null>(null);
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get('status');
   const router = useRouter();
   const { toast } = useToast();
+
+  const { data: poems = [], isPending } = useQuery({
+    queryKey: ['admin', 'poems', statusFilter],
+    queryFn: () => fetchAdminPoems(statusFilter),
+  });
+
+  const invalidatePoems = () =>
+    queryClient.invalidateQueries({ queryKey: ['admin', 'poems'] });
+
+  /* Deterministic: pin state moves only after the refetch confirms the write. */
+  const pinMutation = useMutation({
+    mutationFn: async (poem: Poem) => {
+      await updatePoemPinned(poem.id, !poem.pinned);
+      await revalidatePaths([]);
+    },
+    onSuccess: (_data, poem) =>
+      toast({
+        title: !poem.pinned ? `"${poem.title}" pinned` : `"${poem.title}" unpinned`,
+        tone: 'success',
+      }),
+    onError: (error) =>
+      toast({ title: error instanceof Error ? error.message : 'Update failed', tone: 'danger' }),
+    onSettled: invalidatePoems,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (target: Poem) => {
+      await deletePoem(target.id);
+      await revalidatePaths([`/poem/${target.slug}`]);
+    },
+    onSuccess: (_data, target) => toast({ title: `"${target.title}" deleted`, tone: 'success' }),
+    onSettled: invalidatePoems,
+  });
 
   const filteredPoems = poems
     .filter((poem) =>
@@ -45,74 +115,8 @@ export default function AdminPoemsPage() {
     }
   }, [toast]);
 
-  useEffect(() => {
-    const supabase = createClient();
-
-    async function fetchPoems() {
-      let query = supabase
-        .from('poems')
-        .select('*')
-        .order('published_at', { ascending: false });
-
-      if (statusFilter === 'draft' || statusFilter === 'published') {
-        query = query.eq('status', statusFilter);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching poems:', error);
-      } else {
-        setPoems((data as Poem[]) || []);
-      }
-      setIsLoading(false);
-    }
-
-    fetchPoems();
-  }, [statusFilter]);
-
-  const handleTogglePin = async (poem: Poem) => {
-    const supabase = createClient();
-    const newPinned = !poem.pinned;
-    const { error: pinError } = await supabase
-      .from('poems')
-      .update({ pinned: newPinned })
-      .eq('id', poem.id);
-
-    if (pinError) {
-      toast({ title: pinError.message, tone: 'danger' });
-    } else {
-      setPoems((current) =>
-        current.map((p) => (p.id === poem.id ? { ...p, pinned: newPinned } : p))
-      );
-      await fetch('/api/admin/revalidate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paths: [] }),
-      });
-      toast({ title: newPinned ? `"${poem.title}" pinned` : `"${poem.title}" unpinned`, tone: 'success' });
-    }
-  };
-
   const handleDeleteClick = (poem: Poem) => {
     setDeleteTarget(poem);
-  };
-
-  const handleDeleteConfirm = async (target: Poem) => {
-    const supabase = createClient();
-    const { error: deleteError } = await supabase.from('poems').delete().eq('id', target.id);
-
-    if (deleteError) {
-      throw new Error(deleteError.message);
-    }
-
-    setPoems((currentPoems) => currentPoems.filter((p) => p.id !== target.id));
-    await fetch('/api/admin/revalidate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paths: [`/poem/${target.slug}`] }),
-    });
-    toast({ title: `"${target.title}" deleted`, tone: 'success' });
   };
 
   return (
@@ -157,7 +161,7 @@ export default function AdminPoemsPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {isPending ? (
         <SkeletonList count={8} />
       ) : poems.length === 0 ? (
         <div className={styles.emptyState}>
@@ -215,7 +219,7 @@ export default function AdminPoemsPage() {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => handleTogglePin(poem)}
+                onClick={() => pinMutation.mutate(poem)}
                 aria-label={poem.pinned ? 'Unpin poem' : 'Pin poem'}
               >
                 {poem.pinned ? 'Unpin' : 'Pin'}
@@ -235,7 +239,7 @@ export default function AdminPoemsPage() {
       <ConfirmDialog
         target={deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDeleteConfirm}
+        onConfirm={(target) => deleteMutation.mutateAsync(target)}
         title="Delete Poem"
         description={`Are you sure you want to delete "${deleteTarget?.title}"? This action cannot be undone.`}
         confirmLabel="Delete"

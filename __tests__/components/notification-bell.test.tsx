@@ -1,5 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { renderWithProviders } from '../test-utils';
 import { NotificationBell } from '@/components/admin/NotificationBell';
 
 const commentsData = [
@@ -41,7 +42,7 @@ describe('NotificationBell', () => {
   });
 
   it('shows an unread count based on comments + likes newer than last seen', async () => {
-    render(<NotificationBell />);
+    renderWithProviders(<NotificationBell />);
     expect(
       await screen.findByRole('button', { name: 'Notifications (2 unread)' })
     ).toBeInTheDocument();
@@ -49,7 +50,7 @@ describe('NotificationBell', () => {
 
   it('renders a comment notification with author, content, and timestamp after opening', async () => {
     const user = userEvent.setup();
-    render(<NotificationBell />);
+    renderWithProviders(<NotificationBell />);
 
     const bellButton = await screen.findByRole(
       'button',
@@ -68,7 +69,7 @@ describe('NotificationBell', () => {
 
   it('renders a like notification with timestamp after opening', async () => {
     const user = userEvent.setup();
-    render(<NotificationBell />);
+    renderWithProviders(<NotificationBell />);
 
     const bellButton = await screen.findByRole(
       'button',
@@ -83,7 +84,7 @@ describe('NotificationBell', () => {
 
   it('links each notification to its poem', async () => {
     const user = userEvent.setup();
-    render(<NotificationBell />);
+    renderWithProviders(<NotificationBell />);
 
     const bellButton = await screen.findByRole(
       'button',

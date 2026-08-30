@@ -1,15 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useEffectEvent } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import styles from './NotificationSettings.module.css';
 
 type Preference = { enabled: boolean; unsubscribed: boolean };
-
-type State =
-  | { kind: 'loading' }
-  | ({ kind: 'ready' } & Preference)
-  | { kind: 'error'; message: string };
 
 function messageFor(err: unknown): string {
   return err instanceof Error ? err.message : 'Something went wrong';
@@ -46,55 +42,41 @@ interface NotificationSettingsProps {
 }
 
 export function NotificationSettings({ token, initialAction }: NotificationSettingsProps) {
-  const [state, setState] = useState<State>({ kind: 'loading' });
-  const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
+  const prefKey = ['notifications', token];
 
-  const apply = useCallback(
-    async (action: 'on' | 'off') => {
-      setIsSaving(true);
-      try {
-        const preference = await writePreference(token, action);
-        setState({ kind: 'ready', ...preference });
-      } catch (err) {
-        setState({ kind: 'error', message: messageFor(err) });
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [token]
-  );
+  /* With an initialAction the mount-time write below supplies the data, so
+     the read is skipped entirely. */
+  const query = useQuery({
+    queryKey: prefKey,
+    queryFn: () => readPreference(token),
+    enabled: !initialAction,
+  });
+
+  /* Deterministic: the cache is set from the server response, never guessed. */
+  const mutation = useMutation({
+    mutationFn: (action: 'on' | 'off') => writePreference(token, action),
+    onSuccess: (preference) => queryClient.setQueryData(prefKey, preference),
+  });
+
+  const applyInitialAction = useEffectEvent(() => {
+    if (initialAction) mutation.mutate(initialAction);
+  });
 
   useEffect(() => {
-    let cancelled = false;
+    applyInitialAction();
+  }, []);
 
-    const run = async () => {
-      try {
-        const preference = initialAction
-          ? await writePreference(token, initialAction)
-          : await readPreference(token);
-        if (!cancelled) setState({ kind: 'ready', ...preference });
-      } catch (err) {
-        if (!cancelled) setState({ kind: 'error', message: messageFor(err) });
-      }
-    };
+  const preference = query.data;
+  const error = mutation.error ?? query.error;
 
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [initialAction, token]);
-
-  if (state.kind === 'loading') {
-    return <p className={styles.message}>One moment…</p>;
-  }
-
-  if (state.kind === 'error') {
+  if (error) {
     return (
       <>
         <h1 className={styles.title}>
           This link has expired
         </h1>
-        <p className={styles.description}>{state.message}</p>
+        <p className={styles.description}>{messageFor(error)}</p>
         <Link
           href="/"
           className={styles.button}
@@ -105,15 +87,19 @@ export function NotificationSettings({ token, initialAction }: NotificationSetti
     );
   }
 
+  if (!preference) {
+    return <p className={styles.message}>One moment…</p>;
+  }
+
   return (
     <>
       <h1 className={styles.title}>
-        {state.enabled
+        {preference.enabled
           ? 'You’ll get an email when a new poem is published'
           : 'You won’t get emails about new poems'}
       </h1>
 
-      {state.unsubscribed && (
+      {preference.unsubscribed && (
         <p className={styles.notice}>
           You&rsquo;ve unsubscribed from all emails, so nothing will be sent until you subscribe
           again.
@@ -121,7 +107,7 @@ export function NotificationSettings({ token, initialAction }: NotificationSetti
       )}
 
       <p className={styles.description}>
-        {state.enabled
+        {preference.enabled
           ? 'Changed your mind? You can turn these off any time.'
           : 'You can turn them back on whenever you like.'}
       </p>
@@ -129,11 +115,11 @@ export function NotificationSettings({ token, initialAction }: NotificationSetti
       <div className={styles.actions}>
         <button
           type="button"
-          onClick={() => apply(state.enabled ? 'off' : 'on')}
-          disabled={isSaving}
+          onClick={() => mutation.mutate(preference.enabled ? 'off' : 'on')}
+          disabled={mutation.isPending}
           className={styles.button}
         >
-          {state.enabled ? 'Turn off new-poem emails' : 'Turn on new-poem emails'}
+          {preference.enabled ? 'Turn off new-poem emails' : 'Turn on new-poem emails'}
         </button>
         <Link
           href="/"

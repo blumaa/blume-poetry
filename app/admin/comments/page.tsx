@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { Button, ConfirmDialog, DataTable, useToast } from '@/components/mds';
 import type { Comment } from '@/lib/supabase/types';
@@ -11,46 +12,48 @@ type CommentWithPoem = Comment & {
   poems: { title: string; slug: string } | null;
 };
 
+async function fetchAdminComments(): Promise<CommentWithPoem[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('comments')
+    .select('*, poems(title, slug)')
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data as CommentWithPoem[]) || [];
+}
+
+async function deleteAdminComment(id: string): Promise<void> {
+  const res = await fetch(`/api/admin/comments/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: 'Failed to delete comment' }));
+    throw new Error(body.error || 'Failed to delete comment');
+  }
+}
+
 export default function AdminCommentsPage() {
-  const [comments, setComments] = useState<CommentWithPoem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<CommentWithPoem | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    async function fetchComments() {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('comments')
-        .select('*, poems(title, slug)')
-        .order('created_at', { ascending: false });
+  const { data: comments = [], isPending } = useQuery({
+    queryKey: ['admin', 'comments'],
+    queryFn: fetchAdminComments,
+  });
 
-      if (error) {
-        console.error('Error fetching comments:', error);
-      } else {
-        setComments((data as CommentWithPoem[]) || []);
-      }
-      setIsLoading(false);
-    }
-    fetchComments();
-  }, []);
+  /* Deterministic: the row disappears only after the server confirms the
+     delete and the refetch returns. */
+  const deleteMutation = useMutation({
+    mutationFn: (target: CommentWithPoem) => deleteAdminComment(target.id),
+    onSuccess: () => toast({ title: 'Comment deleted', tone: 'success' }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] }),
+  });
 
   const handleDeleteClick = (comment: CommentWithPoem) => {
     setDeleteTarget(comment);
-  };
-
-  const handleDeleteConfirm = async (target: CommentWithPoem) => {
-    const res = await fetch(`/api/admin/comments/${target.id}`, {
-      method: 'DELETE',
-    });
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({ error: 'Failed to delete comment' }));
-      throw new Error(body.error || 'Failed to delete comment');
-    }
-
-    setComments((current) => current.filter((c) => c.id !== target.id));
-    toast({ title: 'Comment deleted', tone: 'success' });
   };
 
   return (
@@ -59,7 +62,7 @@ export default function AdminCommentsPage() {
         <h1 className={styles.title}>Comments</h1>
       </div>
 
-      {isLoading ? (
+      {isPending ? (
         <div className={styles.loadingText}>Loading comments...</div>
       ) : comments.length === 0 ? (
         <div className={styles.emptyState}>
@@ -126,7 +129,7 @@ export default function AdminCommentsPage() {
       <ConfirmDialog
         target={deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDeleteConfirm}
+        onConfirm={(target) => deleteMutation.mutateAsync(target)}
         title="Delete Comment"
         description={`Are you sure you want to delete this comment by "${deleteTarget?.author_name}"? This action cannot be undone.`}
         confirmLabel="Delete"

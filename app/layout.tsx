@@ -8,6 +8,7 @@ import "./tokens/brand-blume.css";
 import "@mond-design-system/react/styles.css";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { QueryProvider } from "@/components/QueryProvider";
 import { ToastProvider } from "@/components/mds";
 import { getSiteUrl } from "@/lib/config";
 import styles from "./layout.module.css";
@@ -80,9 +81,11 @@ export default function RootLayout({
           Skip to main content
         </a>
         <ThemeProvider>
-          <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
-            {children}
-          </ToastProvider>
+          <QueryProvider>
+            <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
+              {children}
+            </ToastProvider>
+          </QueryProvider>
         </ThemeProvider>
         <Analytics />
       </body>
