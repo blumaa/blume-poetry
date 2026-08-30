@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { SubscribeModal } from '@/components/SubscribeModal';
 import { Badge, Button, Checkbox, Chip, ChipGroup, ConfirmDialog, DataTable, useToast } from '@/components/mds';
@@ -11,7 +12,7 @@ import styles from './page.module.css';
 
 async function loadSubscribers(
   filter: 'all' | 'active' | 'unsubscribed'
-): Promise<Subscriber[] | null> {
+): Promise<Subscriber[]> {
   const supabase = createClient();
   let query = supabase
     .from('subscribers')
@@ -24,75 +25,67 @@ async function loadSubscribers(
 
   const { data, error } = await query;
 
-  if (error) {
-    console.error('Error fetching subscribers:', error);
-    return null;
-  }
+  if (error) throw new Error(error.message);
   return (data as Subscriber[]) || [];
 }
 
+async function deleteSubscriber(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from('subscribers').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+async function updateNotifyNewPoems(id: string, next: boolean): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('subscribers')
+    .update({ notify_new_poems: next })
+    .eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
 export default function AdminSubscribersPage() {
-  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<'all' | 'active' | 'unsubscribed'>('active');
   const [deleteTarget, setDeleteTarget] = useState<Subscriber | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [savingNotifyId, setSavingNotifyId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadSubscribers(filter).then((data) => {
-      if (data) setSubscribers(data);
-      setIsLoading(false);
-    });
-  }, [filter]);
+  const { data: subscribers = [], isPending } = useQuery({
+    queryKey: ['admin', 'subscribers', filter],
+    queryFn: () => loadSubscribers(filter),
+  });
+
+  // Invalidate every filter's list — a write changes them all.
+  const invalidateSubscribers = () =>
+    queryClient.invalidateQueries({ queryKey: ['admin', 'subscribers'] });
+
+  const deleteMutation = useMutation({
+    mutationFn: (target: Subscriber) => deleteSubscriber(target.id),
+    onSuccess: (_data, target) => toast({ title: `"${target.email}" deleted`, tone: 'success' }),
+    onSettled: invalidateSubscribers,
+  });
+
+  /* Flip one subscriber's new-poem preference. Deterministic: writes an
+     absolute value taken from the row on screen; the checkbox moves only
+     after the refetch confirms the write. */
+  const notifyMutation = useMutation({
+    mutationFn: (subscriber: Subscriber) =>
+      updateNotifyNewPoems(subscriber.id, !subscriber.notify_new_poems),
+    onSuccess: (_data, subscriber) =>
+      toast({
+        title: !subscriber.notify_new_poems
+          ? `"${subscriber.email}" will get new-poem emails`
+          : `"${subscriber.email}" will not get new-poem emails`,
+        tone: 'success',
+      }),
+    onError: (error) =>
+      toast({ title: error instanceof Error ? error.message : 'Update failed', tone: 'danger' }),
+    onSettled: invalidateSubscribers,
+  });
 
   const handleDeleteClick = (subscriber: Subscriber) => {
     setDeleteTarget(subscriber);
-  };
-
-  const handleDeleteConfirm = async (target: Subscriber) => {
-    const supabase = createClient();
-    const { error: deleteError } = await supabase.from('subscribers').delete().eq('id', target.id);
-
-    if (deleteError) {
-      throw new Error(deleteError.message);
-    }
-
-    setSubscribers((current) => current.filter((s) => s.id !== target.id));
-    toast({ title: `"${target.email}" deleted`, tone: 'success' });
-  };
-
-  /**
-   * Flip one subscriber's new-poem preference. Writes an absolute value taken
-   * from the row currently on screen, then updates local state on success —
-   * no refetch, and nothing moves if the write is rejected.
-   */
-  const handleNotifyToggle = async (subscriber: Subscriber) => {
-    const next = !subscriber.notify_new_poems;
-
-    setSavingNotifyId(subscriber.id);
-    const supabase = createClient();
-    const { error } = await supabase
-      .from('subscribers')
-      .update({ notify_new_poems: next })
-      .eq('id', subscriber.id);
-    setSavingNotifyId(null);
-
-    if (error) {
-      toast({ title: error.message, tone: 'danger' });
-      return;
-    }
-
-    setSubscribers((current) =>
-      current.map((s) => (s.id === subscriber.id ? { ...s, notify_new_poems: next } : s))
-    );
-    toast({
-      title: next
-        ? `"${subscriber.email}" will get new-poem emails`
-        : `"${subscriber.email}" will not get new-poem emails`,
-      tone: 'success',
-    });
   };
 
   const handleExportCSV = () => {
@@ -113,10 +106,9 @@ export default function AdminSubscribersPage() {
     toast({ title: `Exported ${subscribers.length} subscribers`, tone: 'success' });
   };
 
-  const handleAddSuccess = async () => {
+  const handleAddSuccess = () => {
     toast({ title: 'Subscriber added', tone: 'success' });
-    const data = await loadSubscribers(filter);
-    if (data) setSubscribers(data);
+    invalidateSubscribers();
   };
 
   return (
@@ -158,7 +150,7 @@ export default function AdminSubscribersPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {isPending ? (
         <div className={styles.loadingText}>Loading subscribers...</div>
       ) : subscribers.length === 0 ? (
         <div className={styles.emptyState}>
@@ -204,8 +196,8 @@ export default function AdminSubscribersPage() {
                     label={`New poem emails for ${subscriber.email}`}
                     labelHidden
                     checked={subscriber.notify_new_poems}
-                    onChange={() => handleNotifyToggle(subscriber)}
-                    disabled={savingNotifyId === subscriber.id}
+                    onChange={() => notifyMutation.mutate(subscriber)}
+                    disabled={notifyMutation.isPending && notifyMutation.variables?.id === subscriber.id}
                   />
                 ),
               },
@@ -230,7 +222,7 @@ export default function AdminSubscribersPage() {
       <ConfirmDialog
         target={deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDeleteConfirm}
+        onConfirm={(target) => deleteMutation.mutateAsync(target)}
         title="Delete Subscriber"
         description={`Are you sure you want to delete "${deleteTarget?.email}"? This action cannot be undone.`}
         confirmLabel="Delete"

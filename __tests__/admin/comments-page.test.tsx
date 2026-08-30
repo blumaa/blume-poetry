@@ -1,7 +1,7 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { renderWithProviders } from '../test-utils';
 import AdminCommentsPage from '@/app/admin/comments/page';
-import { ToastProvider } from '@/components/mds';
 
 const mockOrder = jest.fn();
 const mockSelect = jest.fn(() => ({ order: mockOrder }));
@@ -14,11 +14,7 @@ jest.mock('@/lib/supabase/client', () => ({
 }));
 
 function renderPage() {
-  return render(
-    <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
-      <AdminCommentsPage />
-    </ToastProvider>
-  );
+  return renderWithProviders(<AdminCommentsPage />);
 }
 
 async function confirmInDialog(user: ReturnType<typeof userEvent.setup>) {
@@ -84,7 +80,11 @@ describe('AdminCommentsPage', () => {
     });
   });
 
-  it('removes the comment from the list after a successful delete', async () => {
+  it('removes the comment from the list only after the refetch confirms it', async () => {
+    // Deterministic: the row disappears via the post-delete refetch, not a local splice.
+    mockOrder
+      .mockResolvedValueOnce({ data: comments, error: null })
+      .mockResolvedValueOnce({ data: [comments[1]], error: null });
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({ success: true }),

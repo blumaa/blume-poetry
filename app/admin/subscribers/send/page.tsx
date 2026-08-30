@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { RichTextEditor, RichTextEditorRef } from '@/components/admin/RichTextEditor';
 import { Button, ConfirmDialog, Field, Input, Select, Tab, TabList, Tabs, useToast } from '@/components/mds';
@@ -11,55 +12,96 @@ import { contentToHtml } from '@/lib/poemHtml';
 import type { Poem } from '@/lib/supabase/types';
 import styles from './page.module.css';
 
+async function fetchSendData(): Promise<{ poems: Poem[]; subscriberCount: number }> {
+  const supabase = createClient();
+
+  // Recent published poems
+  const { data: poemsData, error: poemsError } = await supabase
+    .from('poems')
+    .select('*')
+    .eq('status', 'published')
+    .order('published_at', { ascending: false })
+    .limit(20);
+  if (poemsError) throw new Error(poemsError.message);
+
+  // Active subscriber count
+  const { count, error: countError } = await supabase
+    .from('subscribers')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'active');
+  if (countError) throw new Error(countError.message);
+
+  return { poems: (poemsData as Poem[]) || [], subscriberCount: count || 0 };
+}
+
+interface SendEmailInput {
+  subject: string;
+  bodyHtml: string;
+  bodyText: string;
+  poemId?: string;
+  testEmail?: string;
+}
+
+async function sendEmail(input: SendEmailInput): Promise<{ message?: string }> {
+  const response = await fetch('/api/admin/send-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to send emails');
+  }
+  return data;
+}
+
 export default function SendNewsletterPage() {
-  const [poems, setPoems] = useState<Poem[]>([]);
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('');
   const [bodyText, setBodyText] = useState('');
   const [selectedPoemId, setSelectedPoemId] = useState<string>('');
   const [testEmail, setTestEmail] = useState('');
-  const [subscriberCount, setSubscriberCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSending, setIsSending] = useState(false);
   const [showSendConfirm, setShowSendConfirm] = useState(false);
   const [mobileTab, setMobileTab] = useState<'compose' | 'preview'>('compose');
   const router = useRouter();
   const editorRef = useRef<RichTextEditorRef>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const supabase = createClient();
+  const { data: sendData, isPending: isLoading } = useQuery({
+    queryKey: ['admin', 'send-data'],
+    queryFn: fetchSendData,
+  });
+  const poems = sendData?.poems ?? [];
+  const subscriberCount = sendData?.subscriberCount ?? 0;
 
-    async function fetchData() {
-      // Fetch recent published poems
-      const { data: poemsData } = await supabase
-        .from('poems')
-        .select('*')
-        .eq('status', 'published')
-        .order('published_at', { ascending: false })
-        .limit(20);
+  const testMutation = useMutation({
+    mutationFn: sendEmail,
+    onSuccess: () => toast({ title: 'Test email sent', tone: 'success' }),
+    onError: (error) =>
+      toast({
+        title: error instanceof Error ? error.message : 'An unexpected error occurred',
+        tone: 'danger',
+      }),
+  });
 
-      setPoems((poemsData as Poem[]) || []);
+  const sendAllMutation = useMutation({
+    mutationFn: sendEmail,
+    onSuccess: (data) => toast({ title: data.message ?? 'Newsletter sent', tone: 'success' }),
+    onError: (error) =>
+      toast({
+        title: error instanceof Error ? error.message : 'An unexpected error occurred',
+        tone: 'danger',
+      }),
+  });
 
-      // Get subscriber count
-      const { count } = await supabase
-        .from('subscribers')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
-
-      setSubscriberCount(count || 0);
-      setIsLoading(false);
-    }
-
-    fetchData();
-  }, []);
+  const isSending = testMutation.isPending || sendAllMutation.isPending;
 
   const handleEditorChange = (html: string, text: string) => {
     setBodyHtml(html);
     setBodyText(text);
   };
 
-  const handleSendTest = async () => {
+  const handleSendTest = () => {
     if (!subject.trim()) {
       toast({ title: 'Please enter a subject', tone: 'danger' });
       return;
@@ -73,33 +115,13 @@ export default function SendNewsletterPage() {
       return;
     }
 
-    setIsSending(true);
-
-    try {
-      const response = await fetch('/api/admin/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subject,
-          bodyHtml,
-          bodyText,
-          poemId: selectedPoemId || undefined,
-          testEmail,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({ title: 'Test email sent', tone: 'success' });
-      } else {
-        toast({ title: data.error || 'Failed to send test email', tone: 'danger' });
-      }
-    } catch {
-      toast({ title: 'An unexpected error occurred', tone: 'danger' });
-    } finally {
-      setIsSending(false);
-    }
+    testMutation.mutate({
+      subject,
+      bodyHtml,
+      bodyText,
+      poemId: selectedPoemId || undefined,
+      testEmail,
+    });
   };
 
   const handleSendAllClick = () => {
@@ -116,32 +138,12 @@ export default function SendNewsletterPage() {
 
   const handleSendAllConfirm = async () => {
     setShowSendConfirm(false);
-    setIsSending(true);
-
-    try {
-      const response = await fetch('/api/admin/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subject,
-          bodyHtml,
-          bodyText,
-          poemId: selectedPoemId || undefined,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({ title: data.message, tone: 'success' });
-      } else {
-        toast({ title: data.error || 'Failed to send emails', tone: 'danger' });
-      }
-    } catch {
-      toast({ title: 'An unexpected error occurred', tone: 'danger' });
-    } finally {
-      setIsSending(false);
-    }
+    sendAllMutation.mutate({
+      subject,
+      bodyHtml,
+      bodyText,
+      poemId: selectedPoemId || undefined,
+    });
   };
 
   const selectedPoem = poems.find((p) => p.id === selectedPoemId);
