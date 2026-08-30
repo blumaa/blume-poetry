@@ -1,4 +1,7 @@
 .nav {
+  /* MDS SideNav ships a fixed 240px column (--mds-sidebar-w); our sidebar
+     shell owns the width, so the nav must fill it instead. */
+  width: 100%;
   flex: 1 1 0%;
   overflow-y: auto;
   padding: 0.5rem;
