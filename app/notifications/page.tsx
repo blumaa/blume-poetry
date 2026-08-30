@@ -5,7 +5,7 @@ import { NotificationSettings } from './NotificationSettings';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
-  title: 'Email settings | Blumenous Poetry',
+  title: 'Email settings',
   description: 'Choose whether to get an email when a new poem is published',
   robots: { index: false, follow: false },
 };

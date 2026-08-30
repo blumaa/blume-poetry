@@ -1,3 +1,4 @@
+import { SITE_NAME } from '@/lib/brand';
 import nodemailer from 'nodemailer';
 import { escapeHtml, sanitizeNewsletterHtml } from './sanitize';
 import {
@@ -35,7 +36,7 @@ function poemExcerpt(content: string) {
     text: renderPoemTextForEmail(excerpt),
     linkLabel: truncated
       ? `Continue reading on ${new URL(getSiteUrl()).host.replace(/^www\./, '')}`
-      : 'Read on Blumenous Poetry',
+      : `Read on ${SITE_NAME}`,
   };
 }
 
@@ -96,7 +97,7 @@ interface SendEmailOptions {
 
 export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
   const transport = getTransporter();
-  const fromName = process.env.EMAIL_FROM_NAME || 'Blumenous Poetry';
+  const fromName = process.env.EMAIL_FROM_NAME || SITE_NAME;
   const fromEmail = process.env.GMAIL_USER;
 
   const info = await transport.sendMail({
@@ -191,7 +192,7 @@ function renderEmailShell({
 
     <div style="text-align: center; margin-top: 24px; color: #52525b; font-size: 12px;">
       <p style="margin: 0 0 8px 0;">
-        Blumenous Poetry
+        ${SITE_NAME}
       </p>
       <p style="margin: 0 0 8px 0;">
         <a href="${notifications.url}" style="color: #52525b; text-decoration: underline;">

@@ -1,5 +1,6 @@
 'use client';
 
+import { SITE_NAME } from '@/lib/brand';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AuthProvider } from '@/components/auth/AuthProvider';
@@ -65,7 +66,7 @@ function AdminNav() {
         <div className={styles.navContainer}>
           <div className={styles.navLeft}>
             <Link href="/" className={styles.brandLink}>
-              Blumenous Poetry
+              {SITE_NAME}
             </Link>
             <div className={styles.navLinks}>
               {navItems.map((item) => (
@@ -98,7 +99,7 @@ function AdminNav() {
       {/* Mobile top bar */}
       <nav className={styles.mobileNav}>
         <Link href="/" className={styles.mobileBrandLink}>
-          Blumenous
+          {SITE_NAME}
         </Link>
         <div className={styles.mobileRight}>
           <NotificationBell />

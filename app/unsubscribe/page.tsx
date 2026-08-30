@@ -1,11 +1,12 @@
+import { SITE_NAME } from '@/lib/brand';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageShell } from '@/components/PageShell';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
-  title: 'Unsubscribed | Blumenous Poetry',
-  description: 'You have been unsubscribed from Blumenous Poetry',
+  title: 'Unsubscribed',
+  description: `You have been unsubscribed from ${SITE_NAME}`,
 };
 
 export default function UnsubscribePage() {
@@ -32,7 +33,7 @@ export default function UnsubscribePage() {
           You&apos;ve been unsubscribed
         </h1>
         <p className={styles.message}>
-          You will no longer receive email updates from Blumenous Poetry.
+          You will no longer receive email updates from {SITE_NAME}.
         </p>
         <Link
           href="/"

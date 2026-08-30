@@ -138,9 +138,11 @@ body {
 /* ==========================================================================
    Main Content Area - Clean, no page effects
    ========================================================================== */
+/* Viewport-filling height lives in PageShell, not here: the admin layout's
+   <main> sits below an in-flow nav, and nav + 100vh forces a permanent
+   scrollbar. Only the public shell's main starts at the viewport top. */
 main {
   background: var(--bg-primary);
-  min-height: 100vh;
   position: relative;
   max-width: 100vw;
   overflow-x: hidden;
@@ -330,13 +332,6 @@ input[type="button"]:disabled {
 /* ==========================================================================
    Mobile-First Responsive Layout
    ========================================================================== */
-
-/* Mobile: Add top padding for fixed header */
-@media (max-width: 767px) {
-  main {
-    padding-top: var(--mobile-header-height);
-  }
-}
 
 /* Desktop: Add left margin for sidebar (uses dynamic width for collapse) */
 /* Only applies to pages with .has-sidebar wrapper */

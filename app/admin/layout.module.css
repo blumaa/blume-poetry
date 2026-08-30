@@ -98,6 +98,14 @@
 }
 
 .mobileBrandLink {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Same touch-target fix as the public header: min-height 44px from the
+     coarse-pointer rule stretches the box, so center the text ourselves. */
+  display: inline-flex;
+  align-items: center;
   font-weight: 500;
   transition: color 0.15s ease;
   font-size: 0.875rem;

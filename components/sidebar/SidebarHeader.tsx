@@ -1,3 +1,4 @@
+import { SITE_NAME } from '@/lib/brand';
 import Link from 'next/link';
 import { Button } from '@/components/mds';
 import { ThemeToggle } from '../ThemeToggle';
@@ -66,7 +67,7 @@ export function SidebarHeader({
           onClick={onClose}
           className={styles.brandLinkMobile}
         >
-          Blumenous Poetry
+          {SITE_NAME}
         </Link>
 
         <div className={styles.actionsMobile}>
@@ -94,7 +95,7 @@ export function SidebarHeader({
           href="/"
           className={styles.brandLinkDesktop}
         >
-          Blumenous Poetry
+          {SITE_NAME}
         </Link>
       )}
 

@@ -58,8 +58,8 @@ describe('NotificationBell', () => {
     );
     await user.click(bellButton);
 
-    // jsdom ignores responsive tailwind classes, so both the mobile bottom
-    // sheet and desktop dropdown render simultaneously — use getAllBy*.
+    // Desktop by default: jest.setup's matchMedia stub matches nothing, so
+    // useIsMobile reports desktop and the anchored popover renders.
     expect((await screen.findAllByText('Alice')).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/commented on/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Autumn/).length).toBeGreaterThan(0);
@@ -97,6 +97,73 @@ describe('NotificationBell', () => {
     expect(autumnLinks.length).toBeGreaterThan(0);
     autumnLinks.forEach((link) => {
       expect(link).toHaveAttribute('href', '/poem/autumn');
+    });
+  });
+
+  it('clears the list via the clear button, and keeps it cleared on remount', async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderWithProviders(<NotificationBell />);
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Notifications (2 unread)' })
+    );
+    await screen.findAllByText('Alice');
+
+    await user.click(screen.getByRole('button', { name: 'Clear notifications' }));
+
+    expect(screen.getByText('No notifications')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Clear notifications' })
+    ).not.toBeInTheDocument();
+
+    // Cleared state persists in localStorage: a fresh mount shows no unread
+    // badge and an empty panel.
+    unmount();
+    renderWithProviders(<NotificationBell />);
+    const bell = await screen.findByRole('button', { name: 'Notifications' });
+    await user.click(bell);
+    expect(await screen.findByText('No notifications')).toBeInTheDocument();
+  });
+
+  describe('on mobile', () => {
+    const desktopMatchMedia = window.matchMedia;
+
+    beforeEach(() => {
+      window.matchMedia = ((query: string) => ({
+        matches: query === '(max-width: 767px)',
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      })) as unknown as typeof window.matchMedia;
+    });
+
+    afterEach(() => {
+      window.matchMedia = desktopMatchMedia;
+    });
+
+    it('opens notifications in a modal bottom sheet instead of the popover', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NotificationBell />);
+
+      await user.click(
+        await screen.findByRole('button', { name: 'Notifications (2 unread)' })
+      );
+
+      // The sheet is a modal dialog on a scrim; the desktop popover is a
+      // non-modal dialog with neither.
+      expect(screen.getByTestId('mds-scrim')).toBeInTheDocument();
+      expect(screen.getByRole('dialog', { name: 'Notifications' })).toHaveAttribute(
+        'aria-modal',
+        'true'
+      );
+      expect((await screen.findAllByText('Alice')).length).toBeGreaterThan(0);
+      expect(
+        screen.getByRole('button', { name: 'Clear notifications' })
+      ).toBeInTheDocument();
     });
   });
 });

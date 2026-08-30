@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import type { TreeNode } from '@/lib/poems';
+import { useIsMobile } from '@/lib/useIsMobile';
 import { Sidebar } from './Sidebar';
 import { MobileHeader } from './MobileHeader';
 
@@ -10,7 +11,6 @@ interface SidebarWrapperProps {
 }
 
 const COLLAPSED_KEY = 'sidebar_collapsed';
-const MOBILE_QUERY = '(max-width: 767px)';
 
 /* Collapsed state lives in localStorage (survives reload); expose it as an
    external store so reads stay hydration-safe without a setState-in-effect. */
@@ -30,20 +30,9 @@ function writeCollapsed(value: boolean) {
   collapsedListeners.forEach((listener) => listener());
 }
 
-function subscribeMobile(listener: () => void) {
-  const mql = window.matchMedia(MOBILE_QUERY);
-  mql.addEventListener('change', listener);
-  return () => mql.removeEventListener('change', listener);
-}
-
-function readMobile() {
-  return window.matchMedia(MOBILE_QUERY).matches;
-}
-
 export function SidebarWrapper({ tree }: SidebarWrapperProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  // Server snapshots: desktop, expanded — matches the server-rendered HTML.
-  const isMobile = useSyncExternalStore(subscribeMobile, readMobile, () => false);
+  const isMobile = useIsMobile();
   const isCollapsed = useSyncExternalStore(subscribeCollapsed, readCollapsed, () => false);
 
   // Prevent body scroll when mobile menu is open

@@ -1,3 +1,4 @@
+import { SITE_NAME } from '@/lib/brand';
 import { notFound } from 'next/navigation';
 import { PoemDisplay } from '@/components/PoemDisplay';
 import { getPoemBySlug, getAllPoemSlugs, getAdjacentPoems } from '@/lib/poems';
@@ -20,13 +21,13 @@ export async function generateMetadata({ params }: PoemPageProps) {
   const poem = await getPoemBySlug(slug);
 
   if (!poem) {
-    return { title: 'Poem Not Found | Blumenous Poetry' };
+    return { title: 'Poem Not Found' };
   }
 
   const description = poem.plainText.slice(0, 160) || poem.content.slice(0, 160);
 
   return {
-    title: `${poem.title} | Blumenous Poetry`,
+    title: poem.title,
     description,
     alternates: {
       canonical: `/poem/${slug}`,
@@ -36,7 +37,7 @@ export async function generateMetadata({ params }: PoemPageProps) {
       description,
       url: `/poem/${slug}`,
       type: 'article',
-      siteName: 'Blumenous Poetry',
+      siteName: SITE_NAME,
     },
     twitter: {
       card: 'summary',

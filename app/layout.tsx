@@ -1,3 +1,4 @@
+import { SITE_NAME } from '@/lib/brand';
 import type { Metadata, Viewport } from "next";
 import { Source_Sans_3 } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
@@ -28,7 +29,10 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
-  title: "Blumenous Poetry",
+  title: {
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
+  },
   description: "Poetry by Desmond Blume",
   manifest: "/manifest.json",
   appleWebApp: {
@@ -40,7 +44,7 @@ export const metadata: Metadata = {
     apple: "/icons/apple-touch-icon.svg",
   },
   openGraph: {
-    siteName: "Blumenous Poetry",
+    siteName: SITE_NAME,
     type: "website",
   },
 };

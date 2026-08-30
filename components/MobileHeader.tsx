@@ -1,5 +1,6 @@
 'use client';
 
+import { SITE_NAME } from '@/lib/brand';
 import Link from 'next/link';
 import { AppBar, Button } from '@/components/mds';
 import { ThemeToggle } from './ThemeToggle';
@@ -51,7 +52,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
             href="/"
             className={styles.brandLink}
           >
-            Blumenous Poetry
+            {SITE_NAME}
           </Link>
         </>
       }

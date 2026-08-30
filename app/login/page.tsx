@@ -1,3 +1,4 @@
+import { SITE_NAME } from '@/lib/brand';
 import type { Metadata } from 'next';
 import { LoginForm } from '@/components/auth/LoginForm';
 import Link from 'next/link';
@@ -6,7 +7,7 @@ import { createClient } from '@/lib/supabase/server';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
-  title: 'Login | Blumenous Poetry',
+  title: 'Login',
 };
 
 export default async function LoginPage() {
@@ -24,7 +25,7 @@ export default async function LoginPage() {
       <div className={styles.card}>
         <div className={styles.header}>
           <Link href="/" className={styles.brand}>
-            Blumenous Poetry
+            {SITE_NAME}
           </Link>
           <p className={styles.subtitle}>Admin Login</p>
         </div>

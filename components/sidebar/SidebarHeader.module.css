@@ -15,6 +15,13 @@
   height: 44px;
   display: flex;
   align-items: center;
+  /* The action row is five fixed-width buttons; on narrow screens the brand
+     must truncate, not wrap — a second line overflows the 44px row and reads
+     as vertical misalignment. Mirrors .brandLinkDesktop. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .brandLinkMobile:hover {

@@ -3,11 +3,23 @@
 import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
-import { Button, Popover, PopoverBody, PopoverHeader } from '@/components/mds';
+import {
+  Button,
+  Popover,
+  PopoverBody,
+  PopoverFooter,
+  PopoverHeader,
+  Sheet,
+  SheetBody,
+  SheetFooter,
+  SheetHeader,
+} from '@/components/mds';
+import { useIsMobile } from '@/lib/useIsMobile';
 import { NotificationList, type Notification } from './NotificationList';
 import styles from './NotificationBell.module.css';
 
 const LAST_SEEN_KEY = 'admin_notifications_last_seen';
+const CLEARED_KEY = 'admin_notifications_cleared';
 const EPOCH = '1970-01-01T00:00:00Z';
 
 async function fetchActivity(): Promise<Notification[]> {
@@ -67,14 +79,25 @@ export function NotificationBell() {
   const [lastSeen, setLastSeen] = useState(() =>
     typeof window === 'undefined' ? EPOCH : localStorage.getItem(LAST_SEEN_KEY) || EPOCH
   );
+  const [clearedAt, setClearedAt] = useState(() =>
+    typeof window === 'undefined' ? EPOCH : localStorage.getItem(CLEARED_KEY) || EPOCH
+  );
   const anchorRef = useRef<HTMLButtonElement>(null);
+  const isMobile = useIsMobile();
 
   const { data: notifications = [], isPending } = useQuery({
     queryKey: ['admin', 'activity'],
     queryFn: fetchActivity,
   });
 
-  const unreadCount = notifications.filter(
+  /* Notifications are derived from comments/likes rows, so "clear" cannot
+     delete anything server-side; it hides everything up to the cleared
+     timestamp. Cleared items stay in the query cache but never resurface. */
+  const visible = notifications.filter(
+    (n) => new Date(n.created_at) > new Date(clearedAt)
+  );
+
+  const unreadCount = visible.filter(
     (n) => new Date(n.created_at) > new Date(lastSeen)
   ).length;
 
@@ -86,6 +109,14 @@ export function NotificationBell() {
       localStorage.setItem(LAST_SEEN_KEY, now);
       setLastSeen(now);
     }
+  };
+
+  const handleClose = () => setIsOpen(false);
+
+  const handleClear = () => {
+    const now = new Date().toISOString();
+    localStorage.setItem(CLEARED_KEY, now);
+    setClearedAt(now);
   };
 
   const formatTime = (dateString: string) => {
@@ -102,6 +133,23 @@ export function NotificationBell() {
     if (days < 7) return `${days}d ago`;
     return date.toLocaleDateString();
   };
+
+  const list = (
+    <NotificationList
+      notifications={visible}
+      isLoading={isPending}
+      onItemClick={handleClose}
+      formatTime={formatTime}
+      compact
+    />
+  );
+
+  const clearButton =
+    visible.length > 0 ? (
+      <Button variant="ghost" size="sm" onClick={handleClear}>
+        Clear notifications
+      </Button>
+    ) : null;
 
   return (
     <>
@@ -129,27 +177,30 @@ export function NotificationBell() {
         )}
       </span>
 
-      <Popover
-        open={isOpen}
-        onClose={() => setIsOpen(false)}
-        anchorRef={anchorRef}
-        label="Notifications"
-        placement="bottom-end"
-        className={styles.popoverPanel}
-      >
-        <PopoverHeader onClose={() => setIsOpen(false)} closeLabel="Close notifications">
-          Notifications
-        </PopoverHeader>
-        <PopoverBody>
-          <NotificationList
-            notifications={notifications}
-            isLoading={isPending}
-            onItemClick={() => setIsOpen(false)}
-            formatTime={formatTime}
-            compact
-          />
-        </PopoverBody>
-      </Popover>
+      {isMobile ? (
+        <Sheet open={isOpen} onClose={handleClose} label="Notifications">
+          <SheetHeader onClose={handleClose} closeLabel="Close notifications">
+            Notifications
+          </SheetHeader>
+          <SheetBody>{list}</SheetBody>
+          {clearButton && <SheetFooter>{clearButton}</SheetFooter>}
+        </Sheet>
+      ) : (
+        <Popover
+          open={isOpen}
+          onClose={handleClose}
+          anchorRef={anchorRef}
+          label="Notifications"
+          placement="bottom-end"
+          className={styles.popoverPanel}
+        >
+          <PopoverHeader onClose={handleClose} closeLabel="Close notifications">
+            Notifications
+          </PopoverHeader>
+          <PopoverBody>{list}</PopoverBody>
+          {clearButton && <PopoverFooter>{clearButton}</PopoverFooter>}
+        </Popover>
+      )}
     </>
   );
 }

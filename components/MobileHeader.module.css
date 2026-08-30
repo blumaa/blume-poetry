@@ -14,6 +14,12 @@
 }
 
 .brandLink {
+  /* Self-center the text: the global touch-target rule gives anchors
+     min-height 44px on coarse pointers, which grows this box past its
+     line-height and leaves the text at the top. Centering inside our
+     own box keeps the brand level with the buttons on real phones. */
+  display: inline-flex;
+  align-items: center;
   font-size: 1rem;
   line-height: 1.5rem;
   font-weight: 500;

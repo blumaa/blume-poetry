@@ -1,10 +1,11 @@
+import { SITE_NAME } from '@/lib/brand';
 import type { Metadata } from 'next';
 import { PageShell } from '@/components/PageShell';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | Blumenous Poetry',
-  description: 'Privacy policy for Blumenous Poetry',
+  title: 'Privacy Policy',
+  description: `Privacy policy for ${SITE_NAME}`,
   alternates: {
     canonical: '/privacy',
   },
@@ -22,7 +23,7 @@ export default function PrivacyPage() {
 
         <div className={styles.body}>
           <p>
-            Blumenous Poetry collects minimal data to provide you with a better experience.
+            {SITE_NAME} collects minimal data to provide you with a better experience.
           </p>
 
           <h2 className={styles.heading}>Newsletter Subscription</h2>

@@ -1,5 +1,6 @@
 'use client';
 
+import { SITE_NAME } from '@/lib/brand';
 import { useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -278,14 +279,14 @@ export default function SendNewsletterPage() {
                     </h3>
                     <PoemContent html={contentToHtml(selectedPoem.content || selectedPoem.plain_text || '')} />
                     <div className={styles.poemPreviewCta}>
-                      Read on Blumenous Poetry &rarr;
+                      Read on {SITE_NAME} &rarr;
                     </div>
                   </div>
                 )}
 
                 {/* Footer Preview */}
                 <div className={styles.footerPreview}>
-                  <p>Blumenous Poetry</p>
+                  <p>{SITE_NAME}</p>
                   <p className={styles.unsubscribeText}>Unsubscribe</p>
                 </div>
               </div>
