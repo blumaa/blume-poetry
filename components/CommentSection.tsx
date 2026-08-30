@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { Button, ConfirmDialog, Field, Input, Modal, ModalBody, ModalHeader, Textarea, useToast } from '@/components/mds';
 import { SkeletonComment } from '@/components/Skeleton';
@@ -19,6 +20,49 @@ interface CommentSectionProps {
   slug: string;
   isModalOpen?: boolean;
   onModalClose?: () => void;
+}
+
+async function fetchComments(slug: string): Promise<Comment[]> {
+  const res = await fetch(`/api/poems/${slug}/comments`);
+  if (!res.ok) throw new Error('Failed to load comments');
+  const data = await res.json();
+  return data.comments || [];
+}
+
+async function fetchAuthUser() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+}
+
+interface PostCommentInput {
+  visitorId: string;
+  authorName: string;
+  content: string;
+  honeypot: string;
+  timestamp: number;
+}
+
+async function postComment(slug: string, input: PostCommentInput): Promise<void> {
+  const res = await fetch(`/api/poems/${slug}/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to post comment. Please try again.');
+  }
+}
+
+async function deleteComment(id: string): Promise<void> {
+  const res = await fetch(`/api/admin/comments/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: 'Failed to delete comment' }));
+    throw new Error(data.error || 'Failed to delete comment');
+  }
 }
 
 function formatDate(dateString: string): string {
@@ -49,62 +93,39 @@ export function CommentIcon() {
 }
 
 export function CommentSection({ slug, isModalOpen = false, onModalClose }: CommentSectionProps) {
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<Comment | null>(null);
   const { toast } = useToast();
+  const commentsKey = ['poems', slug, 'comments'];
 
-  useEffect(() => {
-    const supabase = createClient();
+  const { data: comments, isPending, isError } = useQuery({
+    queryKey: commentsKey,
+    queryFn: () => fetchComments(slug),
+  });
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setIsAdmin(isAdminEmail(user?.email));
-    });
-  }, []);
+  const { data: authUser } = useQuery({
+    queryKey: ['auth', 'user'],
+    queryFn: fetchAuthUser,
+  });
+  const isAdmin = isAdminEmail(authUser?.email);
 
-  useEffect(() => {
-    fetch(`/api/poems/${slug}/comments`)
-      .then((res) => res.json())
-      .then((data) => {
-        setComments(data.comments || []);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setError('Failed to load comments');
-        setIsLoading(false);
-      });
-  }, [slug]);
-
-  const handleNewComment = (comment: Comment) => {
-    setComments((prev) => [comment, ...prev]);
-    onModalClose?.();
-  };
-
-  const handleDeleteConfirm = async (target: Comment) => {
-    const res = await fetch(`/api/admin/comments/${target.id}`, {
-      method: 'DELETE',
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({ error: 'Failed to delete comment' }));
-      throw new Error(data.error || 'Failed to delete comment');
-    }
-
-    setComments((prev) => prev.filter((c) => c.id !== target.id));
-    toast({ title: 'Comment deleted', tone: 'success' });
-  };
+  /* Deterministic: the comment disappears only after the server confirms
+     the delete and the refetch returns. */
+  const deleteMutation = useMutation({
+    mutationFn: (target: Comment) => deleteComment(target.id),
+    onSuccess: () => toast({ title: 'Comment deleted', tone: 'success' }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: commentsKey }),
+  });
 
   return (
     <div>
-      {isLoading ? (
+      {isPending ? (
         <div className={styles.divider}>
           <SkeletonComment />
         </div>
-      ) : error ? (
+      ) : isError ? (
         <div className={styles.divider}>
-          <p className={styles.errorText}>{error}</p>
+          <p className={styles.errorText}>Failed to load comments</p>
         </div>
       ) : comments.length > 0 ? (
         <div className={styles.commentsList}>
@@ -134,17 +155,13 @@ export function CommentSection({ slug, isModalOpen = false, onModalClose }: Comm
       {/* Mounted only while open so state (saved name, spam timer) seeds
           fresh on each open via initializers instead of effects. */}
       {isModalOpen && (
-        <CommentModal
-          onClose={() => onModalClose?.()}
-          slug={slug}
-          onCommentAdded={handleNewComment}
-        />
+        <CommentModal onClose={() => onModalClose?.()} slug={slug} />
       )}
 
       <ConfirmDialog
         target={deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDeleteConfirm}
+        onConfirm={(target) => deleteMutation.mutateAsync(target)}
         title="Delete Comment"
         description={`Are you sure you want to delete this comment by "${deleteTarget?.author_name}"?`}
         confirmLabel="Delete"
@@ -158,15 +175,14 @@ export function CommentSection({ slug, isModalOpen = false, onModalClose }: Comm
 interface CommentModalProps {
   onClose: () => void;
   slug: string;
-  onCommentAdded: (comment: Comment) => void;
 }
 
 /* Mounted per open (see call site), so initializers run at open time. */
-function CommentModal({ onClose, slug, onCommentAdded }: CommentModalProps) {
+function CommentModal({ onClose, slug }: CommentModalProps) {
+  const queryClient = useQueryClient();
   const [name, setName] = useState(() => localStorage.getItem('comment_name') ?? '');
   const [content, setContent] = useState('');
   const [honeypot, setHoneypot] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   // Spam check: server rejects submits too soon after the form appeared.
   const formLoadTime = useRef(0);
   const { toast } = useToast();
@@ -175,7 +191,24 @@ function CommentModal({ onClose, slug, onCommentAdded }: CommentModalProps) {
     formLoadTime.current = Date.now();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  /* Deterministic: the new comment appears only via the refetch after the
+     server accepts it; the modal closes once that refetch settles. */
+  const postMutation = useMutation({
+    mutationFn: (input: PostCommentInput) => postComment(slug, input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['poems', slug, 'comments'] });
+      toast({ title: 'Comment posted!', tone: 'success' });
+      onClose();
+    },
+    onError: (error) => {
+      toast({
+        title: error instanceof Error ? error.message : 'Failed to post comment. Please try again.',
+        tone: 'danger',
+      });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim() || !content.trim()) {
@@ -183,41 +216,15 @@ function CommentModal({ onClose, slug, onCommentAdded }: CommentModalProps) {
       return;
     }
 
-    setIsSubmitting(true);
     localStorage.setItem('comment_name', name.trim());
 
-    const visitorId = getVisitorId();
-
-    try {
-      const res = await fetch(`/api/poems/${slug}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          visitorId,
-          authorName: name.trim(),
-          content: content.trim(),
-          honeypot,
-          timestamp: formLoadTime.current,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast({ title: data.error || 'Failed to post comment', tone: 'danger' });
-        return;
-      }
-
-      if (data.comment) {
-        onCommentAdded(data.comment);
-        setContent('');
-        toast({ title: 'Comment posted!', tone: 'success' });
-      }
-    } catch {
-      toast({ title: 'Failed to post comment. Please try again.', tone: 'danger' });
-    } finally {
-      setIsSubmitting(false);
-    }
+    postMutation.mutate({
+      visitorId: getVisitorId(),
+      authorName: name.trim(),
+      content: content.trim(),
+      honeypot,
+      timestamp: formLoadTime.current,
+    });
   };
 
   return (
@@ -261,11 +268,11 @@ function CommentModal({ onClose, slug, onCommentAdded }: CommentModalProps) {
         </div>
 
         <div className={styles.formActions}>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={postMutation.isPending}>
             Cancel
           </Button>
-          <Button type="submit" loading={isSubmitting}>
-            {isSubmitting ? 'Posting...' : 'Post Comment'}
+          <Button type="submit" loading={postMutation.isPending}>
+            {postMutation.isPending ? 'Posting...' : 'Post Comment'}
           </Button>
         </div>
       </form>
