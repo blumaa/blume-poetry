@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAnonClient } from '@/lib/supabase/anon';
 import { createAdminClient } from '@/lib/supabase/server';
-import { getPoemIdBySlug } from '@/lib/poems';
+import { getPoemIdBySlug, getPoemBySlug } from '@/lib/poems';
+import { sendLikeNotification } from '@/lib/push';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { verifyOrigin } from '@/lib/csrf';
 
@@ -97,6 +98,13 @@ export async function POST(
 
     if (insertError) {
       return NextResponse.json({ error: 'Failed to like' }, { status: 500 });
+    }
+
+    // Notify the admin's devices. sendLikeNotification never throws, so a
+    // push outage can't fail the like itself.
+    const poem = await getPoemBySlug(slug);
+    if (poem) {
+      await sendLikeNotification({ poemTitle: poem.title, slug });
     }
 
     return NextResponse.json({ liked: true });

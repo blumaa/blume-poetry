@@ -48,6 +48,11 @@ jest.mock('@/lib/supabase/anon', () => ({
 
 jest.mock('@/lib/poems', () => ({
   getPoemIdBySlug: async () => FIXED_POEM_ID,
+  getPoemBySlug: async () => ({ id: FIXED_POEM_ID, title: 'Some Poem', slug: 'some-slug' }),
+}));
+
+jest.mock('@/lib/push', () => ({
+  sendLikeNotification: async () => undefined,
 }));
 
 jest.mock('@/lib/csrf', () => ({

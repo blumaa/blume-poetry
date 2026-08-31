@@ -8,6 +8,7 @@ import { AdminGuard } from '@/components/auth/AdminGuard';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/admin/NotificationBell';
+import { PushToggle } from '@/components/admin/PushToggle';
 import { Button, Menu, MenuItem, TabBar, TabBarItem } from '@/components/mds';
 import styles from './layout.module.css';
 
@@ -86,6 +87,7 @@ function AdminNav() {
             </div>
           </div>
           <div className={styles.navRight}>
+            <PushToggle />
             <NotificationBell />
             <ThemeToggle className={styles.themeToggle} />
             <span className={styles.userEmail}>{user?.email}</span>
@@ -102,6 +104,7 @@ function AdminNav() {
           {SITE_NAME}
         </Link>
         <div className={styles.mobileRight}>
+          <PushToggle />
           <NotificationBell />
           <ThemeToggle className={styles.themeToggle} />
           <Menu

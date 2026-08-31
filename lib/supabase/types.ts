@@ -239,6 +239,30 @@ export type Database = {
           }
         ];
       };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          endpoint?: string;
+          p256dh?: string;
+          auth?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -263,3 +287,5 @@ export type NewLike = Database['public']['Tables']['likes']['Insert'];
 
 export type Comment = Database['public']['Tables']['comments']['Row'];
 export type NewComment = Database['public']['Tables']['comments']['Insert'];
+
+export type PushSubscriptionRow = Database['public']['Tables']['push_subscriptions']['Row'];
