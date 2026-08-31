@@ -1,6 +1,13 @@
 // Push-only service worker. Deliberately no fetch/caching handlers: pages
 // always come from the network, so a stale cache can never shadow the site.
 
+// Take over immediately on update. Without this a new version waits until
+// every tab and installed-app window closes, and pushes keep running through
+// the old worker (stale icons, stale handlers). Safe here precisely because
+// the worker caches nothing — there is no app shell to yank mid-session.
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => event.waitUntil(clients.claim()));
+
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
 
