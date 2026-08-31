@@ -14,6 +14,7 @@
 }
 
 .brandLink {
+  text-decoration: none;
   /* Self-center the text: the global touch-target rule gives anchors
      min-height 44px on coarse pointers, which grows this box past its
      line-height and leaves the text at the top. Centering inside our
@@ -24,7 +25,7 @@
   line-height: 1.5rem;
   font-weight: 500;
   color: var(--text-primary);
-  transition: color 0.2s ease;
+  transition: opacity 0.2s ease;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -32,7 +33,7 @@
 }
 
 .brandLink:hover {
-  color: var(--text-secondary);
+  opacity: 0.75;
 }
 
 .iconButton {

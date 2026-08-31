@@ -17,6 +17,8 @@
 }
 
 .itemLink {
+  color: inherit;
+  text-decoration: none;
   display: block;
   transition: background-color 0.15s ease;
 }

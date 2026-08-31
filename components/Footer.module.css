@@ -18,6 +18,7 @@
 }
 
 .link {
+  text-decoration: none;
   transition: color 0.2s ease;
   min-height: 44px;
   display: inline-flex;

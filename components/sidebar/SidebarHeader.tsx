@@ -1,5 +1,6 @@
 import { SITE_NAME } from '@/lib/brand';
 import Link from 'next/link';
+import { BrandLogo } from '../BrandLogo';
 import { Button } from '@/components/mds';
 import { ThemeToggle } from '../ThemeToggle';
 import { SubscribeButton } from '../SubscribeButton';
@@ -66,8 +67,9 @@ export function SidebarHeader({
           href="/"
           onClick={onClose}
           className={styles.brandLinkMobile}
+          aria-label={SITE_NAME}
         >
-          {SITE_NAME}
+          <BrandLogo />
         </Link>
 
         <div className={styles.actionsMobile}>
@@ -94,8 +96,9 @@ export function SidebarHeader({
         <Link
           href="/"
           className={styles.brandLinkDesktop}
+          aria-label={SITE_NAME}
         >
-          {SITE_NAME}
+          <BrandLogo />
         </Link>
       )}
 

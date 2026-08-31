@@ -31,6 +31,9 @@
 }
 
 .button {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
   padding: 0.5rem 1.5rem;
   min-height: 44px;
   background: var(--accent);
@@ -44,6 +47,7 @@
 }
 
 .buttonOutline {
+  text-decoration: none;
   display: flex;
   align-items: center;
   padding: 0.5rem 1.5rem;

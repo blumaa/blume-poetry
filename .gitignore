@@ -46,3 +46,8 @@ next-env.d.ts
 
 # Serena tool artifacts
 .serena/
+
+# local tool artifacts
+.claude/
+.playwright-mcp/
+supabase/.temp/

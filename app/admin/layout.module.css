@@ -31,12 +31,13 @@
 }
 
 .brandLink {
+  text-decoration: none;
   font-weight: 500;
   transition: color 0.15s ease;
 }
 
 .brandLink:hover {
-  color: var(--text-secondary);
+  opacity: 0.75;
 }
 
 .navLinks {
@@ -46,6 +47,7 @@
 }
 
 .navLink {
+  text-decoration: none;
   font-size: 0.875rem;
   transition: color 0.15s ease;
 }
@@ -98,6 +100,7 @@
 }
 
 .mobileBrandLink {
+  text-decoration: none;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -112,7 +115,7 @@
 }
 
 .mobileBrandLink:hover {
-  color: var(--text-secondary);
+  opacity: 0.75;
 }
 
 .mobileRight {

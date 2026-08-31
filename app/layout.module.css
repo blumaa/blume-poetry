@@ -4,6 +4,7 @@
 }
 
 .skipLink:focus {
+  text-decoration: none;
   position: absolute;
   top: 1rem;
   left: 1rem;

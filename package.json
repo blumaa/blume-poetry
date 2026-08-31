@@ -12,7 +12,7 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
-    "@mond-design-system/react": "^6.0.0",
+    "@mond-design-system/react": "^6.2.0",
     "@mond-design-system/tokens": "^4.1.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",

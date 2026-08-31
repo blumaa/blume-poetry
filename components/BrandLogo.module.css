@@ -1,0 +1,24 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.mark {
+  width: 28px;
+  height: 28px;
+  flex: none;
+}
+
+/* Height states the size — the SVG scales through its viewBox, so this is
+   the one number to change; the 40px fontSize experiment clipped because the
+   318×44 artboard is drawn for 30px text. The aspect ratio comes from that
+   artboard so the width follows without being named twice. */
+.wordmark {
+  height: 24px;
+  width: auto;
+  aspect-ratio: 318 / 44;
+  flex-shrink: 1;
+  min-width: 0;
+}

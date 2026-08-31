@@ -25,6 +25,7 @@
 }
 
 .navLink {
+  text-decoration: none;
   color: var(--text-secondary);
   transition: color 0.2s ease;
   min-height: 44px;
@@ -100,6 +101,9 @@
 }
 
 .commentButton {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.5rem;

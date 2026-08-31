@@ -1,6 +1,7 @@
 'use client';
 
 import { SITE_NAME } from '@/lib/brand';
+import { BrandLogo } from '@/components/BrandLogo';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AuthProvider } from '@/components/auth/AuthProvider';
@@ -66,8 +67,8 @@ function AdminNav() {
       <nav className={styles.desktopNav}>
         <div className={styles.navContainer}>
           <div className={styles.navLeft}>
-            <Link href="/" className={styles.brandLink}>
-              {SITE_NAME}
+            <Link href="/" className={styles.brandLink} aria-label={SITE_NAME}>
+              <BrandLogo />
             </Link>
             <div className={styles.navLinks}>
               {navItems.map((item) => (
@@ -100,8 +101,8 @@ function AdminNav() {
 
       {/* Mobile top bar */}
       <nav className={styles.mobileNav}>
-        <Link href="/" className={styles.mobileBrandLink}>
-          {SITE_NAME}
+        <Link href="/" className={styles.mobileBrandLink} aria-label={SITE_NAME}>
+          <BrandLogo />
         </Link>
         <div className={styles.mobileRight}>
           <PushToggle />

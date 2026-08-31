@@ -1,6 +1,6 @@
 import { SITE_NAME } from '@/lib/brand';
 import type { Metadata, Viewport } from "next";
-import { Source_Sans_3 } from "next/font/google";
+import { Source_Sans_3, Space_Grotesk } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 /* Order matters: tokens declare, the brand re-points, components read, the app
    overrides. Do not sort. */
@@ -18,6 +18,13 @@ const sourceSans = Source_Sans_3({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["300", "400", "600", "700"],
+});
+
+/* The logo wordmark's face; the inline SVG in BrandLogo reads --font-logo. */
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-logo",
+  subsets: ["latin"],
+  weight: ["300", "400"],
 });
 
 export const viewport: Viewport = {
@@ -59,7 +66,7 @@ export default function RootLayout({
     // :root, and a var() is substituted on the element that declares it. Held on
     // <body>, --font-inter would be undefined at :root, which would make
     // --font-sans invalid and drop the whole site to the browser default.
-    <html lang="en" suppressHydrationWarning className={sourceSans.variable}>
+    <html lang="en" suppressHydrationWarning className={`${sourceSans.variable} ${spaceGrotesk.variable}`}>
       <head>
         {/* Prevent flash of wrong theme */}
         <script

@@ -2,6 +2,7 @@
 
 import { SITE_NAME } from '@/lib/brand';
 import Link from 'next/link';
+import { BrandLogo } from './BrandLogo';
 import { AppBar, Button } from '@/components/mds';
 import { ThemeToggle } from './ThemeToggle';
 import { LoginButton } from './LoginButton';
@@ -51,8 +52,9 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
           <Link
             href="/"
             className={styles.brandLink}
+            aria-label={SITE_NAME}
           >
-            {SITE_NAME}
+            <BrandLogo />
           </Link>
         </>
       }
@@ -62,6 +64,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
           <LoginButton className={styles.iconButton} />
         </>
       }
+      flush={true}
     />
   );
 }

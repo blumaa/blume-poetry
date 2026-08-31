@@ -2,6 +2,12 @@
    Light Theme (Newsprint) - WCAG AA Compliant
    ========================================================================== */
 :root {
+  /* Official logo palette (Blumenous Poetry Logo Directions). The mark is
+     terracotta on light and peach on dark; the wordmark's second word keeps
+     one muted violet on both. */
+  --logo-mark: #c26a4e;
+  --logo-word: #1a1a2e;
+  --logo-word-sub: #8a88a0;
   /* Backgrounds */
   --bg-primary: #ffffff;
   --bg-secondary: #f8f8f8;
@@ -56,6 +62,8 @@
    Dark Theme (Inverted Newsprint) - WCAG AA Compliant
    ========================================================================== */
 [data-theme="dark"] {
+  --logo-mark: #f0b8a8;
+  --logo-word: #e8e6f0;
   /* Backgrounds - avoid pure black for better readability */
   --bg-primary: #121212;
   --bg-secondary: #1e1e1e;
@@ -264,28 +272,9 @@ article {
     );
   }
 }
-/* ==========================================================================
-   Link Styling
-   ========================================================================== */
-/* Preflight-style link reset: UA blue/underline off, links style
-   themselves per component. */
-a {
-  color: inherit;
-  text-decoration: inherit;
-  transition: color 0.2s ease;
-}
-
-/* ==========================================================================
-   Button Styling - Accessibility
-   ========================================================================== */
-/* MDS base.css only sets `font: inherit` on form controls; strip the
-   remaining UA chrome (Tailwind preflight used to do this). */
-button {
-  background-color: transparent;
-  border: 0;
-  padding: 0;
-  appearance: none;
-}
+/* No element selectors for a, button, headings or inputs here: MDS renders
+   those elements and owns their styling; site components carry their own
+   resets in their module CSS. */
 
 fieldset {
   border: 0;
@@ -300,32 +289,6 @@ kbd,
 samp,
 pre {
   font-size: 1em;
-}
-
-/* Headings carry no default size/weight; each component opts in. Matches
-   the preflight rule the site was built against. */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-size: inherit;
-  font-weight: inherit;
-}
-
-button,
-[role="button"],
-input[type="submit"],
-input[type="button"] {
-  cursor: pointer;
-}
-
-button:disabled,
-[role="button"][aria-disabled="true"],
-input[type="submit"]:disabled,
-input[type="button"]:disabled {
-  cursor: not-allowed;
 }
 
 
@@ -414,19 +377,6 @@ input[type="button"]:disabled {
 
 .animate-slide-up {
   animation: slideUp 0.3s ease-out;
-}
-
-/* ==========================================================================
-   Touch Target Sizing (Accessibility)
-   ========================================================================== */
-@media (pointer: coarse) {
-  button,
-  a,
-  input[type="checkbox"],
-  input[type="radio"] {
-    min-height: 44px;
-    min-width: 44px;
-  }
 }
 
 /* ==========================================================================
