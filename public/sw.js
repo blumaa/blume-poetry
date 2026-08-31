@@ -8,7 +8,7 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(data.title || 'Blumenous Poetry', {
       body: data.body || '',
       icon: '/icons/icon-192.svg',
-      badge: '/icons/badge-96.svg',
+      badge: '/icons/badge-96.png',
       data: { url: data.url || '/' },
     })
   );

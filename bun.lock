@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "poetree-v2",
+      "name": "blume-poetry",
       "dependencies": {
         "@mond-design-system/react": "^6.2.0",
         "@mond-design-system/tokens": "^4.1.0",

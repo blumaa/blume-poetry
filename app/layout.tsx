@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Poetree",
+    title: SITE_NAME,
   },
   icons: {
     apple: "/icons/apple-touch-icon.svg",
