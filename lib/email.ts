@@ -77,8 +77,11 @@ function getTransporter(): nodemailer.Transporter {
       throw new Error('GMAIL_USER and GMAIL_APP_PASSWORD environment variables must be set');
     }
 
+    // Pooled: whole-list sends share a few SMTP connections. One connection
+    // per recipient makes Gmail refuse the burst with `421 4.3.0`.
     transporter = nodemailer.createTransport({
       service: 'gmail',
+      pool: true,
       auth: {
         user,
         pass,
@@ -95,20 +98,36 @@ interface SendEmailOptions {
   text?: string;
 }
 
+const MAX_SEND_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 2000;
+
+/** SMTP 4xx means "try again later"; 5xx is final. */
+function isTemporarySmtpError(err: unknown): boolean {
+  const code = (err as { responseCode?: number } | null)?.responseCode;
+  return typeof code === 'number' && code >= 400 && code < 500;
+}
+
 export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
   const transport = getTransporter();
   const fromName = process.env.EMAIL_FROM_NAME || SITE_NAME;
   const fromEmail = process.env.GMAIL_USER;
-
-  const info = await transport.sendMail({
+  const mail = {
     from: `${fromName} <${fromEmail}>`,
     to: Array.isArray(to) ? to.join(', ') : to,
     subject,
     html,
     text,
-  });
+  };
 
-  return { id: info.messageId };
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const info = await transport.sendMail(mail);
+      return { id: info.messageId };
+    } catch (err) {
+      if (attempt >= MAX_SEND_ATTEMPTS || !isTemporarySmtpError(err)) throw err;
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * attempt));
+    }
+  }
 }
 
 interface PoemEmailData {
