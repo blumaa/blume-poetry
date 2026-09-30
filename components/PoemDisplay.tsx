@@ -4,7 +4,7 @@ import { useEffect, useCallback, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Poem, PoemMeta } from '@/lib/poems';
-import { LikeButton } from './LikeButton';
+import { LikeButton } from '@/features/likes';
 import { CommentSection, CommentIcon } from './CommentSection';
 import { PoemContent } from './PoemContent';
 import { formatDate } from '@/lib/date';

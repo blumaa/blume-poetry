@@ -1,3 +1,5 @@
+import { apiFetch } from '@/lib/apiFetch';
+
 /* This browser's like-notification push subscription. The browser's
    PushManager is the source of truth; the server holds a copy for sending. */
 
@@ -40,12 +42,7 @@ export async function subscribe(): Promise<void> {
     ) as BufferSource,
   });
 
-  const res = await fetch('/api/push', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(subscription.toJSON()),
-  });
-  if (!res.ok) throw new Error('Failed to register subscription');
+  await apiFetch('/api/push', { method: 'POST', json: subscription.toJSON() });
 }
 
 export async function unsubscribe(): Promise<void> {
@@ -54,10 +51,5 @@ export async function unsubscribe(): Promise<void> {
   if (!subscription) return;
 
   await subscription.unsubscribe();
-  const res = await fetch('/api/push', {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ endpoint: subscription.endpoint }),
-  });
-  if (!res.ok) throw new Error('Failed to remove subscription');
+  await apiFetch('/api/push', { method: 'DELETE', json: { endpoint: subscription.endpoint } });
 }

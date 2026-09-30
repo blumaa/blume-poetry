@@ -4,6 +4,10 @@ export const queryKeys = {
   admin: {
     activity: () => ['admin', 'activity'] as const,
   },
+  poem: {
+    like: (slug: string) => ['poems', slug, 'like'] as const,
+    comments: (slug: string) => ['poems', slug, 'comments'] as const,
+  },
   push: {
     subscription: () => ['push', 'subscription'] as const,
   },

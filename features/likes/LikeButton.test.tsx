@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { renderWithProviders } from '../test-utils';
-import { LikeButton } from '@/components/LikeButton';
+import { renderWithProviders } from '@/__tests__/test-utils';
+import { LikeButton } from './LikeButton';
 
 jest.mock('@/lib/visitorId', () => ({
   getVisitorId: () => 'visitor-1',
