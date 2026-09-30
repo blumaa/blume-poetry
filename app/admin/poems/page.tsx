@@ -6,13 +6,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { Badge, Button, Chip, ChipGroup, ConfirmDialog, DataTable, Input, useToast } from '@/components/mds';
-import type { Poem } from '@/lib/supabase/types';
+import type { PoemRow } from '@/lib/supabase/types';
 import { SkeletonList } from '@/components/Skeleton';
 import { formatDate } from '@/lib/date';
 import { takeFlashToast } from '@/lib/flashToast';
 import styles from './page.module.css';
 
-async function fetchAdminPoems(statusFilter: string | null): Promise<Poem[]> {
+async function fetchAdminPoems(statusFilter: string | null): Promise<PoemRow[]> {
   const supabase = createClient();
   let query = supabase
     .from('poems')
@@ -26,7 +26,7 @@ async function fetchAdminPoems(statusFilter: string | null): Promise<Poem[]> {
   const { data, error } = await query;
 
   if (error) throw new Error(error.message);
-  return (data as Poem[]) || [];
+  return (data as PoemRow[]) || [];
 }
 
 async function updatePoemPinned(id: string, pinned: boolean): Promise<void> {
@@ -52,7 +52,7 @@ async function revalidatePaths(paths: string[]): Promise<void> {
 export default function AdminPoemsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [deleteTarget, setDeleteTarget] = useState<Poem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PoemRow | null>(null);
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get('status');
   const router = useRouter();
@@ -68,7 +68,7 @@ export default function AdminPoemsPage() {
 
   /* Deterministic: pin state moves only after the refetch confirms the write. */
   const pinMutation = useMutation({
-    mutationFn: async (poem: Poem) => {
+    mutationFn: async (poem: PoemRow) => {
       await updatePoemPinned(poem.id, !poem.pinned);
       await revalidatePaths([]);
     },
@@ -83,7 +83,7 @@ export default function AdminPoemsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (target: Poem) => {
+    mutationFn: async (target: PoemRow) => {
       await deletePoem(target.id);
       await revalidatePaths([`/poem/${target.slug}`]);
     },
@@ -108,7 +108,7 @@ export default function AdminPoemsPage() {
     if (flash) toast(flash);
   }, [toast]);
 
-  const handleDeleteClick = (poem: Poem) => {
+  const handleDeleteClick = (poem: PoemRow) => {
     setDeleteTarget(poem);
   };
 
@@ -171,7 +171,7 @@ export default function AdminPoemsPage() {
             {
               key: 'title',
               header: 'Title',
-              cell: (poem: Poem) => (
+              cell: (poem: PoemRow) => (
                 <span className={styles.titleCell}>
                   {poem.pinned && (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={styles.pinIcon} aria-label="Pinned">
@@ -191,7 +191,7 @@ export default function AdminPoemsPage() {
             {
               key: 'status',
               header: 'Status',
-              cell: (poem: Poem) => (
+              cell: (poem: PoemRow) => (
                 <Badge tone={poem.status === 'published' ? 'success' : 'warning'}>
                   {poem.status}
                 </Badge>
@@ -200,7 +200,7 @@ export default function AdminPoemsPage() {
             {
               key: 'published',
               header: 'Published',
-              cell: (poem: Poem) => formatDate(poem.published_at),
+              cell: (poem: PoemRow) => formatDate(poem.published_at),
             },
           ]}
           rows={filteredPoems}

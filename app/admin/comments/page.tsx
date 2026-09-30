@@ -5,10 +5,10 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { Button, ConfirmDialog, DataTable, useToast } from '@/components/mds';
-import type { Comment } from '@/lib/supabase/types';
+import type { CommentRow } from '@/lib/supabase/types';
 import styles from './page.module.css';
 
-type CommentWithPoem = Comment & {
+type CommentWithPoem = CommentRow & {
   poems: { title: string; slug: string } | null;
 };
 

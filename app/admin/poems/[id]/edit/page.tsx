@@ -4,14 +4,14 @@ import { use } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { PoemEditor } from '@/components/admin/PoemEditor';
-import type { Poem } from '@/lib/supabase/types';
+import type { PoemRow } from '@/lib/supabase/types';
 import styles from './page.module.css';
 
 interface EditPoemPageProps {
   params: Promise<{ id: string }>;
 }
 
-async function fetchPoemById(id: string): Promise<Poem> {
+async function fetchPoemById(id: string): Promise<PoemRow> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('poems')
@@ -20,7 +20,7 @@ async function fetchPoemById(id: string): Promise<Poem> {
     .single();
 
   if (error) throw new Error(error.message);
-  return data as Poem;
+  return data as PoemRow;
 }
 
 export default function EditPoemPage({ params }: EditPoemPageProps) {

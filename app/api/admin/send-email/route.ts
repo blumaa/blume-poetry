@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { sendEmail, generateNewsletterHtml, generateNewsletterText } from '@/lib/email';
 import { requireAdmin } from '@/lib/auth';
 import { z } from 'zod';
-import type { Poem, Subscriber } from '@/lib/supabase/types';
+import type { PoemRow, SubscriberRow } from '@/lib/supabase/types';
 
 const sendEmailSchema = z.object({
   subject: z.string().min(1, 'Subject is required'),
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const adminSupabase = createAdminClient();
 
     // Get the poem if provided
-    let poemData: Poem | null = null;
+    let poemData: PoemRow | null = null;
     if (poemId) {
       const { data: poem, error: poemError } = await adminSupabase
         .from('poems')
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       if (poemError || !poem) {
         return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
       }
-      poemData = poem as Poem;
+      poemData = poem as PoemRow;
     }
 
     // Build poem attachment data if poem is selected.
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch subscribers' }, { status: 500 });
     }
 
-    const activeSubscribers = (subscribers as Subscriber[]) || [];
+    const activeSubscribers = (subscribers as SubscriberRow[]) || [];
 
     if (activeSubscribers.length === 0) {
       return NextResponse.json({ error: 'No active subscribers' }, { status: 400 });

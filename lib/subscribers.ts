@@ -1,13 +1,13 @@
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
-import type { Database, Subscriber } from '@/lib/supabase/types';
+import type { Database, SubscriberRow } from '@/lib/supabase/types';
 
 type SubscribersClient = SupabaseClient<Database>;
 type SubscriberUpdate = Database['public']['Tables']['subscribers']['Update'];
 
 export type UpsertSubscriberResult =
   | { outcome: 'already_active' }
-  | { outcome: 'reactivated'; data: Subscriber | null; error: PostgrestError | null }
-  | { outcome: 'inserted'; data: Subscriber | null; error: PostgrestError | null };
+  | { outcome: 'reactivated'; data: SubscriberRow | null; error: PostgrestError | null }
+  | { outcome: 'inserted'; data: SubscriberRow | null; error: PostgrestError | null };
 
 /**
  * Shared check-existing -> reactivate-if-unsubscribed -> insert-if-new flow
@@ -51,13 +51,13 @@ export async function upsertSubscriber(
       .from('subscribers')
       .update({ ...reactivateFields, notify_new_poems: notifyNewPoems })
       .eq('id', existing.id)
-      // `.select<'*', Subscriber>('*')` instead of bare `.select()`: in the
+      // `.select<'*', SubscriberRow>('*')` instead of bare `.select()`: in the
       // installed postgrest-js version, a bare `.select()` after
       // `.update()`/`.insert()` resolves `data`'s type to `{}` instead of the
       // table row (a known upstream generic-inference gap — reproduces even
       // for a plain read). The explicit generic is a type-only assertion; the
       // runtime query ("*") is unchanged.
-      .select<'*', Subscriber>('*')
+      .select<'*', SubscriberRow>('*')
       .single();
 
     return { outcome: 'reactivated', data, error };
@@ -66,7 +66,7 @@ export async function upsertSubscriber(
   const { data, error } = await client
     .from('subscribers')
     .insert({ email, status: 'active', verified: true, notify_new_poems: notifyNewPoems })
-    .select<'*', Subscriber>('*')
+    .select<'*', SubscriberRow>('*')
     .single();
 
   return { outcome: 'inserted', data, error };

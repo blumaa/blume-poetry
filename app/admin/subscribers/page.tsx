@@ -6,13 +6,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { SubscribeModal } from '@/components/SubscribeModal';
 import { Badge, Button, Checkbox, Chip, ChipGroup, ConfirmDialog, DataTable, useToast } from '@/components/mds';
-import type { Subscriber } from '@/lib/supabase/types';
+import type { SubscriberRow } from '@/lib/supabase/types';
 import { formatDate } from '@/lib/date';
 import styles from './page.module.css';
 
 async function loadSubscribers(
   filter: 'all' | 'active' | 'unsubscribed'
-): Promise<Subscriber[]> {
+): Promise<SubscriberRow[]> {
   const supabase = createClient();
   let query = supabase
     .from('subscribers')
@@ -26,7 +26,7 @@ async function loadSubscribers(
   const { data, error } = await query;
 
   if (error) throw new Error(error.message);
-  return (data as Subscriber[]) || [];
+  return (data as SubscriberRow[]) || [];
 }
 
 async function deleteSubscriber(id: string): Promise<void> {
@@ -47,7 +47,7 @@ async function updateNotifyNewPoems(id: string, next: boolean): Promise<void> {
 export default function AdminSubscribersPage() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<'all' | 'active' | 'unsubscribed'>('active');
-  const [deleteTarget, setDeleteTarget] = useState<Subscriber | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SubscriberRow | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const { toast } = useToast();
 
@@ -61,7 +61,7 @@ export default function AdminSubscribersPage() {
     queryClient.invalidateQueries({ queryKey: ['admin', 'subscribers'] });
 
   const deleteMutation = useMutation({
-    mutationFn: (target: Subscriber) => deleteSubscriber(target.id),
+    mutationFn: (target: SubscriberRow) => deleteSubscriber(target.id),
     onSuccess: (_data, target) => toast({ title: `"${target.email}" deleted`, tone: 'success' }),
     onSettled: invalidateSubscribers,
   });
@@ -70,7 +70,7 @@ export default function AdminSubscribersPage() {
      absolute value taken from the row on screen; the checkbox moves only
      after the refetch confirms the write. */
   const notifyMutation = useMutation({
-    mutationFn: (subscriber: Subscriber) =>
+    mutationFn: (subscriber: SubscriberRow) =>
       updateNotifyNewPoems(subscriber.id, !subscriber.notify_new_poems),
     onSuccess: (_data, subscriber) =>
       toast({
@@ -84,7 +84,7 @@ export default function AdminSubscribersPage() {
     onSettled: invalidateSubscribers,
   });
 
-  const handleDeleteClick = (subscriber: Subscriber) => {
+  const handleDeleteClick = (subscriber: SubscriberRow) => {
     setDeleteTarget(subscriber);
   };
 
@@ -164,14 +164,14 @@ export default function AdminSubscribersPage() {
               {
                 key: 'email',
                 header: 'Email',
-                cell: (subscriber: Subscriber) => (
+                cell: (subscriber: SubscriberRow) => (
                   <span className={styles.emailCell}>{subscriber.email}</span>
                 ),
               },
               {
                 key: 'status',
                 header: 'Status',
-                cell: (subscriber: Subscriber) => (
+                cell: (subscriber: SubscriberRow) => (
                   <Badge tone={subscriber.status === 'active' ? 'success' : 'neutral'}>
                     {subscriber.status}
                   </Badge>
@@ -180,18 +180,18 @@ export default function AdminSubscribersPage() {
               {
                 key: 'subscribed',
                 header: 'Subscribed',
-                cell: (subscriber: Subscriber) => formatDate(subscriber.subscribed_at),
+                cell: (subscriber: SubscriberRow) => formatDate(subscriber.subscribed_at),
               },
               {
                 key: 'verified',
                 header: 'Verified',
-                cell: (subscriber: Subscriber) =>
+                cell: (subscriber: SubscriberRow) =>
                   subscriber.verified ? <Badge tone="success">Yes</Badge> : 'No',
               },
               {
                 key: 'notify',
                 header: 'New poems',
-                cell: (subscriber: Subscriber) => (
+                cell: (subscriber: SubscriberRow) => (
                   <Checkbox
                     label={`New poem emails for ${subscriber.email}`}
                     labelHidden

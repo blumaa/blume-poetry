@@ -8,7 +8,7 @@ import type { RichTextEditorRef } from './RichTextEditor';
 import { PoemContent } from '@/components/PoemContent';
 import { Button, Checkbox, ConfirmDialog, Field, Input, Radio, Tab, TabList, Tabs } from '@/components/mds';
 import { formatDate } from '@/lib/date';
-import type { Poem, NewPoem } from '@/lib/supabase/types';
+import type { PoemRow, PoemInsert } from '@/lib/supabase/types';
 import styles from './PoemEditor.module.css';
 import { setFlashToast, type FlashToast } from '@/lib/flashToast';
 
@@ -36,14 +36,14 @@ function PoemPreview({ title, subtitle, html }: { title: string; subtitle: strin
         </time>
       </header>
 
-      {/* Poem body - uses shared PoemContent component */}
+      {/* PoemRow body - uses shared PoemContent component */}
       <PoemContent html={html} />
     </article>
   );
 }
 
 interface PoemEditorProps {
-  poem?: Poem;
+  poem?: PoemRow;
   isNew?: boolean;
 }
 
@@ -128,7 +128,7 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
         ? new Date(publishedAt).toISOString()
         : new Date().toISOString();
 
-      const poemData: NewPoem = {
+      const poemData: PoemInsert = {
         title: title.trim(),
         subtitle: subtitle.trim() || null,
         slug,

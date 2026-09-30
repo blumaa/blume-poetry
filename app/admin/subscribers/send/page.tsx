@@ -10,10 +10,10 @@ import { Button, ConfirmDialog, Field, Input, Select, Tab, TabList, Tabs, useToa
 import { PoemContent } from '@/components/PoemContent';
 import { sanitizeNewsletterHtml } from '@/lib/sanitize';
 import { contentToHtml } from '@/lib/poemHtml';
-import type { Poem } from '@/lib/supabase/types';
+import type { PoemRow } from '@/lib/supabase/types';
 import styles from './page.module.css';
 
-async function fetchSendData(): Promise<{ poems: Poem[]; subscriberCount: number }> {
+async function fetchSendData(): Promise<{ poems: PoemRow[]; subscriberCount: number }> {
   const supabase = createClient();
 
   // Recent published poems
@@ -32,7 +32,7 @@ async function fetchSendData(): Promise<{ poems: Poem[]; subscriberCount: number
     .eq('status', 'active');
   if (countError) throw new Error(countError.message);
 
-  return { poems: (poemsData as Poem[]) || [], subscriberCount: count || 0 };
+  return { poems: (poemsData as PoemRow[]) || [], subscriberCount: count || 0 };
 }
 
 interface SendEmailInput {
@@ -198,7 +198,7 @@ export default function SendNewsletterPage() {
             </div>
           </div>
 
-          {/* Poem Attachment (Optional) */}
+          {/* PoemRow Attachment (Optional) */}
           <Field label="Attach Poem" hint="Optional">
             <Select value={selectedPoemId} onChange={(e) => setSelectedPoemId(e.target.value)}>
               <option value="">None</option>
@@ -210,7 +210,7 @@ export default function SendNewsletterPage() {
             </Select>
           </Field>
 
-          {/* Subscriber Info */}
+          {/* SubscriberRow Info */}
           <div className={styles.subscriberInfo}>
             <div className={styles.subscriberInfoText}>
               Active subscribers: <strong className={styles.subscriberCount}>{subscriberCount}</strong>
@@ -271,7 +271,7 @@ export default function SendNewsletterPage() {
                   />
                 )}
 
-                {/* Poem Preview */}
+                {/* PoemRow Preview */}
                 {selectedPoem && (
                   <div className={bodyHtml ? styles.poemPreviewWrap : ''}>
                     <h3 className={styles.poemPreviewTitle}>

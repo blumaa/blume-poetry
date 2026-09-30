@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../test-utils';
 import AdminSubscribersPage from '@/app/admin/subscribers/page';
-import type { Subscriber } from '@/lib/supabase/types';
+import type { SubscriberRow } from '@/lib/supabase/types';
 
 /* The real modal posts to the API; here only the success callback matters. */
 jest.mock('@/components/SubscribeModal', () => ({
@@ -10,7 +10,7 @@ jest.mock('@/components/SubscribeModal', () => ({
     isOpen ? <button onClick={onSuccess}>Mock add success</button> : null,
 }));
 
-const listResults: Array<{ data: Subscriber[]; error: null }> = [];
+const listResults: Array<{ data: SubscriberRow[]; error: null }> = [];
 
 function makeListQuery() {
   const result = listResults.shift() ?? { data: [], error: null };
@@ -29,14 +29,14 @@ jest.mock('@/lib/supabase/client', () => ({
   }),
 }));
 
-const subscriber = (id: string, email: string): Subscriber => ({
+const subscriber = (id: string, email: string): SubscriberRow => ({
   id,
   email,
   status: 'active',
   subscribed_at: '2026-01-01T00:00:00.000Z',
   verified: true,
   notify_new_poems: true,
-} as Subscriber);
+} as SubscriberRow);
 
 describe('AdminSubscribersPage', () => {
   beforeEach(() => {
