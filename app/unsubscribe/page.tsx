@@ -2,6 +2,7 @@ import { SITE_NAME } from '@/lib/brand';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageShell } from '@/components/PageShell';
+import { Button } from '@/components/mds';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
@@ -35,12 +36,9 @@ export default function UnsubscribePage() {
         <p className={styles.message}>
           You will no longer receive email updates from {SITE_NAME}.
         </p>
-        <Link
-          href="/"
-          className={styles.button}
-        >
+        <Button as={Link} href="/">
           Return to poems
-        </Link>
+        </Button>
       </div>
     </PageShell>
   );

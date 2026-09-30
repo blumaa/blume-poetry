@@ -10,3 +10,4 @@ export {
   type NewsletterInput,
   type SubscriberFilter,
 } from './api/subscribers';
+export { NotificationSettings } from './NotificationSettings';

@@ -28,6 +28,10 @@ export const queryKeys = {
     comments: (slug: string) => ['poems', slug, 'comments'] as const,
     search: (query: string) => ['poems', 'search', query] as const,
   },
+  subscriber: {
+    /** Keyed by the emailed token: it is the only identity the page has. */
+    preference: (token: string) => ['subscriber', 'preference', token] as const,
+  },
   push: {
     subscription: () => ['push', 'subscription'] as const,
   },

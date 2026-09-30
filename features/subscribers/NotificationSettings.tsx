@@ -3,33 +3,10 @@
 import { useEffect, useEffectEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
+import { Button } from '@/components/mds';
+import { queryKeys } from '@/lib/queryKeys';
+import { readPreference, writePreference, type PreferenceAction } from './api/preferences';
 import styles from './NotificationSettings.module.css';
-
-type Preference = { enabled: boolean; unsubscribed: boolean };
-
-function messageFor(err: unknown): string {
-  return err instanceof Error ? err.message : 'Something went wrong';
-}
-
-/** Read the current preference without changing it. */
-async function readPreference(token: string): Promise<Preference> {
-  const res = await fetch(`/api/notifications?token=${encodeURIComponent(token)}`);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Something went wrong');
-  return { enabled: data.enabled, unsubscribed: data.unsubscribed };
-}
-
-/** Set the preference to an absolute value. Repeating it changes nothing. */
-async function writePreference(token: string, action: 'on' | 'off'): Promise<Preference> {
-  const res = await fetch('/api/notifications', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, action }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Something went wrong');
-  return { enabled: data.enabled, unsubscribed: data.unsubscribed };
-}
 
 interface NotificationSettingsProps {
   token: string;
@@ -38,12 +15,12 @@ interface NotificationSettingsProps {
    * email gets fetched by mail scanners, so the change is made from JS with a
    * POST rather than by the page load itself.
    */
-  initialAction?: 'on' | 'off';
+  initialAction?: PreferenceAction;
 }
 
 export function NotificationSettings({ token, initialAction }: NotificationSettingsProps) {
   const queryClient = useQueryClient();
-  const prefKey = ['notifications', token];
+  const prefKey = queryKeys.subscriber.preference(token);
 
   /* With an initialAction the mount-time write below supplies the data, so
      the read is skipped entirely. */
@@ -55,7 +32,7 @@ export function NotificationSettings({ token, initialAction }: NotificationSetti
 
   /* Deterministic: the cache is set from the server response, never guessed. */
   const mutation = useMutation({
-    mutationFn: (action: 'on' | 'off') => writePreference(token, action),
+    mutationFn: (action: PreferenceAction) => writePreference(token, action),
     onSuccess: (preference) => queryClient.setQueryData(prefKey, preference),
   });
 
@@ -76,13 +53,10 @@ export function NotificationSettings({ token, initialAction }: NotificationSetti
         <h1 className={styles.title}>
           This link has expired
         </h1>
-        <p className={styles.description}>{messageFor(error)}</p>
-        <Link
-          href="/"
-          className={styles.button}
-        >
+        <p className={styles.description}>{error.message}</p>
+        <Button as={Link} href="/">
           Return to poems
-        </Link>
+        </Button>
       </>
     );
   }
@@ -113,20 +87,15 @@ export function NotificationSettings({ token, initialAction }: NotificationSetti
       </p>
 
       <div className={styles.actions}>
-        <button
-          type="button"
+        <Button
           onClick={() => mutation.mutate(preference.enabled ? 'off' : 'on')}
-          disabled={mutation.isPending}
-          className={styles.button}
+          loading={mutation.isPending}
         >
           {preference.enabled ? 'Turn off new-poem emails' : 'Turn on new-poem emails'}
-        </button>
-        <Link
-          href="/"
-          className={styles.buttonOutline}
-        >
+        </Button>
+        <Button as={Link} href="/" variant="secondary">
           Return to poems
-        </Link>
+        </Button>
       </div>
     </>
   );

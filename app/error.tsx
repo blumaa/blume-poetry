@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/components/mds';
 import styles from './error.module.css';
 
 export default function GlobalError({
@@ -15,12 +16,7 @@ export default function GlobalError({
         <p className={styles.message}>
           An unexpected error occurred. Please try again.
         </p>
-        <button
-          onClick={reset}
-          className={styles.button}
-        >
-          Try again
-        </button>
+        <Button onClick={reset}>Try again</Button>
       </div>
     </div>
   );

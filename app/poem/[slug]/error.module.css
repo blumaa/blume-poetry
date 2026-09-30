@@ -29,35 +29,3 @@
   gap: 1rem;
   justify-content: center;
 }
-
-.button {
-  appearance: none;
-  border: 0;
-  cursor: pointer;
-  padding: 0.5rem 1.5rem;
-  min-height: 44px;
-  background: var(--accent);
-  color: #fff;
-  border-radius: 0.25rem;
-  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.button:hover {
-  background: var(--accent-hover);
-}
-
-.buttonOutline {
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 1.5rem;
-  min-height: 44px;
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  border-radius: 0.25rem;
-  transition: border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.buttonOutline:hover {
-  border-color: var(--accent);
-}
