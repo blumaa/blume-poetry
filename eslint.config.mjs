@@ -54,12 +54,40 @@ const dataLayerGate = {
   },
 };
 
+/* Button as={Link} breaks when the caller is a server component: there Link
+   is a plain function and cannot cross into the client Button. ButtonLink
+   holds the one allowed use. */
+const linkGate = {
+  files: ["**/*.tsx"],
+  ignores: ["components/mds/ButtonLink.tsx", "**/*.test.tsx", "__tests__/**"],
+  rules: {
+    "no-restricted-syntax": [
+      "error",
+      {
+        selector: "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='as']",
+        message: "Use ButtonLink from '@/components/mds' for a button that navigates.",
+      },
+    ],
+  },
+};
+
+/* A component past 300 lines is doing more than one job: split it. */
+const sizeGate = {
+  files: ["**/*.tsx"],
+  ignores: ["**/*.test.tsx", "__tests__/**"],
+  rules: {
+    "max-lines": ["error", { max: 300, skipBlankLines: false, skipComments: false }],
+  },
+};
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   storageGate,
   importGate,
   dataLayerGate,
+  sizeGate,
+  linkGate,
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

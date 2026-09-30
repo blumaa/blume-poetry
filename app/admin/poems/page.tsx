@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Badge, Button, Chip, ChipGroup, ConfirmDialog, DataTable, Input, useToast } from '@/components/mds';
+import { Badge, Button, ButtonLink, Chip, ChipGroup, ConfirmDialog, DataTable, Input, useToast } from '@/components/mds';
 import type { PoemRow } from '@/lib/supabase/types';
 import { SkeletonList } from '@/components/Skeleton';
 import { formatDate } from '@/lib/date';
@@ -82,9 +82,9 @@ export default function AdminPoemsPage() {
       <div className={styles.header}>
         <div className={styles.headerTop}>
           <h1 className={styles.title}>Poems</h1>
-          <Button as={Link} href="/admin/poems/new" size="sm">
+          <ButtonLink href="/admin/poems/new" size="sm">
             New Poem
-          </Button>
+          </ButtonLink>
         </div>
         <div className={styles.filters}>
           <ChipGroup>
@@ -181,9 +181,9 @@ export default function AdminPoemsPage() {
               >
                 {poem.pinned ? 'Unpin' : 'Pin'}
               </Button>
-              <Button as={Link} href={`/admin/poems/${poem.id}/edit`} variant="secondary" size="sm">
+              <ButtonLink href={`/admin/poems/${poem.id}/edit`} variant="secondary" size="sm">
                 Edit
-              </Button>
+              </ButtonLink>
               <Button variant="danger" size="sm" onClick={() => handleDeleteClick(poem)}>
                 Delete
               </Button>

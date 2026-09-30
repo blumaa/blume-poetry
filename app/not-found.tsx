@@ -1,6 +1,5 @@
 import { PageShell } from '@/components/PageShell';
-import Link from 'next/link';
-import { Button } from '@/components/mds';
+import { ButtonLink } from '@/components/mds';
 import styles from './not-found.module.css';
 
 export default function NotFound() {
@@ -13,9 +12,9 @@ export default function NotFound() {
         <p className={styles.message}>
           The poem you are looking for may have moved or does not exist.
         </p>
-        <Button as={Link} href="/">
+        <ButtonLink href="/">
           Return to latest poem
-        </Button>
+        </ButtonLink>
       </div>
     </PageShell>
   );

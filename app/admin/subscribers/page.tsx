@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -10,7 +9,7 @@ import {
   setNotifyNewPoems,
   type SubscriberFilter,
 } from '@/features/subscribers';
-import { Badge, Button, Checkbox, Chip, ChipGroup, ConfirmDialog, DataTable, useToast } from '@/components/mds';
+import { Badge, Button, ButtonLink, Checkbox, Chip, ChipGroup, ConfirmDialog, DataTable, useToast } from '@/components/mds';
 import type { SubscriberRow } from '@/lib/supabase/types';
 import { formatDate } from '@/lib/date';
 import { queryKeys } from '@/lib/queryKeys';
@@ -113,9 +112,9 @@ export default function AdminSubscribersPage() {
           <Button variant="secondary" size="sm" onClick={handleExportCSV} className={styles.headerButton}>
             Export CSV
           </Button>
-          <Button as={Link} href="/admin/subscribers/send" size="sm" className={styles.headerButton}>
+          <ButtonLink href="/admin/subscribers/send" size="sm" className={styles.headerButton}>
             Send Newsletter
-          </Button>
+          </ButtonLink>
         </div>
       </div>
 

@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { PageShell } from '@/components/PageShell';
 import { NotificationSettings } from '@/features/subscribers';
-import { Button } from '@/components/mds';
+import { ButtonLink } from '@/components/mds';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
@@ -35,9 +34,9 @@ export default async function NotificationsPage({
               Open the link straight from one of my emails and it&rsquo;ll bring you here with
               your settings.
             </p>
-            <Button as={Link} href="/">
+            <ButtonLink href="/">
               Return to poems
-            </Button>
+            </ButtonLink>
           </>
         )}
       </div>

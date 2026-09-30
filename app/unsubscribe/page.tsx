@@ -1,8 +1,7 @@
 import { SITE_NAME } from '@/lib/brand';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { PageShell } from '@/components/PageShell';
-import { Button } from '@/components/mds';
+import { ButtonLink } from '@/components/mds';
 import { Icon } from '@/components/icons';
 import styles from './page.module.css';
 
@@ -24,9 +23,9 @@ export default function UnsubscribePage() {
         <p className={styles.message}>
           You will no longer receive email updates from {SITE_NAME}.
         </p>
-        <Button as={Link} href="/">
+        <ButtonLink href="/">
           Return to poems
-        </Button>
+        </ButtonLink>
       </div>
     </PageShell>
   );

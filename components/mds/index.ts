@@ -4,3 +4,4 @@
    the client boundary. Server components import MDS through here, never from
    the package directly. */
 export * from '@mond-design-system/react';
+export { ButtonLink, type ButtonLinkProps } from './ButtonLink';

@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { Button } from '@/components/mds';
+import { ButtonLink } from '@/components/mds';
 import { Icon } from '@/components/icons';
 
 interface LoginButtonProps {
@@ -8,10 +7,9 @@ interface LoginButtonProps {
 
 export function LoginButton({ className = '' }: LoginButtonProps) {
   return (
-    <Button
+    <ButtonLink
       iconOnly
       variant="ghost"
-      as={Link}
       href="/login"
       className={className}
       aria-label="Admin login"
@@ -19,6 +17,6 @@ export function LoginButton({ className = '' }: LoginButtonProps) {
     >
       {/* Capricorn: a deliberately unconventional login mark. */}
       <Icon name="login" />
-    </Button>
+    </ButtonLink>
   );
 }

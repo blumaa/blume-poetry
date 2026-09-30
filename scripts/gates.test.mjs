@@ -54,3 +54,46 @@ test('feature gate: the barrel is the way in', async () => {
   const ids = await ruleIds(code, 'app/Probe.tsx');
   assert.ok(!ids.includes('no-restricted-imports'));
 });
+
+import { rawColours, stylesheetViolations } from './tokenGate.mjs';
+
+test('token gate: a raw colour in a stylesheet fails', () => {
+  assert.deepEqual(rawColours('.a { color: #ef4444; }\n.b { box-shadow: 0 1px rgb(0 0 0 / 0.1); }'), [
+    { line: 1, value: '#ef4444' },
+    { line: 2, value: 'rgb(0 0 0 / 0.1)' },
+  ]);
+});
+
+test('token gate: tokens pass', () => {
+  assert.deepEqual(rawColours('.a { color: var(--mds-text-primary); }'), []);
+});
+
+test('token gate: app stylesheets carry no raw colour', () => {
+  assert.deepEqual(stylesheetViolations(), []);
+});
+
+test('size gate: a component over 300 lines fails', async () => {
+  const code = 'export const x = 1;\n'.repeat(301);
+  const ids = await ruleIds(code, 'components/Probe.tsx');
+  assert.ok(ids.includes('max-lines'));
+});
+
+test('size gate: a component at 300 lines passes', async () => {
+  const code = 'export const x = 1;\n'.repeat(300);
+  const ids = await ruleIds(code, 'components/Probe.tsx');
+  assert.ok(!ids.includes('max-lines'));
+});
+
+const linkButton =
+  "import Link from 'next/link';\nimport { Button } from '@/components/mds';\nexport const B = () => <Button as={Link} href=\"/\">Home</Button>;\n";
+
+test('link gate: Button as={Link} fails; server components cannot pass Link', async () => {
+  const ids = await ruleIds(linkButton, 'app/Probe.tsx');
+  assert.ok(ids.includes('no-restricted-syntax'));
+});
+
+test('link gate: ButtonLink passes', async () => {
+  const code = "import { ButtonLink } from '@/components/mds';\nexport const B = () => <ButtonLink href=\"/\">Home</ButtonLink>;\n";
+  const ids = await ruleIds(code, 'app/Probe.tsx');
+  assert.ok(!ids.includes('no-restricted-syntax'));
+});

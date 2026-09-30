@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { fetchStats } from '@/features/dashboard';
 import { queryKeys } from '@/lib/queryKeys';
-import { Button, Card, CardBody } from '@/components/mds';
+import { ButtonLink, Card, CardBody } from '@/components/mds';
 import { SkeletonCard } from '@/components/Skeleton';
 import styles from './page.module.css';
 
@@ -26,9 +26,9 @@ export default function AdminDashboard() {
     <div>
       <div className={styles.header}>
         <h1 className={styles.title}>Dashboard</h1>
-        <Button as={Link} href="/admin/poems/new">
+        <ButtonLink href="/admin/poems/new">
           New Poem
-        </Button>
+        </ButtonLink>
       </div>
 
       {isPending ? (
@@ -61,12 +61,12 @@ export default function AdminDashboard() {
       <div className={styles.quickActions}>
         <h2 className={styles.quickActionsTitle}>Quick Actions</h2>
         <div className={styles.quickActionsRow}>
-          <Button as={Link} href="/admin/poems/new" variant="secondary">
+          <ButtonLink href="/admin/poems/new" variant="secondary">
             Create New Poem
-          </Button>
-          <Button as={Link} href="/admin/subscribers/send" variant="secondary">
+          </ButtonLink>
+          <ButtonLink href="/admin/subscribers/send" variant="secondary">
             Send Newsletter
-          </Button>
+          </ButtonLink>
         </div>
       </div>
     </div>

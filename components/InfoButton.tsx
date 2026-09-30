@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { Button } from '@/components/mds';
+import { ButtonLink } from '@/components/mds';
 import { Icon } from '@/components/icons';
 
 interface InfoButtonProps {
@@ -10,16 +9,15 @@ interface InfoButtonProps {
 
 export function InfoButton({ className = '' }: InfoButtonProps) {
   return (
-    <Button
+    <ButtonLink
       iconOnly
       variant="ghost"
-      as={Link}
       href="/about"
       className={className}
       aria-label="About"
       title="About"
     >
       <Icon name="info" />
-    </Button>
+    </ButtonLink>
   );
 }

@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { Button } from '@/components/mds';
+import { Button, ButtonLink } from '@/components/mds';
 import styles from './error.module.css';
 
 export default function PoemError({
@@ -19,9 +18,9 @@ export default function PoemError({
         </p>
         <div className={styles.actions}>
           <Button onClick={reset}>Try again</Button>
-          <Button as={Link} href="/" variant="secondary">
+          <ButtonLink href="/" variant="secondary">
             Go home
-          </Button>
+          </ButtonLink>
         </div>
       </div>
     </div>

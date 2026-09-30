@@ -2,8 +2,7 @@
 
 import { useEffect, useEffectEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import Link from 'next/link';
-import { Button } from '@/components/mds';
+import { Button, ButtonLink } from '@/components/mds';
 import { queryKeys } from '@/lib/queryKeys';
 import { readPreference, writePreference, type PreferenceAction } from './api/preferences';
 import styles from './NotificationSettings.module.css';
@@ -54,9 +53,9 @@ export function NotificationSettings({ token, initialAction }: NotificationSetti
           This link has expired
         </h1>
         <p className={styles.description}>{error.message}</p>
-        <Button as={Link} href="/">
+        <ButtonLink href="/">
           Return to poems
-        </Button>
+        </ButtonLink>
       </>
     );
   }
@@ -93,9 +92,9 @@ export function NotificationSettings({ token, initialAction }: NotificationSetti
         >
           {preference.enabled ? 'Turn off new-poem emails' : 'Turn on new-poem emails'}
         </Button>
-        <Button as={Link} href="/" variant="secondary">
+        <ButtonLink href="/" variant="secondary">
           Return to poems
-        </Button>
+        </ButtonLink>
       </div>
     </>
   );
