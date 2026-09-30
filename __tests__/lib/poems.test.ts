@@ -1,15 +1,34 @@
 /** @jest-environment node */
-import { getPoemIdBySlug, getAdjacentPoems } from '@/lib/poems';
+import {
+  getPoemIdBySlug,
+  getPoemBySlug,
+  getAdjacentPoems,
+  getAllPoems,
+  getAllPoemsMeta,
+  getRecentPoems,
+} from '@/lib/poems';
 
-const mockSingle = jest.fn();
-const mockOrder = jest.fn();
+/* A Supabase-style query builder: every modifier returns the chain, and
+   awaiting it runs the query, resolving with mockResult. After throwOnError()
+   a result carrying an error rejects instead, as supabase-js does. */
+const mockResult = jest.fn();
 
 function buildChain() {
-  const chain: Record<string, jest.Mock> = {};
-  chain.select = jest.fn(() => chain);
-  chain.eq = jest.fn(() => chain);
-  chain.single = mockSingle;
-  chain.order = mockOrder;
+  let throwing = false;
+  const chain: Record<string, unknown> = {};
+  for (const method of ['select', 'eq', 'order', 'limit', 'maybeSingle']) {
+    chain[method] = jest.fn(() => chain);
+  }
+  chain.throwOnError = jest.fn(() => {
+    throwing = true;
+    return chain;
+  });
+  chain.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) => {
+    const result = mockResult();
+    return (
+      throwing && result.error ? Promise.reject(new Error(result.error.message)) : Promise.resolve(result)
+    ).then(resolve, reject);
+  };
   return chain;
 }
 
@@ -20,25 +39,52 @@ jest.mock('@/lib/supabase/anon', () => ({
   POEMS_CACHE_TAG: 'poems',
 }));
 
+const dbError = { message: 'connection refused' };
+
+beforeEach(() => {
+  mockResult.mockReset();
+});
+
 describe('getPoemIdBySlug', () => {
-  beforeEach(() => {
-    mockSingle.mockReset();
-  });
-
   it('returns the id on a hit', async () => {
-    mockSingle.mockResolvedValue({ data: { id: 'poem-123' }, error: null });
-
-    const id = await getPoemIdBySlug('some-slug');
-
-    expect(id).toBe('poem-123');
+    mockResult.mockReturnValue({ data: { id: 'poem-123' }, error: null });
+    await expect(getPoemIdBySlug('some-slug')).resolves.toBe('poem-123');
   });
 
-  it('returns null when data is null', async () => {
-    mockSingle.mockResolvedValue({ data: null, error: { message: 'not found' } });
+  it('returns null when no poem has the slug', async () => {
+    mockResult.mockReturnValue({ data: null, error: null });
+    await expect(getPoemIdBySlug('missing-slug')).resolves.toBeNull();
+  });
 
-    const id = await getPoemIdBySlug('missing-slug');
+  it('throws on a database error instead of reporting "not found"', async () => {
+    mockResult.mockReturnValue({ data: null, error: dbError });
+    await expect(getPoemIdBySlug('some-slug')).rejects.toThrow('connection refused');
+  });
+});
 
-    expect(id).toBeNull();
+describe('getPoemBySlug', () => {
+  it('returns undefined when no poem has the slug', async () => {
+    mockResult.mockReturnValue({ data: null, error: null });
+    await expect(getPoemBySlug('missing')).resolves.toBeUndefined();
+  });
+
+  /* A thrown error keeps the last good ISR page; a swallowed one would cache
+     a 404 for a poem that exists. */
+  it('throws on a database error', async () => {
+    mockResult.mockReturnValue({ data: null, error: dbError });
+    await expect(getPoemBySlug('some-slug')).rejects.toThrow('connection refused');
+  });
+});
+
+describe('poem lists', () => {
+  /* Returning [] on error would regenerate and cache an empty site. */
+  it.each([
+    ['getAllPoems', () => getAllPoems()],
+    ['getAllPoemsMeta', () => getAllPoemsMeta()],
+    ['getRecentPoems', () => getRecentPoems(1)],
+  ])('%s throws on a database error', async (_name, load) => {
+    mockResult.mockReturnValue({ data: null, error: dbError });
+    await expect(load()).rejects.toThrow('connection refused');
   });
 });
 
@@ -51,8 +97,7 @@ describe('getAdjacentPoems', () => {
   ];
 
   beforeEach(() => {
-    mockOrder.mockReset();
-    mockOrder.mockResolvedValue({ data: rows, error: null });
+    mockResult.mockReturnValue({ data: rows, error: null });
   });
 
   it('points prev back in time and next forward in time', async () => {
