@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { sendEmail, generateNewsletterHtml, generateNewsletterText } from '@/lib/email';
 import { requireAdmin } from '@/lib/auth';
+import { recordEmailSend } from '@/lib/emailLog';
 import { z } from 'zod';
 import type { PoemRow, SubscriberRow } from '@/lib/supabase/types';
 
@@ -27,16 +28,17 @@ export async function POST(request: Request) {
     // Get the poem if provided
     let poemData: PoemRow | null = null;
     if (poemId) {
-      const { data: poem, error: poemError } = await adminSupabase
+      const { data: poem } = await adminSupabase
         .from('poems')
         .select('*')
         .eq('id', poemId)
-        .single();
+        .maybeSingle()
+        .throwOnError();
 
-      if (poemError || !poem) {
+      if (!poem) {
         return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
       }
-      poemData = poem as PoemRow;
+      poemData = poem;
     }
 
     // Build poem attachment data if poem is selected.
@@ -156,7 +158,7 @@ export async function POST(request: Request) {
     }
 
     // Log the email send
-    await adminSupabase.from('email_logs').insert({
+    await recordEmailSend(adminSupabase, {
       subject,
       poem_id: poemId || null,
       recipient_count: sent,

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/auth';
+import { recordEmailSend } from '@/lib/emailLog';
 import { sendEmail, generatePoemEmailHtml, generatePoemEmailText } from '@/lib/email';
 import { z } from 'zod';
 
@@ -110,7 +111,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await supabase.from('email_logs').insert({
+    await recordEmailSend(supabase, {
       subject,
       poem_id: poem.id,
       recipient_count: sent,

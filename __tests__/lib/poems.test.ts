@@ -8,36 +8,16 @@ import {
   getRecentPoems,
 } from '@/lib/poems';
 
-/* A Supabase-style query builder: every modifier returns the chain, and
-   awaiting it runs the query, resolving with mockResult. After throwOnError()
-   a result carrying an error rejects instead, as supabase-js does. */
+// Each query resolves with whatever mockResult returns at the time.
 const mockResult = jest.fn();
 
-function buildChain() {
-  let throwing = false;
-  const chain: Record<string, unknown> = {};
-  for (const method of ['select', 'eq', 'order', 'limit', 'maybeSingle']) {
-    chain[method] = jest.fn(() => chain);
-  }
-  chain.throwOnError = jest.fn(() => {
-    throwing = true;
-    return chain;
-  });
-  chain.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) => {
-    const result = mockResult();
-    return (
-      throwing && result.error ? Promise.reject(new Error(result.error.message)) : Promise.resolve(result)
-    ).then(resolve, reject);
+jest.mock('@/lib/supabase/anon', () => {
+  const { queryMock } = jest.requireActual('@/__tests__/supabaseMock');
+  return {
+    getCachedPoemClient: () => ({ from: () => queryMock(mockResult()) }),
+    POEMS_CACHE_TAG: 'poems',
   };
-  return chain;
-}
-
-jest.mock('@/lib/supabase/anon', () => ({
-  getCachedPoemClient: jest.fn(() => ({
-    from: jest.fn(() => buildChain()),
-  })),
-  POEMS_CACHE_TAG: 'poems',
-}));
+});
 
 const dbError = { message: 'connection refused' };
 

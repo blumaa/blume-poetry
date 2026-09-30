@@ -1,4 +1,4 @@
-import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, SubscriberRow } from '@/lib/supabase/types';
 
 type SubscribersClient = SupabaseClient<Database>;
@@ -6,8 +6,7 @@ type SubscriberUpdate = Database['public']['Tables']['subscribers']['Update'];
 
 export type UpsertSubscriberResult =
   | { outcome: 'already_active' }
-  | { outcome: 'reactivated'; data: SubscriberRow | null; error: PostgrestError | null }
-  | { outcome: 'inserted'; data: SubscriberRow | null; error: PostgrestError | null };
+  | { outcome: 'reactivated' | 'inserted'; subscriber: SubscriberRow };
 
 /**
  * Shared check-existing -> reactivate-if-unsubscribed -> insert-if-new flow
@@ -27,6 +26,9 @@ export type UpsertSubscriberResult =
  * `notifyNewPoems` is its own argument rather than part of
  * `reactivateFields` because it applies to both paths: whichever answer the
  * subscriber just gave wins over whatever an earlier signup left behind.
+ *
+ * Database errors throw. A failed lookup must not read as "new subscriber"
+ * and fall through to an insert.
  */
 export async function upsertSubscriber(
   client: SubscribersClient,
@@ -40,14 +42,15 @@ export async function upsertSubscriber(
     .from('subscribers')
     .select('id, status')
     .eq('email', email)
-    .single();
+    .maybeSingle()
+    .throwOnError();
 
   if (existing) {
     if (existing.status === 'active') {
       return { outcome: 'already_active' };
     }
 
-    const { data, error } = await client
+    const { data } = await client
       .from('subscribers')
       .update({ ...reactivateFields, notify_new_poems: notifyNewPoems })
       .eq('id', existing.id)
@@ -58,16 +61,18 @@ export async function upsertSubscriber(
       // for a plain read). The explicit generic is a type-only assertion; the
       // runtime query ("*") is unchanged.
       .select<'*', SubscriberRow>('*')
-      .single();
+      .single()
+      .throwOnError();
 
-    return { outcome: 'reactivated', data, error };
+    return { outcome: 'reactivated', subscriber: data };
   }
 
-  const { data, error } = await client
+  const { data } = await client
     .from('subscribers')
     .insert({ email, status: 'active', verified: true, notify_new_poems: notifyNewPoems })
     .select<'*', SubscriberRow>('*')
-    .single();
+    .single()
+    .throwOnError();
 
-  return { outcome: 'inserted', data, error };
+  return { outcome: 'inserted', subscriber: data };
 }

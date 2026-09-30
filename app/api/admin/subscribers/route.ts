@@ -30,27 +30,10 @@ export async function POST(request: Request) {
     }
 
     if (result.outcome === 'reactivated') {
-      if (result.error) {
-        console.error('Reactivate subscriber error:', result.error);
-        return NextResponse.json(
-          { error: 'Failed to reactivate subscriber' },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json({ subscriber: result.data, reactivated: true });
+      return NextResponse.json({ subscriber: result.subscriber, reactivated: true });
     }
 
-    // Inserted a new subscriber
-    if (result.error) {
-      console.error('Add subscriber error:', result.error);
-      return NextResponse.json(
-        { error: 'Failed to add subscriber' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ subscriber: result.data });
+    return NextResponse.json({ subscriber: result.subscriber });
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json(

@@ -50,15 +50,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Successfully resubscribed!' });
     }
 
-    // Inserted a new subscriber
-    if (result.error) {
-      console.error('Subscription error:', result.error);
-      return NextResponse.json(
-        { error: 'Failed to subscribe' },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json({ message: 'Successfully subscribed!' });
   } catch (err) {
     if (err instanceof z.ZodError) {

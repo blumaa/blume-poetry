@@ -31,13 +31,14 @@ export async function GET(request: Request) {
   }
 
   const supabase = createAdminClient();
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from('subscribers')
     .select('notify_new_poems, status')
     .eq('email', email)
-    .single();
+    .maybeSingle()
+    .throwOnError();
 
-  if (error || !data) {
+  if (!data) {
     return NextResponse.json({ error: 'We could not find that subscription' }, { status: 404 });
   }
 
@@ -72,15 +73,15 @@ export async function POST(request: Request) {
     // token for an address that has since been deleted would otherwise get a
     // cheerful success it can't act on — and lets the page say so when the
     // reader has unsubscribed from everything.
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('subscribers')
       .update({ notify_new_poems: enabled })
       .eq('email', email)
       .select<'status', { status: string }>('status')
-      .single();
+      .maybeSingle()
+      .throwOnError();
 
-    if (error || !data) {
-      console.error('Notification preference error:', error);
+    if (!data) {
       return NextResponse.json({ error: 'We could not find that subscription' }, { status: 404 });
     }
 
