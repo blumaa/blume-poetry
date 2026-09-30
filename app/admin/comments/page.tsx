@@ -24,7 +24,12 @@ export default function AdminCommentsPage() {
   const deleteMutation = useMutation({
     mutationFn: (target: AdminComment) => deleteComment(target.id),
     onSuccess: () => toast({ title: 'Comment deleted', tone: 'success' }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.admin.comments() }),
+    onSettled: (_data, _error, target) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.admin.all() }),
+        target.poems &&
+          queryClient.invalidateQueries({ queryKey: queryKeys.poem.comments(target.poems.slug) }),
+      ]),
   });
 
   const handleDeleteClick = (comment: AdminComment) => {

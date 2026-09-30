@@ -2,6 +2,10 @@
    here; an inline key array is a second declaration of the same fact. */
 export const queryKeys = {
   admin: {
+    /** Every admin read. Admin writes invalidate this: views overlap (the
+        dashboard counts what the lists show), so marking all stale is the
+        one rule that cannot miss a view. Only mounted queries refetch. */
+    all: () => ['admin'] as const,
     activity: () => ['admin', 'activity'] as const,
     comments: () => ['admin', 'comments'] as const,
     /** No status: the prefix, which invalidates every filtered list. */
@@ -14,6 +18,7 @@ export const queryKeys = {
         ? (['admin', 'subscribers'] as const)
         : (['admin', 'subscribers', filter] as const),
     sendData: () => ['admin', 'send-data'] as const,
+    stats: () => ['admin', 'stats'] as const,
   },
   auth: {
     isAdmin: (userId: string | undefined) => ['auth', 'is-admin', userId] as const,

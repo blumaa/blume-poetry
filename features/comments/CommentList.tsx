@@ -28,7 +28,11 @@ export function CommentList({ slug }: { slug: string }) {
   const deleteMutation = useMutation({
     mutationFn: (target: Comment) => deleteComment(target.id),
     onSuccess: () => toast({ title: 'Comment deleted', tone: 'success' }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: commentsKey }),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: commentsKey }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.admin.all() }),
+      ]),
   });
 
   if (isPending) {

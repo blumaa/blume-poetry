@@ -28,7 +28,7 @@ export default function AdminPoemsPage() {
   });
 
   const invalidatePoems = () =>
-    queryClient.invalidateQueries({ queryKey: queryKeys.admin.poems() });
+    queryClient.invalidateQueries({ queryKey: queryKeys.admin.all() });
 
   /* Deterministic: pin state moves only after the refetch confirms the write. */
   const pinMutation = useMutation({

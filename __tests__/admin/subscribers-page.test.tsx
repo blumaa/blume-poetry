@@ -1,8 +1,9 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../test-utils';
 import AdminSubscribersPage from '@/app/admin/subscribers/page';
 import type { SubscriberRow } from '@/lib/supabase/types';
+import { queryKeys } from '@/lib/queryKeys';
 
 /* The real modal posts to the API; here only the success callback matters. */
 jest.mock('@/features/subscribers/SubscribeModal', () => ({
@@ -60,5 +61,22 @@ describe('AdminSubscribersPage', () => {
     await user.click(screen.getByText('Mock add success'));
 
     expect(await screen.findByText('b@example.com')).toBeInTheDocument();
+  });
+
+  /* Every admin view derived from subscribers (dashboard count, send page)
+     must go stale on a write, not only this list. */
+  it('marks every admin read stale after a write', async () => {
+    listResults.push({ data: [subscriber('s1', 'a@example.com')], error: null });
+    const { queryClient } = renderWithProviders(<AdminSubscribersPage />);
+    queryClient.setQueryData(queryKeys.admin.stats(), { poems: 1, subscribers: 1, drafts: 0, comments: 0 });
+    const user = userEvent.setup();
+
+    await screen.findByText('a@example.com');
+    await user.click(screen.getByLabelText('Add subscriber'));
+    await user.click(screen.getByText('Mock add success'));
+
+    await waitFor(() =>
+      expect(queryClient.getQueryState(queryKeys.admin.stats())?.isInvalidated).toBe(true)
+    );
   });
 });

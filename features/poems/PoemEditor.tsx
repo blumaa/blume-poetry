@@ -145,9 +145,9 @@ export function PoemEditor({ poem }: PoemEditorProps) {
         notify: willNotify,
       });
 
-      // Prefix key: covers every filtered list and the by-id read. Mark only;
-      // each refetches when next mounted, not the edit page we are leaving.
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.poems(), refetchType: 'none' });
+      // Mark only: each read refetches when next mounted, not the edit page
+      // we are leaving.
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.all(), refetchType: 'none' });
       setFlashToast(flash);
       router.push('/admin/poems');
     } catch (err) {

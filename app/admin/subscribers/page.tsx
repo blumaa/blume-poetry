@@ -28,12 +28,8 @@ export default function AdminSubscribersPage() {
     queryFn: () => fetchSubscribers(filter),
   });
 
-  // A write changes every filter's list and the send page's active count.
   const invalidateSubscribers = () =>
-    Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.subscribers() }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.sendData() }),
-    ]);
+    queryClient.invalidateQueries({ queryKey: queryKeys.admin.all() });
 
   const deleteMutation = useMutation({
     mutationFn: (target: SubscriberRow) => deleteSubscriber(target.id),
