@@ -4,32 +4,13 @@ import { SITE_NAME } from '@/lib/brand';
 import Link from 'next/link';
 import { BrandLogo } from './BrandLogo';
 import { AppBar, Button } from '@/components/mds';
+import { Icon } from '@/components/icons';
 import { ThemeToggle } from './ThemeToggle';
 import { LoginButton } from './LoginButton';
 import styles from './MobileHeader.module.css';
 
 interface MobileHeaderProps {
   onMenuClick: () => void;
-}
-
-function MenuIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <line x1="3" y1="12" x2="21" y2="12" />
-      <line x1="3" y1="18" x2="21" y2="18" />
-    </svg>
-  );
 }
 
 export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
@@ -47,7 +28,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
             onClick={onMenuClick}
             aria-label="Open navigation menu"
           >
-            <MenuIcon />
+            <Icon name="menu" size="lg" />
           </Button>
           <Link
             href="/"

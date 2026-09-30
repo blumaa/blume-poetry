@@ -2,7 +2,17 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button, Field, Input, Modal, ModalBody, ModalHeader, Textarea, useToast } from '@/components/mds';
+import {
+  Button,
+  Field,
+  Input,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  Textarea,
+  VisuallyHidden,
+  useToast,
+} from '@/components/mds';
 import { getVisitorId } from '@/lib/visitorId';
 import { readStored, writeStored } from '@/lib/browserStorage';
 import { queryKeys } from '@/lib/queryKeys';
@@ -91,7 +101,7 @@ export function CommentModal({ onClose, slug }: CommentModalProps) {
         </Field>
 
         {/* Honeypot field */}
-        <div className="sr-only" aria-hidden="true">
+        <VisuallyHidden as="div" aria-hidden="true">
           <label htmlFor="website">Website</label>
           <input
             id="website"
@@ -102,7 +112,7 @@ export function CommentModal({ onClose, slug }: CommentModalProps) {
             tabIndex={-1}
             autoComplete="off"
           />
-        </div>
+        </VisuallyHidden>
 
         <div className={styles.formActions}>
           <Button type="button" variant="secondary" onClick={onClose} disabled={postMutation.isPending}>

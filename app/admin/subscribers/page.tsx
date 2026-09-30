@@ -14,6 +14,7 @@ import { Badge, Button, Checkbox, Chip, ChipGroup, ConfirmDialog, DataTable, use
 import type { SubscriberRow } from '@/lib/supabase/types';
 import { formatDate } from '@/lib/date';
 import { queryKeys } from '@/lib/queryKeys';
+import { Icon } from '@/components/icons';
 import styles from './page.module.css';
 
 export default function AdminSubscribersPage() {
@@ -94,9 +95,7 @@ export default function AdminSubscribersPage() {
             onClick={() => setShowAddModal(true)}
             aria-label="Add subscriber"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+            <Icon name="add" />
           </Button>
           <ChipGroup>
             <Chip selected={filter === 'active'} onClick={() => setFilter('active')}>

@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Poem, PoemMeta } from '@/lib/poems';
 import { LikeButton } from '@/features/likes';
-import { CommentSection, CommentIcon } from '@/features/comments';
+import { CommentSection } from '@/features/comments';
+import { Button } from '@/components/mds';
+import { Icon } from '@/components/icons';
 import { PoemContent } from './PoemContent';
 import { formatDate } from '@/lib/date';
 import styles from './PoemDisplay.module.css';
@@ -135,13 +137,9 @@ export function PoemDisplay({ poem, prevPoem, nextPoem, showNavigation = true }:
       {/* Like & Comment Buttons */}
       <div className={styles.actionsRow}>
         <LikeButton slug={poem.slug} />
-        <button
-          onClick={() => setIsCommentModalOpen(true)}
-          className={styles.commentButton}
-        >
-          <CommentIcon />
-          <span>add comment</span>
-        </button>
+        <Button iconLeft={<Icon name="comment" />} onClick={() => setIsCommentModalOpen(true)}>
+          add comment
+        </Button>
       </div>
 
       {/* Comments */}

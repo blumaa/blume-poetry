@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/components/mds';
 import styles from './error.module.css';
 
 export default function AdminError({
@@ -15,12 +16,7 @@ export default function AdminError({
         <p className={styles.message}>
           Something went wrong in the admin panel.
         </p>
-        <button
-          onClick={reset}
-          className={styles.retryButton}
-        >
-          Try again
-        </button>
+        <Button onClick={reset}>Try again</Button>
       </div>
     </div>
   );

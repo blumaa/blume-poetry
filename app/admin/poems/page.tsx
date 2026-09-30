@@ -11,6 +11,7 @@ import { formatDate } from '@/lib/date';
 import { takeFlashToast } from '@/lib/flashToast';
 import { queryKeys } from '@/lib/queryKeys';
 import { deletePoem, fetchAdminPoems, revalidatePoems, setPoemPinned } from '@/features/poems';
+import { Icon } from '@/components/icons';
 import styles from './page.module.css';
 
 export default function AdminPoemsPage() {
@@ -139,9 +140,7 @@ export default function AdminPoemsPage() {
               cell: (poem: PoemRow) => (
                 <span className={styles.titleCell}>
                   {poem.pinned && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={styles.pinIcon} aria-label="Pinned">
-                      <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
-                    </svg>
+                    <Icon name="pin" size="sm" label="Pinned" className={styles.pinIcon} />
                   )}
                   <Link
                     href={`/poem/${poem.slug}`}

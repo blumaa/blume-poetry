@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Button, Checkbox, Input, Modal, ModalBody, ModalHeader } from '@/components/mds';
+import { Icon } from '@/components/icons';
 import { addSubscriber, subscribe } from './api/subscribers';
 import styles from './SubscribeModal.module.css';
 
@@ -51,20 +52,7 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
       {mutation.isSuccess ? (
         <div className={styles.successBox}>
           <div className={styles.successIcon}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className={styles.checkIcon}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+            <Icon name="check" />
           </div>
           <p className={styles.successMessage}>
             {isAdmin ? 'Subscriber added!' : 'Thank you for subscribing!'}

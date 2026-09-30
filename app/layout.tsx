@@ -14,6 +14,7 @@ import { QueryProvider } from "@/components/QueryProvider";
 import { AuthProvider } from "@/features/auth";
 import { ToastProvider } from "@/components/mds";
 import { getSiteUrl } from "@/lib/config";
+import { IconRegistry } from "@/components/icons";
 import styles from "./layout.module.css";
 
 const sourceSans = Source_Sans_3({
@@ -76,16 +77,18 @@ export default function RootLayout({
       <body className={styles.body}>
         <a
           href="#main-content"
-          className={`sr-only focus:not-sr-only ${styles.skipLink}`}
+          className={styles.skipLink}
         >
           Skip to main content
         </a>
         <ThemeSync />
         <QueryProvider>
           <AuthProvider>
-            <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
-              {children}
-            </ToastProvider>
+            <IconRegistry>
+              <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
+                {children}
+              </ToastProvider>
+            </IconRegistry>
           </AuthProvider>
         </QueryProvider>
         <Analytics />

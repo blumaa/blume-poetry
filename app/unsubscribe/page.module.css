@@ -11,15 +11,10 @@
 }
 
 .iconWrap {
+  /* MDS Icon takes its size from the slot it sits in. */
+  --mds-icon-slot: 4rem;
   color: var(--accent);
   margin-bottom: 1.5rem;
-}
-
-.icon {
-  height: 4rem;
-  width: 4rem;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .title {

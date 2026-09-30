@@ -9,15 +9,10 @@
 }
 
 .successIcon {
+  /* MDS Icon takes its size from the slot it sits in. */
+  --mds-icon-slot: 3rem;
   color: var(--accent);
   margin-bottom: 1rem;
-}
-
-.checkIcon {
-  height: 3rem;
-  width: 3rem;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .successMessage {

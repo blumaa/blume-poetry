@@ -1,21 +1,8 @@
 import Link from 'next/link';
 import { SideNavItem } from '@/components/mds';
+import { Icon } from '@/components/icons';
 import type { TreeNode } from '@/lib/poems';
 import styles from './TreeItem.module.css';
-
-function ChevronIcon({ expanded }: { expanded: boolean }) {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="currentColor"
-      className={`${styles.chevron} ${expanded ? styles.chevronExpanded : ''}`}
-    >
-      <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
 
 interface TreeItemProps {
   node: TreeNode;
@@ -59,7 +46,11 @@ export function TreeItem({
         aria-expanded={isExpanded}
         aria-controls={hasChildren ? `tree-children-${node.id}` : undefined}
       >
-        <ChevronIcon expanded={isExpanded} />
+        <Icon
+          name="chevron-right"
+          size="sm"
+          className={`${styles.chevron} ${isExpanded ? styles.chevronExpanded : ''}`}
+        />
         <span className={styles.label}>{node.label}</span>
         {node.count !== undefined && (
           <span className={styles.count}>{node.count}</span>
