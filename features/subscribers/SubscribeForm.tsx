@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { Button, Checkbox, Input, useToast } from '@/components/mds';
+import { subscribe } from './api/subscribers';
 import styles from './SubscribeForm.module.css';
 
 interface SubscribeFormProps {
@@ -14,37 +16,23 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
   // new-poem emails — which is what the sidebar copy promises. Either way the
   // preference is one click away from any email they get.
   const [notifyNewPoems, setNotifyNewPoems] = useState(true);
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const mutation = useMutation({
+    mutationFn: () => subscribe({ email, notifyNewPoems }),
+    onSuccess: () => {
+      toast({ title: 'Thank you for subscribing!', tone: 'success' });
+      setEmail('');
+    },
+    onError: (error) => toast({ title: error.message, tone: 'danger' }),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus('loading');
-
-    try {
-      const response = await fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, notifyNewPoems }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setStatus('success');
-        toast({ title: 'Thank you for subscribing!', tone: 'success' });
-        setEmail('');
-      } else {
-        setStatus('idle');
-        toast({ title: data.error || 'Failed to subscribe', tone: 'danger' });
-      }
-    } catch {
-      setStatus('idle');
-      toast({ title: 'An unexpected error occurred', tone: 'danger' });
-    }
+    mutation.mutate();
   };
 
-  if (status === 'success') {
+  if (mutation.isSuccess) {
     return (
       <div className={`${styles.successMsg} ${compact ? styles.compactText : styles.centerText}`}>
         Thank you for subscribing!
@@ -63,10 +51,10 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
           required
-          disabled={status === 'loading'}
+          disabled={mutation.isPending}
           className={styles.compactInput}
         />
-        <Button type="submit" size="sm" loading={status === 'loading'}>
+        <Button type="submit" size="sm" loading={mutation.isPending}>
           Go
         </Button>
       </form>
@@ -83,11 +71,11 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
           required
-          disabled={status === 'loading'}
+          disabled={mutation.isPending}
           className={styles.input}
         />
-        <Button type="submit" loading={status === 'loading'}>
-          {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
+        <Button type="submit" loading={mutation.isPending}>
+          {mutation.isPending ? 'Subscribing...' : 'Subscribe'}
         </Button>
       </div>
 
@@ -96,7 +84,7 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
           label="Email me when a new poem is published"
           checked={notifyNewPoems}
           onChange={(e) => setNotifyNewPoems(e.target.checked)}
-          disabled={status === 'loading'}
+          disabled={mutation.isPending}
         />
       </div>
     </form>

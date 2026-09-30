@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { SubscribeForm } from '../SubscribeForm';
+import { SubscribeForm } from '@/features/subscribers';
 import styles from './SidebarFooter.module.css';
 
 interface SidebarFooterProps {

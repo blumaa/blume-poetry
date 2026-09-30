@@ -5,29 +5,18 @@ import AdminSubscribersPage from '@/app/admin/subscribers/page';
 import type { SubscriberRow } from '@/lib/supabase/types';
 
 /* The real modal posts to the API; here only the success callback matters. */
-jest.mock('@/components/SubscribeModal', () => ({
+jest.mock('@/features/subscribers/SubscribeModal', () => ({
   SubscribeModal: ({ isOpen, onSuccess }: { isOpen: boolean; onSuccess: () => void }) =>
     isOpen ? <button onClick={onSuccess}>Mock add success</button> : null,
 }));
 
-const listResults: Array<{ data: SubscriberRow[]; error: null }> = [];
+const listResults: Array<{ data?: SubscriberRow[]; error?: { message: string } | null }> = [];
 
-function makeListQuery() {
-  const result = listResults.shift() ?? { data: [], error: null };
-  const query = Promise.resolve(result) as Promise<typeof result> & { eq: () => unknown };
-  query.eq = () => query;
-  return query;
-}
-
-jest.mock('@/lib/supabase/client', () => ({
-  createClient: () => ({
-    from: () => ({
-      select: () => ({ order: () => makeListQuery() }),
-      delete: () => ({ eq: () => Promise.resolve({ error: null }) }),
-      update: () => ({ eq: () => Promise.resolve({ error: null }) }),
-    }),
-  }),
-}));
+// Every query takes the next queued result; list reads are the only ones awaited here.
+jest.mock('@/lib/supabase/client', () => {
+  const { queryMock } = jest.requireActual('@/__tests__/supabaseMock');
+  return { createClient: () => ({ from: () => queryMock(listResults.shift() ?? { data: [] }) }) };
+});
 
 const subscriber = (id: string, email: string): SubscriberRow => ({
   id,
@@ -41,6 +30,14 @@ const subscriber = (id: string, email: string): SubscriberRow => ({
 describe('AdminSubscribersPage', () => {
   beforeEach(() => {
     listResults.length = 0;
+  });
+
+  it('says so when subscribers fail to load, rather than showing an empty list', async () => {
+    listResults.push({ error: { message: 'connection lost' } });
+    renderWithProviders(<AdminSubscribersPage />);
+
+    expect(await screen.findByText('Failed to load subscribers')).toBeInTheDocument();
+    expect(screen.queryByText('No subscribers found.')).not.toBeInTheDocument();
   });
 
   it('shows subscribers from the server', async () => {

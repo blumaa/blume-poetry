@@ -8,6 +8,12 @@ export const queryKeys = {
     poems: (status?: string | null) =>
       status === undefined ? (['admin', 'poems'] as const) : (['admin', 'poems', status] as const),
     poem: (id: string) => ['admin', 'poems', 'byId', id] as const,
+    /** No filter: the prefix, which invalidates every filtered list. */
+    subscribers: (filter?: string) =>
+      filter === undefined
+        ? (['admin', 'subscribers'] as const)
+        : (['admin', 'subscribers', filter] as const),
+    sendData: () => ['admin', 'send-data'] as const,
   },
   auth: {
     isAdmin: (userId: string | undefined) => ['auth', 'is-admin', userId] as const,

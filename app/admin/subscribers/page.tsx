@@ -3,62 +3,37 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
-import { SubscribeModal } from '@/components/SubscribeModal';
+import {
+  SubscribeModal,
+  deleteSubscriber,
+  fetchSubscribers,
+  setNotifyNewPoems,
+  type SubscriberFilter,
+} from '@/features/subscribers';
 import { Badge, Button, Checkbox, Chip, ChipGroup, ConfirmDialog, DataTable, useToast } from '@/components/mds';
 import type { SubscriberRow } from '@/lib/supabase/types';
 import { formatDate } from '@/lib/date';
+import { queryKeys } from '@/lib/queryKeys';
 import styles from './page.module.css';
-
-async function loadSubscribers(
-  filter: 'all' | 'active' | 'unsubscribed'
-): Promise<SubscriberRow[]> {
-  const supabase = createClient();
-  let query = supabase
-    .from('subscribers')
-    .select('*')
-    .order('subscribed_at', { ascending: false });
-
-  if (filter !== 'all') {
-    query = query.eq('status', filter);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw new Error(error.message);
-  return (data as SubscriberRow[]) || [];
-}
-
-async function deleteSubscriber(id: string): Promise<void> {
-  const supabase = createClient();
-  const { error } = await supabase.from('subscribers').delete().eq('id', id);
-  if (error) throw new Error(error.message);
-}
-
-async function updateNotifyNewPoems(id: string, next: boolean): Promise<void> {
-  const supabase = createClient();
-  const { error } = await supabase
-    .from('subscribers')
-    .update({ notify_new_poems: next })
-    .eq('id', id);
-  if (error) throw new Error(error.message);
-}
 
 export default function AdminSubscribersPage() {
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<'all' | 'active' | 'unsubscribed'>('active');
+  const [filter, setFilter] = useState<SubscriberFilter>('active');
   const [deleteTarget, setDeleteTarget] = useState<SubscriberRow | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const { toast } = useToast();
 
-  const { data: subscribers = [], isPending } = useQuery({
-    queryKey: ['admin', 'subscribers', filter],
-    queryFn: () => loadSubscribers(filter),
+  const { data: subscribers = [], isPending, isError } = useQuery({
+    queryKey: queryKeys.admin.subscribers(filter),
+    queryFn: () => fetchSubscribers(filter),
   });
 
-  // Invalidate every filter's list — a write changes them all.
+  // A write changes every filter's list and the send page's active count.
   const invalidateSubscribers = () =>
-    queryClient.invalidateQueries({ queryKey: ['admin', 'subscribers'] });
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.subscribers() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.sendData() }),
+    ]);
 
   const deleteMutation = useMutation({
     mutationFn: (target: SubscriberRow) => deleteSubscriber(target.id),
@@ -71,7 +46,7 @@ export default function AdminSubscribersPage() {
      after the refetch confirms the write. */
   const notifyMutation = useMutation({
     mutationFn: (subscriber: SubscriberRow) =>
-      updateNotifyNewPoems(subscriber.id, !subscriber.notify_new_poems),
+      setNotifyNewPoems(subscriber.id, !subscriber.notify_new_poems),
     onSuccess: (_data, subscriber) =>
       toast({
         title: !subscriber.notify_new_poems
@@ -79,8 +54,7 @@ export default function AdminSubscribersPage() {
           : `"${subscriber.email}" will not get new-poem emails`,
         tone: 'success',
       }),
-    onError: (error) =>
-      toast({ title: error instanceof Error ? error.message : 'Update failed', tone: 'danger' }),
+    onError: (error) => toast({ title: error.message, tone: 'danger' }),
     onSettled: invalidateSubscribers,
   });
 
@@ -152,6 +126,8 @@ export default function AdminSubscribersPage() {
 
       {isPending ? (
         <div className={styles.loadingText}>Loading subscribers...</div>
+      ) : isError ? (
+        <div className={styles.emptyState}>Failed to load subscribers</div>
       ) : subscribers.length === 0 ? (
         <div className={styles.emptyState}>
           No subscribers found.

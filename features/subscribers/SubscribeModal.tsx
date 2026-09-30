@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { Button, Checkbox, Input, Modal, ModalBody, ModalHeader } from '@/components/mds';
+import { addSubscriber, subscribe } from './api/subscribers';
 import styles from './SubscribeModal.module.css';
 
 interface SubscribeModalProps {
@@ -14,44 +16,23 @@ interface SubscribeModalProps {
 export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: SubscribeModalProps) {
   const [email, setEmail] = useState('');
   const [notifyNewPoems, setNotifyNewPoems] = useState(true);
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [message, setMessage] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const mutation = useMutation({
+    mutationFn: () => (isAdmin ? addSubscriber(email) : subscribe({ email, notifyNewPoems })),
+    onSuccess: () => {
+      setEmail('');
+      onSuccess?.();
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus('loading');
-
-    try {
-      const endpoint = isAdmin ? '/api/admin/subscribers' : '/api/subscribe';
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // The admin endpoint takes an email only; the preference belongs to
-        // the person signing themselves up.
-        body: JSON.stringify(isAdmin ? { email } : { email, notifyNewPoems }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setStatus('success');
-        setMessage(isAdmin ? 'Subscriber added!' : 'Thank you for subscribing!');
-        setEmail('');
-        onSuccess?.();
-      } else {
-        setStatus('error');
-        setMessage(data.error || 'Failed to subscribe');
-      }
-    } catch {
-      setStatus('error');
-      setMessage('An unexpected error occurred');
-    }
+    mutation.mutate();
   };
 
   const resetAndClose = () => {
-    setStatus('idle');
+    mutation.reset();
     setEmail('');
-    setMessage('');
     onClose();
   };
 
@@ -67,7 +48,7 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
         {isAdmin ? 'Add a new subscriber manually.' : 'Get notified when new poetry is published.'}
       </p>
 
-      {status === 'success' ? (
+      {mutation.isSuccess ? (
         <div className={styles.successBox}>
           <div className={styles.successIcon}>
             <svg
@@ -85,7 +66,9 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
               />
             </svg>
           </div>
-          <p className={styles.successMessage}>{message}</p>
+          <p className={styles.successMessage}>
+            {isAdmin ? 'Subscriber added!' : 'Thank you for subscribing!'}
+          </p>
           <Button variant="ghost" onClick={resetAndClose} className={styles.closeButton}>
             Close
           </Button>
@@ -100,23 +83,25 @@ export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: 
             placeholder="your@email.com"
             required
             autoFocus
-            invalid={status === 'error'}
-            aria-describedby={status === 'error' ? 'modal-subscribe-error' : undefined}
-            disabled={status === 'loading'}
+            invalid={mutation.isError}
+            aria-describedby={mutation.isError ? 'modal-subscribe-error' : undefined}
+            disabled={mutation.isPending}
           />
           {!isAdmin && (
             <Checkbox
               label="Email me when a new poem is published"
               checked={notifyNewPoems}
               onChange={(e) => setNotifyNewPoems(e.target.checked)}
-              disabled={status === 'loading'}
+              disabled={mutation.isPending}
             />
           )}
-          {status === 'error' && (
-            <p id="modal-subscribe-error" className={styles.errorText} role="alert">{message}</p>
+          {mutation.isError && (
+            <p id="modal-subscribe-error" className={styles.errorText} role="alert">
+              {mutation.error.message}
+            </p>
           )}
-          <Button type="submit" fullWidth loading={status === 'loading'}>
-            {status === 'loading' ? (isAdmin ? 'Adding...' : 'Subscribing...') : (isAdmin ? 'Add Subscriber' : 'Subscribe')}
+          <Button type="submit" fullWidth loading={mutation.isPending}>
+            {mutation.isPending ? (isAdmin ? 'Adding...' : 'Subscribing...') : (isAdmin ? 'Add Subscriber' : 'Subscribe')}
           </Button>
         </form>
       )}

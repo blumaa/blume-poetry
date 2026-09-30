@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { BrandLogo } from '../BrandLogo';
 import { Button } from '@/components/mds';
 import { ThemeToggle } from '../ThemeToggle';
-import { SubscribeButton } from '../SubscribeButton';
+import { SubscribeButton } from '@/features/subscribers';
 import { InfoButton } from '../InfoButton';
 import { LoginButton } from '../LoginButton';
 import styles from './SidebarHeader.module.css';
