@@ -3,7 +3,9 @@
 import { useState, useMemo, useEffect, useEffectEvent } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { usePathname } from 'next/navigation';
-import type { TreeNode, Poem } from '@/lib/poems';
+import type { TreeNode } from '@/lib/poems';
+import { searchPoems } from '@/features/poems';
+import { queryKeys } from '@/lib/queryKeys';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { SidebarHeader } from './sidebar/SidebarHeader';
 import { SidebarSearch } from './sidebar/SidebarSearch';
@@ -23,13 +25,6 @@ function findPoemPath(nodes: TreeNode[], slug: string, path: string[] = []): str
     }
   }
   return null;
-}
-
-async function searchPoems(query: string): Promise<Poem[]> {
-  const res = await fetch(`/api/poems/search?q=${encodeURIComponent(query)}`);
-  if (!res.ok) throw new Error('Search failed');
-  const data = await res.json();
-  return data.poems;
 }
 
 interface SidebarProps {
@@ -56,7 +51,7 @@ export function Sidebar({
   /* keepPreviousData: old results stay visible while the next query loads,
      so the list does not flash empty between keystrokes. */
   const { data: searchData } = useQuery({
-    queryKey: ['poems', 'search', debouncedQuery],
+    queryKey: queryKeys.poem.search(debouncedQuery),
     queryFn: () => searchPoems(debouncedQuery),
     enabled: !!debouncedQuery,
     placeholderData: keepPreviousData,

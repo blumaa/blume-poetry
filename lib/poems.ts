@@ -34,12 +34,12 @@ export interface TreeNode {
 }
 
 // Row shape shared by every query that selects the full poem column set
-type PoemRow = Pick<
+type PoemColumns = Pick<
   Database['public']['Tables']['poems']['Row'],
   'id' | 'slug' | 'title' | 'subtitle' | 'content' | 'plain_text' | 'published_at' | 'url'
 >;
 
-function mapPoemRow(row: PoemRow): Poem {
+function mapPoemRow(row: PoemColumns): Poem {
   return {
     id: row.id,
     slug: row.slug,
@@ -52,36 +52,30 @@ function mapPoemRow(row: PoemRow): Poem {
   };
 }
 
+/* Every read throws on a database error (throwOnError). During ISR a thrown
+   error keeps the last good page; returning [] or "not found" instead would
+   regenerate and cache an empty site or a 404 for a poem that exists. */
+
 // Get all poems sorted by date (newest first) — deduplicated with React cache()
 export const getAllPoems = cache(async (): Promise<Poem[]> => {
-  const supabase = getCachedPoemClient();
-  const { data, error } = await supabase
+  const { data } = await getCachedPoemClient()
     .from('poems')
     .select('id, slug, title, subtitle, content, plain_text, published_at, url')
     .eq('status', 'published')
-    .order('published_at', { ascending: false });
-
-  if (error || !data) {
-    console.error('Error fetching poems:', error);
-    return [];
-  }
+    .order('published_at', { ascending: false })
+    .throwOnError();
 
   return data.map(mapPoemRow);
 });
 
 // Lightweight query for tree/navigation — only fetches metadata fields
 export const getAllPoemsMeta = cache(async (): Promise<PoemMeta[]> => {
-  const supabase = getCachedPoemClient();
-  const { data, error } = await supabase
+  const { data } = await getCachedPoemClient()
     .from('poems')
     .select('id, slug, title, subtitle, published_at, url, pinned')
     .eq('status', 'published')
-    .order('published_at', { ascending: false });
-
-  if (error || !data) {
-    console.error('Error fetching poem metadata:', error);
-    return [];
-  }
+    .order('published_at', { ascending: false })
+    .throwOnError();
 
   return data.map((row) => ({
     id: row.id,
@@ -96,35 +90,26 @@ export const getAllPoemsMeta = cache(async (): Promise<PoemMeta[]> => {
 
 // Get a single poem by slug — cached: fetched twice per page (metadata + body)
 export const getPoemBySlug = cache(async (slug: string): Promise<Poem | undefined> => {
-  const supabase = getCachedPoemClient();
-  const { data, error } = await supabase
+  const { data } = await getCachedPoemClient()
     .from('poems')
     .select('id, slug, title, subtitle, content, plain_text, published_at, url')
     .eq('slug', slug)
     .eq('status', 'published')
-    .single();
+    .maybeSingle()
+    .throwOnError();
 
-  if (error || !data) {
-    return undefined;
-  }
-
-  return mapPoemRow(data);
+  return data ? mapPoemRow(data) : undefined;
 });
 
 // Get recent poems — queries directly with a DB-level limit
 export const getRecentPoems = cache(async (count: number = 10): Promise<Poem[]> => {
-  const supabase = getCachedPoemClient();
-  const { data, error } = await supabase
+  const { data } = await getCachedPoemClient()
     .from('poems')
     .select('id, slug, title, subtitle, content, plain_text, published_at, url')
     .eq('status', 'published')
     .order('published_at', { ascending: false })
-    .limit(count);
-
-  if (error || !data) {
-    console.error('Error fetching recent poems:', error);
-    return [];
-  }
+    .limit(count)
+    .throwOnError();
 
   return data.map(mapPoemRow);
 });
@@ -132,8 +117,13 @@ export const getRecentPoems = cache(async (count: number = 10): Promise<Poem[]> 
 // Shared, cached slug→id lookup — matches the routes' existing slug-only filter
 // (likes/comments do not restrict by status, so this doesn't either)
 export const getPoemIdBySlug = cache(async (slug: string): Promise<string | null> => {
-  const supabase = getCachedPoemClient();
-  const { data } = await supabase.from('poems').select('id').eq('slug', slug).single();
+  const { data } = await getCachedPoemClient()
+    .from('poems')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle()
+    .throwOnError();
+
   return data?.id ?? null;
 });
 

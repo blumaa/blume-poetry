@@ -4,87 +4,52 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
-import { Badge, Button, Chip, ChipGroup, ConfirmDialog, DataTable, Input, useToast } from '@/components/mds';
-import type { Poem } from '@/lib/supabase/types';
+import { Badge, Button, ButtonLink, Chip, ChipGroup, ConfirmDialog, DataTable, Input, useToast } from '@/components/mds';
+import type { PoemRow } from '@/lib/supabase/types';
 import { SkeletonList } from '@/components/Skeleton';
 import { formatDate } from '@/lib/date';
+import { takeFlashToast } from '@/lib/flashToast';
+import { queryKeys } from '@/lib/queryKeys';
+import { deletePoem, fetchAdminPoems, revalidatePoems, setPoemPinned } from '@/features/poems';
+import { Icon } from '@/components/icons';
 import styles from './page.module.css';
-
-async function fetchAdminPoems(statusFilter: string | null): Promise<Poem[]> {
-  const supabase = createClient();
-  let query = supabase
-    .from('poems')
-    .select('*')
-    .order('published_at', { ascending: false });
-
-  if (statusFilter === 'draft' || statusFilter === 'published') {
-    query = query.eq('status', statusFilter);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw new Error(error.message);
-  return (data as Poem[]) || [];
-}
-
-async function updatePoemPinned(id: string, pinned: boolean): Promise<void> {
-  const supabase = createClient();
-  const { error } = await supabase.from('poems').update({ pinned }).eq('id', id);
-  if (error) throw new Error(error.message);
-}
-
-async function deletePoem(id: string): Promise<void> {
-  const supabase = createClient();
-  const { error } = await supabase.from('poems').delete().eq('id', id);
-  if (error) throw new Error(error.message);
-}
-
-async function revalidatePaths(paths: string[]): Promise<void> {
-  await fetch('/api/admin/revalidate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ paths }),
-  });
-}
 
 export default function AdminPoemsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [deleteTarget, setDeleteTarget] = useState<Poem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PoemRow | null>(null);
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get('status');
   const router = useRouter();
   const { toast } = useToast();
 
-  const { data: poems = [], isPending } = useQuery({
-    queryKey: ['admin', 'poems', statusFilter],
+  const { data: poems = [], isPending, isError } = useQuery({
+    queryKey: queryKeys.admin.poems(statusFilter),
     queryFn: () => fetchAdminPoems(statusFilter),
   });
 
   const invalidatePoems = () =>
-    queryClient.invalidateQueries({ queryKey: ['admin', 'poems'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.admin.all() });
 
   /* Deterministic: pin state moves only after the refetch confirms the write. */
   const pinMutation = useMutation({
-    mutationFn: async (poem: Poem) => {
-      await updatePoemPinned(poem.id, !poem.pinned);
-      await revalidatePaths([]);
+    mutationFn: async (poem: PoemRow) => {
+      await setPoemPinned(poem.id, !poem.pinned);
+      await revalidatePoems([]);
     },
     onSuccess: (_data, poem) =>
       toast({
         title: !poem.pinned ? `"${poem.title}" pinned` : `"${poem.title}" unpinned`,
         tone: 'success',
       }),
-    onError: (error) =>
-      toast({ title: error instanceof Error ? error.message : 'Update failed', tone: 'danger' }),
+    onError: (error) => toast({ title: error.message, tone: 'danger' }),
     onSettled: invalidatePoems,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (target: Poem) => {
+    mutationFn: async (target: PoemRow) => {
       await deletePoem(target.id);
-      await revalidatePaths([`/poem/${target.slug}`]);
+      await revalidatePoems([`/poem/${target.slug}`]);
     },
     onSuccess: (_data, target) => toast({ title: `"${target.title}" deleted`, tone: 'success' }),
     onSettled: invalidatePoems,
@@ -101,21 +66,13 @@ export default function AdminPoemsPage() {
       return 0;
     });
 
-  // Show toast from sessionStorage (e.g., after creating/editing a poem)
+  // Show a toast handed over by the editor after save.
   useEffect(() => {
-    const toastData = sessionStorage.getItem('toast');
-    if (toastData) {
-      sessionStorage.removeItem('toast');
-      try {
-        const { message, type } = JSON.parse(toastData);
-        toast({ title: message, tone: type === 'error' ? 'danger' : 'success' });
-      } catch {
-        // Invalid toast data, ignore
-      }
-    }
+    const flash = takeFlashToast();
+    if (flash) toast(flash);
   }, [toast]);
 
-  const handleDeleteClick = (poem: Poem) => {
+  const handleDeleteClick = (poem: PoemRow) => {
     setDeleteTarget(poem);
   };
 
@@ -125,9 +82,9 @@ export default function AdminPoemsPage() {
       <div className={styles.header}>
         <div className={styles.headerTop}>
           <h1 className={styles.title}>Poems</h1>
-          <Button as={Link} href="/admin/poems/new" size="sm">
+          <ButtonLink href="/admin/poems/new" size="sm">
             New Poem
-          </Button>
+          </ButtonLink>
         </div>
         <div className={styles.filters}>
           <ChipGroup>
@@ -163,6 +120,8 @@ export default function AdminPoemsPage() {
 
       {isPending ? (
         <SkeletonList count={8} />
+      ) : isError ? (
+        <div className={styles.emptyState}>Failed to load poems</div>
       ) : poems.length === 0 ? (
         <div className={styles.emptyState}>
           No poems found. <Link href="/admin/poems/new" className={styles.emptyLink}>Create your first poem</Link>
@@ -178,12 +137,10 @@ export default function AdminPoemsPage() {
             {
               key: 'title',
               header: 'Title',
-              cell: (poem: Poem) => (
+              cell: (poem: PoemRow) => (
                 <span className={styles.titleCell}>
                   {poem.pinned && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className={styles.pinIcon} aria-label="Pinned">
-                      <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
-                    </svg>
+                    <Icon name="pin" size="sm" label="Pinned" className={styles.pinIcon} />
                   )}
                   <Link
                     href={`/poem/${poem.slug}`}
@@ -198,7 +155,7 @@ export default function AdminPoemsPage() {
             {
               key: 'status',
               header: 'Status',
-              cell: (poem: Poem) => (
+              cell: (poem: PoemRow) => (
                 <Badge tone={poem.status === 'published' ? 'success' : 'warning'}>
                   {poem.status}
                 </Badge>
@@ -207,7 +164,7 @@ export default function AdminPoemsPage() {
             {
               key: 'published',
               header: 'Published',
-              cell: (poem: Poem) => formatDate(poem.published_at),
+              cell: (poem: PoemRow) => formatDate(poem.published_at),
             },
           ]}
           rows={filteredPoems}
@@ -224,9 +181,9 @@ export default function AdminPoemsPage() {
               >
                 {poem.pinned ? 'Unpin' : 'Pin'}
               </Button>
-              <Button as={Link} href={`/admin/poems/${poem.id}/edit`} variant="secondary" size="sm">
+              <ButtonLink href={`/admin/poems/${poem.id}/edit`} variant="secondary" size="sm">
                 Edit
-              </Button>
+              </ButtonLink>
               <Button variant="danger" size="sm" onClick={() => handleDeleteClick(poem)}>
                 Delete
               </Button>

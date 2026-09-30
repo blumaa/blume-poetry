@@ -1,14 +1,14 @@
 .stateMessage {
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
 }
 
 .errorText {
-  color: var(--color-error);
+  color: var(--mds-status-danger);
 }
 
 .title {
   font-weight: 400;
   font-size: 1.5rem;
   margin-bottom: 1.5rem;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }

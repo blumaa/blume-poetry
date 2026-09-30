@@ -16,21 +16,21 @@
 .title {
   font-weight: 400;
   font-size: 1.5rem;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .loadingText {
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
 }
 
 .emptyState {
   text-align: center;
   padding: 3rem 0;
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
 }
 
 .authorCell {
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .contentCell {
@@ -42,7 +42,7 @@
 }
 
 .poemLink {
-  color: var(--accent);
+  color: var(--mds-text-accent);
 }
 
 .poemLink:hover {
@@ -50,11 +50,11 @@
 }
 
 .unknownPoem {
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
 }
 
 .footerCount {
   padding: 0.75rem 0;
   font-size: 0.875rem;
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
 }

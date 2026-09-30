@@ -22,7 +22,7 @@ const subscriptionRows = [
   { id: 'sub-2', endpoint: 'https://push.test/2', p256dh: 'key2', auth: 'auth2' },
 ];
 
-const deleteEq = jest.fn(async () => ({ error: null }));
+const deleteEq = jest.fn(async (): Promise<{ error: { message: string } | null }> => ({ error: null }));
 const fromMock = jest.fn(() => ({
   select: async () => ({ data: subscriptionRows, error: null }),
   delete: () => ({ eq: deleteEq }),
@@ -70,6 +70,22 @@ describe('sendLikeNotification', () => {
 
     expect(deleteEq).toHaveBeenCalledWith('id', 'sub-1');
     expect(deleteEq).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a gone subscription it could not delete, without throwing', async () => {
+    sendNotification
+      .mockRejectedValueOnce(Object.assign(new Error('gone'), { statusCode: 410 }))
+      .mockResolvedValueOnce({ statusCode: 201 });
+    deleteEq.mockResolvedValueOnce({ error: { message: 'connection lost' } });
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    await expect(
+      sendLikeNotification({ poemTitle: 'Autumn Rain', slug: 'autumn-rain' })
+    ).resolves.toBeUndefined();
+    expect(consoleError).toHaveBeenCalledWith('Failed to delete gone push subscription:', {
+      message: 'connection lost',
+    });
+    consoleError.mockRestore();
   });
 
   it('does not throw when delivery fails outright', async () => {

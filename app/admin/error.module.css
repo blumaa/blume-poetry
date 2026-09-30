@@ -14,27 +14,11 @@
 .title {
   font-size: 1.25rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
   margin-bottom: 0.5rem;
 }
 
 .message {
-  color: var(--text-secondary);
+  color: var(--mds-text-secondary);
   margin-bottom: 1.5rem;
-}
-
-.retryButton {
-  appearance: none;
-  border: 0;
-  cursor: pointer;
-  padding: 0.5rem 1.5rem;
-  background: var(--accent);
-  color: #ffffff;
-  border-radius: 0.25rem;
-  transition: background-color 0.15s ease;
-  min-height: 44px;
-}
-
-.retryButton:hover {
-  background: var(--accent-hover);
 }

@@ -271,21 +271,10 @@ export type Database = {
   };
 };
 
-export type Poem = Database['public']['Tables']['poems']['Row'];
-export type NewPoem = Database['public']['Tables']['poems']['Insert'];
-export type UpdatePoem = Database['public']['Tables']['poems']['Update'];
-
-export type Subscriber = Database['public']['Tables']['subscribers']['Row'];
-export type NewSubscriber = Database['public']['Tables']['subscribers']['Insert'];
-
-export type EmailLog = Database['public']['Tables']['email_logs']['Row'];
-export type EmailEvent = Database['public']['Tables']['email_events']['Row'];
-export type NewEmailEvent = Database['public']['Tables']['email_events']['Insert'];
-
-export type Like = Database['public']['Tables']['likes']['Row'];
-export type NewLike = Database['public']['Tables']['likes']['Insert'];
-
-export type Comment = Database['public']['Tables']['comments']['Row'];
-export type NewComment = Database['public']['Tables']['comments']['Insert'];
-
+/* Row shapes, named for the table. The camelCase domain types (e.g. Poem in
+   lib/poems) are separate; these are what the database returns. */
+export type PoemRow = Database['public']['Tables']['poems']['Row'];
+export type PoemInsert = Database['public']['Tables']['poems']['Insert'];
+export type SubscriberRow = Database['public']['Tables']['subscribers']['Row'];
+export type CommentRow = Database['public']['Tables']['comments']['Row'];
 export type PushSubscriptionRow = Database['public']['Tables']['push_subscriptions']['Row'];

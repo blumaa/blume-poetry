@@ -8,10 +8,13 @@ import "@mond-design-system/tokens/styles.css";
 import "./tokens/brand-blume.css";
 import "@mond-design-system/react/styles.css";
 import "./globals.css";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeSync } from "@/components/ThemeSync";
+import { themeBootScript } from "@/lib/theme";
 import { QueryProvider } from "@/components/QueryProvider";
+import { AuthProvider } from "@/features/auth";
 import { ToastProvider } from "@/components/mds";
 import { getSiteUrl } from "@/lib/config";
+import { IconRegistry } from "@/components/icons";
 import styles from "./layout.module.css";
 
 const sourceSans = Source_Sans_3({
@@ -69,35 +72,25 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={`${sourceSans.variable} ${spaceGrotesk.variable}`}>
       <head>
         {/* Prevent flash of wrong theme */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const stored = localStorage.getItem('theme');
-                  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  const theme = stored || (prefersDark ? 'dark' : 'light');
-                  document.documentElement.setAttribute('data-theme', theme);
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body className={styles.body}>
         <a
           href="#main-content"
-          className={`sr-only focus:not-sr-only ${styles.skipLink}`}
+          className={styles.skipLink}
         >
           Skip to main content
         </a>
-        <ThemeProvider>
-          <QueryProvider>
-            <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
-              {children}
-            </ToastProvider>
-          </QueryProvider>
-        </ThemeProvider>
+        <ThemeSync />
+        <QueryProvider>
+          <AuthProvider>
+            <IconRegistry>
+              <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
+                {children}
+              </ToastProvider>
+            </IconRegistry>
+          </AuthProvider>
+        </QueryProvider>
         <Analytics />
       </body>
     </html>

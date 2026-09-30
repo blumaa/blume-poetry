@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect, useSyncExternalStore } from 'react';
+import { useState, useEffect } from 'react';
 import type { TreeNode } from '@/lib/poems';
-import { useIsMobile } from '@/lib/useIsMobile';
+import { useIsMobile } from '@/lib/useMediaQuery';
+import { useStored } from '@/lib/useStored';
+import { writeStored } from '@/lib/browserStorage';
 import { Sidebar } from './Sidebar';
 import { MobileHeader } from './MobileHeader';
 
@@ -10,30 +12,10 @@ interface SidebarWrapperProps {
   tree: TreeNode[];
 }
 
-const COLLAPSED_KEY = 'sidebar_collapsed';
-
-/* Collapsed state lives in localStorage (survives reload); expose it as an
-   external store so reads stay hydration-safe without a setState-in-effect. */
-const collapsedListeners = new Set<() => void>();
-
-function subscribeCollapsed(listener: () => void) {
-  collapsedListeners.add(listener);
-  return () => collapsedListeners.delete(listener);
-}
-
-function readCollapsed() {
-  return localStorage.getItem(COLLAPSED_KEY) === 'true';
-}
-
-function writeCollapsed(value: boolean) {
-  localStorage.setItem(COLLAPSED_KEY, String(value));
-  collapsedListeners.forEach((listener) => listener());
-}
-
 export function SidebarWrapper({ tree }: SidebarWrapperProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
-  const isCollapsed = useSyncExternalStore(subscribeCollapsed, readCollapsed, () => false);
+  const isCollapsed = useStored('sidebarCollapsed') === 'true';
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
@@ -63,37 +45,32 @@ export function SidebarWrapper({ tree }: SidebarWrapperProps) {
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   const toggleCollapse = () => {
-    writeCollapsed(!isCollapsed);
+    writeStored('sidebarCollapsed', String(!isCollapsed));
   };
 
+  /* One Sidebar at every width, so its state (search, expanded folders, the
+     footer subscribe form) survives a resize. isMobile only picks its
+     presentation: drawer or collapsible rail. */
   return (
     <>
-      {/* Mobile Header */}
       <MobileHeader onMenuClick={openMobileMenu} />
 
-      {/* Desktop Sidebar */}
+      {isMobile && (
+        <div
+          className={`sidebar-overlay ${isMobileMenuOpen ? 'open' : ''}`}
+          onClick={closeMobileMenu}
+          aria-hidden="true"
+        />
+      )}
+
       <Sidebar
         tree={tree}
+        isMobile={isMobile}
+        isOpen={isMobileMenuOpen}
+        onClose={closeMobileMenu}
         isCollapsed={isCollapsed}
         onToggleCollapse={toggleCollapse}
       />
-
-      {/* Mobile Sidebar Overlay */}
-      {isMobile && (
-        <>
-          <div
-            className={`sidebar-overlay ${isMobileMenuOpen ? 'open' : ''}`}
-            onClick={closeMobileMenu}
-            aria-hidden="true"
-          />
-          <Sidebar
-            tree={tree}
-            isOpen={isMobileMenuOpen}
-            onClose={closeMobileMenu}
-            isMobile={true}
-          />
-        </>
-      )}
     </>
   );
 }

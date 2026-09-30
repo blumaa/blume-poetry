@@ -4,57 +4,14 @@ import { SITE_NAME } from '@/lib/brand';
 import { useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
+import { fetchSendData, sendNewsletter } from '@/features/subscribers';
+import { queryKeys } from '@/lib/queryKeys';
 import { RichTextEditor, RichTextEditorRef } from '@/components/admin/RichTextEditor';
 import { Button, ConfirmDialog, Field, Input, Select, Tab, TabList, Tabs, useToast } from '@/components/mds';
 import { PoemContent } from '@/components/PoemContent';
 import { sanitizeNewsletterHtml } from '@/lib/sanitize';
 import { contentToHtml } from '@/lib/poemHtml';
-import type { Poem } from '@/lib/supabase/types';
 import styles from './page.module.css';
-
-async function fetchSendData(): Promise<{ poems: Poem[]; subscriberCount: number }> {
-  const supabase = createClient();
-
-  // Recent published poems
-  const { data: poemsData, error: poemsError } = await supabase
-    .from('poems')
-    .select('*')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false })
-    .limit(20);
-  if (poemsError) throw new Error(poemsError.message);
-
-  // Active subscriber count
-  const { count, error: countError } = await supabase
-    .from('subscribers')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'active');
-  if (countError) throw new Error(countError.message);
-
-  return { poems: (poemsData as Poem[]) || [], subscriberCount: count || 0 };
-}
-
-interface SendEmailInput {
-  subject: string;
-  bodyHtml: string;
-  bodyText: string;
-  poemId?: string;
-  testEmail?: string;
-}
-
-async function sendEmail(input: SendEmailInput): Promise<{ message?: string }> {
-  const response = await fetch('/api/admin/send-email', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error || 'Failed to send emails');
-  }
-  return data;
-}
 
 export default function SendNewsletterPage() {
   const [subject, setSubject] = useState('');
@@ -68,31 +25,25 @@ export default function SendNewsletterPage() {
   const editorRef = useRef<RichTextEditorRef>(null);
   const { toast } = useToast();
 
-  const { data: sendData, isPending: isLoading } = useQuery({
-    queryKey: ['admin', 'send-data'],
+  const { data: sendData, isPending: isLoading, isError } = useQuery({
+    queryKey: queryKeys.admin.sendData(),
     queryFn: fetchSendData,
   });
   const poems = sendData?.poems ?? [];
   const subscriberCount = sendData?.subscriberCount ?? 0;
 
   const testMutation = useMutation({
-    mutationFn: sendEmail,
+    mutationFn: sendNewsletter,
     onSuccess: () => toast({ title: 'Test email sent', tone: 'success' }),
     onError: (error) =>
-      toast({
-        title: error instanceof Error ? error.message : 'An unexpected error occurred',
-        tone: 'danger',
-      }),
+      toast({ title: error.message, tone: 'danger' }),
   });
 
   const sendAllMutation = useMutation({
-    mutationFn: sendEmail,
+    mutationFn: sendNewsletter,
     onSuccess: (data) => toast({ title: data.message ?? 'Newsletter sent', tone: 'success' }),
     onError: (error) =>
-      toast({
-        title: error instanceof Error ? error.message : 'An unexpected error occurred',
-        tone: 'danger',
-      }),
+      toast({ title: error.message, tone: 'danger' }),
   });
 
   const isSending = testMutation.isPending || sendAllMutation.isPending;
@@ -156,6 +107,10 @@ export default function SendNewsletterPage() {
     return <div className={styles.loadingText}>Loading...</div>;
   }
 
+  if (isError) {
+    return <div className={styles.loadingText}>Failed to load subscribers</div>;
+  }
+
   return (
     <div>
       <h1 className={styles.title}>Send Newsletter</h1>
@@ -198,7 +153,7 @@ export default function SendNewsletterPage() {
             </div>
           </div>
 
-          {/* Poem Attachment (Optional) */}
+          {/* PoemRow Attachment (Optional) */}
           <Field label="Attach Poem" hint="Optional">
             <Select value={selectedPoemId} onChange={(e) => setSelectedPoemId(e.target.value)}>
               <option value="">None</option>
@@ -210,7 +165,7 @@ export default function SendNewsletterPage() {
             </Select>
           </Field>
 
-          {/* Subscriber Info */}
+          {/* SubscriberRow Info */}
           <div className={styles.subscriberInfo}>
             <div className={styles.subscriberInfoText}>
               Active subscribers: <strong className={styles.subscriberCount}>{subscriberCount}</strong>
@@ -271,7 +226,7 @@ export default function SendNewsletterPage() {
                   />
                 )}
 
-                {/* Poem Preview */}
+                {/* PoemRow Preview */}
                 {selectedPoem && (
                   <div className={bodyHtml ? styles.poemPreviewWrap : ''}>
                     <h3 className={styles.poemPreviewTitle}>

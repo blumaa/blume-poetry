@@ -21,25 +21,25 @@
   text-decoration: none;
   font-size: 1.5rem;
   line-height: 2rem;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
   transition: color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .brand:hover {
-  color: var(--accent);
+  color: var(--mds-text-accent);
 }
 
 .subtitle {
-  color: var(--text-secondary);
+  color: var(--mds-text-secondary);
   margin-top: 0.5rem;
 }
 
 .panel {
-  background: var(--bg-secondary);
+  background: var(--mds-surface-card);
   padding: 2rem;
   border-radius: 0.5rem;
-  border: 1px solid var(--border);
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border: 1px solid var(--mds-border-subtle);
+  box-shadow: var(--mds-elevation-card);
 }
 
 .footer {
@@ -47,7 +47,7 @@
   margin-top: 1.5rem;
   font-size: 0.875rem;
   line-height: 1.25rem;
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
 }
 
 .backLink {
@@ -56,5 +56,5 @@
 }
 
 .backLink:hover {
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }

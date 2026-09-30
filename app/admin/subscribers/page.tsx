@@ -1,67 +1,38 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
-import { SubscribeModal } from '@/components/SubscribeModal';
-import { Badge, Button, Checkbox, Chip, ChipGroup, ConfirmDialog, DataTable, useToast } from '@/components/mds';
-import type { Subscriber } from '@/lib/supabase/types';
+import {
+  SubscribeModal,
+  deleteSubscriber,
+  fetchSubscribers,
+  setNotifyNewPoems,
+  type SubscriberFilter,
+} from '@/features/subscribers';
+import { Badge, Button, ButtonLink, Checkbox, Chip, ChipGroup, ConfirmDialog, DataTable, useToast } from '@/components/mds';
+import type { SubscriberRow } from '@/lib/supabase/types';
 import { formatDate } from '@/lib/date';
+import { queryKeys } from '@/lib/queryKeys';
+import { Icon } from '@/components/icons';
 import styles from './page.module.css';
-
-async function loadSubscribers(
-  filter: 'all' | 'active' | 'unsubscribed'
-): Promise<Subscriber[]> {
-  const supabase = createClient();
-  let query = supabase
-    .from('subscribers')
-    .select('*')
-    .order('subscribed_at', { ascending: false });
-
-  if (filter !== 'all') {
-    query = query.eq('status', filter);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw new Error(error.message);
-  return (data as Subscriber[]) || [];
-}
-
-async function deleteSubscriber(id: string): Promise<void> {
-  const supabase = createClient();
-  const { error } = await supabase.from('subscribers').delete().eq('id', id);
-  if (error) throw new Error(error.message);
-}
-
-async function updateNotifyNewPoems(id: string, next: boolean): Promise<void> {
-  const supabase = createClient();
-  const { error } = await supabase
-    .from('subscribers')
-    .update({ notify_new_poems: next })
-    .eq('id', id);
-  if (error) throw new Error(error.message);
-}
 
 export default function AdminSubscribersPage() {
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<'all' | 'active' | 'unsubscribed'>('active');
-  const [deleteTarget, setDeleteTarget] = useState<Subscriber | null>(null);
+  const [filter, setFilter] = useState<SubscriberFilter>('active');
+  const [deleteTarget, setDeleteTarget] = useState<SubscriberRow | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const { toast } = useToast();
 
-  const { data: subscribers = [], isPending } = useQuery({
-    queryKey: ['admin', 'subscribers', filter],
-    queryFn: () => loadSubscribers(filter),
+  const { data: subscribers = [], isPending, isError } = useQuery({
+    queryKey: queryKeys.admin.subscribers(filter),
+    queryFn: () => fetchSubscribers(filter),
   });
 
-  // Invalidate every filter's list — a write changes them all.
   const invalidateSubscribers = () =>
-    queryClient.invalidateQueries({ queryKey: ['admin', 'subscribers'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.admin.all() });
 
   const deleteMutation = useMutation({
-    mutationFn: (target: Subscriber) => deleteSubscriber(target.id),
+    mutationFn: (target: SubscriberRow) => deleteSubscriber(target.id),
     onSuccess: (_data, target) => toast({ title: `"${target.email}" deleted`, tone: 'success' }),
     onSettled: invalidateSubscribers,
   });
@@ -70,8 +41,8 @@ export default function AdminSubscribersPage() {
      absolute value taken from the row on screen; the checkbox moves only
      after the refetch confirms the write. */
   const notifyMutation = useMutation({
-    mutationFn: (subscriber: Subscriber) =>
-      updateNotifyNewPoems(subscriber.id, !subscriber.notify_new_poems),
+    mutationFn: (subscriber: SubscriberRow) =>
+      setNotifyNewPoems(subscriber.id, !subscriber.notify_new_poems),
     onSuccess: (_data, subscriber) =>
       toast({
         title: !subscriber.notify_new_poems
@@ -79,12 +50,11 @@ export default function AdminSubscribersPage() {
           : `"${subscriber.email}" will not get new-poem emails`,
         tone: 'success',
       }),
-    onError: (error) =>
-      toast({ title: error instanceof Error ? error.message : 'Update failed', tone: 'danger' }),
+    onError: (error) => toast({ title: error.message, tone: 'danger' }),
     onSettled: invalidateSubscribers,
   });
 
-  const handleDeleteClick = (subscriber: Subscriber) => {
+  const handleDeleteClick = (subscriber: SubscriberRow) => {
     setDeleteTarget(subscriber);
   };
 
@@ -124,9 +94,7 @@ export default function AdminSubscribersPage() {
             onClick={() => setShowAddModal(true)}
             aria-label="Add subscriber"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+            <Icon name="add" />
           </Button>
           <ChipGroup>
             <Chip selected={filter === 'active'} onClick={() => setFilter('active')}>
@@ -144,14 +112,16 @@ export default function AdminSubscribersPage() {
           <Button variant="secondary" size="sm" onClick={handleExportCSV} className={styles.headerButton}>
             Export CSV
           </Button>
-          <Button as={Link} href="/admin/subscribers/send" size="sm" className={styles.headerButton}>
+          <ButtonLink href="/admin/subscribers/send" size="sm" className={styles.headerButton}>
             Send Newsletter
-          </Button>
+          </ButtonLink>
         </div>
       </div>
 
       {isPending ? (
         <div className={styles.loadingText}>Loading subscribers...</div>
+      ) : isError ? (
+        <div className={styles.emptyState}>Failed to load subscribers</div>
       ) : subscribers.length === 0 ? (
         <div className={styles.emptyState}>
           No subscribers found.
@@ -164,14 +134,14 @@ export default function AdminSubscribersPage() {
               {
                 key: 'email',
                 header: 'Email',
-                cell: (subscriber: Subscriber) => (
+                cell: (subscriber: SubscriberRow) => (
                   <span className={styles.emailCell}>{subscriber.email}</span>
                 ),
               },
               {
                 key: 'status',
                 header: 'Status',
-                cell: (subscriber: Subscriber) => (
+                cell: (subscriber: SubscriberRow) => (
                   <Badge tone={subscriber.status === 'active' ? 'success' : 'neutral'}>
                     {subscriber.status}
                   </Badge>
@@ -180,18 +150,18 @@ export default function AdminSubscribersPage() {
               {
                 key: 'subscribed',
                 header: 'Subscribed',
-                cell: (subscriber: Subscriber) => formatDate(subscriber.subscribed_at),
+                cell: (subscriber: SubscriberRow) => formatDate(subscriber.subscribed_at),
               },
               {
                 key: 'verified',
                 header: 'Verified',
-                cell: (subscriber: Subscriber) =>
+                cell: (subscriber: SubscriberRow) =>
                   subscriber.verified ? <Badge tone="success">Yes</Badge> : 'No',
               },
               {
                 key: 'notify',
                 header: 'New poems',
-                cell: (subscriber: Subscriber) => (
+                cell: (subscriber: SubscriberRow) => (
                   <Checkbox
                     label={`New poem emails for ${subscriber.email}`}
                     labelHidden

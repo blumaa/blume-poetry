@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Button, ButtonLink } from '@/components/mds';
 import styles from './error.module.css';
 
 export default function PoemError({
@@ -17,18 +17,10 @@ export default function PoemError({
           There was a problem loading this poem. Please try again.
         </p>
         <div className={styles.actions}>
-          <button
-            onClick={reset}
-            className={styles.button}
-          >
-            Try again
-          </button>
-          <Link
-            href="/"
-            className={styles.buttonOutline}
-          >
+          <Button onClick={reset}>Try again</Button>
+          <ButtonLink href="/" variant="secondary">
             Go home
-          </Link>
+          </ButtonLink>
         </div>
       </div>
     </div>

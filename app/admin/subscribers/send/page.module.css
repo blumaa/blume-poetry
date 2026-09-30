@@ -1,12 +1,12 @@
 .loadingText {
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
 }
 
 .title {
   font-weight: 400;
   font-size: 1.5rem;
   margin-bottom: 1.5rem;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .mobileTabs {
@@ -50,12 +50,12 @@
   font-size: 0.875rem;
   font-weight: 500;
   margin-bottom: 0.5rem;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .editorWrap {
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
+  background: var(--mds-surface-page);
+  border: 1px solid var(--mds-border-subtle);
   border-radius: 0.5rem;
   padding: 1rem;
 }
@@ -66,22 +66,22 @@
 
 .subscriberInfo {
   padding: 1rem;
-  background: var(--bg-secondary);
+  background: var(--mds-surface-card);
   border-radius: 0.5rem;
 }
 
 .subscriberInfoText {
   font-size: 0.875rem;
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
 }
 
 .subscriberCount {
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .testEmailBox {
   padding: 1rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--mds-border-subtle);
   border-radius: 0.5rem;
 }
 
@@ -89,7 +89,7 @@
   font-size: 1rem;
   font-weight: 500;
   margin-bottom: 0.75rem;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .testEmailRow {
@@ -125,12 +125,12 @@
   font-size: 0.875rem;
   font-weight: 500;
   margin-bottom: 0.75rem;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .previewBox {
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
+  background: var(--mds-surface-page);
+  border: 1px solid var(--mds-border-subtle);
   border-radius: 0.5rem;
   padding: 1.5rem;
   min-height: 400px;
@@ -141,8 +141,8 @@
   font-size: 1.25rem;
   margin-bottom: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border);
-  color: var(--text-primary);
+  border-bottom: 1px solid var(--mds-border-subtle);
+  color: var(--mds-text-primary);
 }
 
 /* No typography plugin is installed, so the original `prose prose-lg` were
@@ -150,7 +150,7 @@
    needs, matching the .poem-content p pattern in globals.css. */
 .previewBody {
   max-width: none;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .previewBody p {
@@ -162,29 +162,29 @@
 .poemPreviewWrap {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--mds-border-subtle);
 }
 
 .poemPreviewTitle {
   font-size: 1.125rem;
   font-weight: 500;
   margin-bottom: 0.75rem;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .poemPreviewCta {
   margin-top: 1rem;
   font-size: 0.875rem;
-  color: var(--accent);
+  color: var(--mds-text-accent);
 }
 
 .footerPreview {
   margin-top: 2rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--mds-border-subtle);
   text-align: center;
   font-size: 0.875rem;
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
 }
 
 .unsubscribeText {
@@ -192,7 +192,7 @@
 }
 
 .previewPlaceholder {
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
   text-align: center;
   padding-top: 5rem;
 }

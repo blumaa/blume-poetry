@@ -6,6 +6,9 @@ import { sendLikeNotification } from '@/lib/push';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { verifyOrigin } from '@/lib/csrf';
 
+// Database errors throw (.throwOnError) and Next answers 500: a failed read
+// must not pass as "no likes", nor a failed write as success.
+
 // GET - Get like count and whether current visitor has liked
 export async function GET(
   request: NextRequest,
@@ -27,7 +30,8 @@ export async function GET(
   const { count } = await supabase
     .from('likes')
     .select('*', { count: 'exact', head: true })
-    .eq('poem_id', poemId);
+    .eq('poem_id', poemId)
+    .throwOnError();
 
   // Check if visitor has liked
   let hasLiked = false;
@@ -37,12 +41,13 @@ export async function GET(
       .select('id')
       .eq('poem_id', poemId)
       .eq('visitor_id', visitorId)
-      .single();
+      .maybeSingle()
+      .throwOnError();
 
     hasLiked = !!existingLike;
   }
 
-  return NextResponse.json({ count: count || 0, hasLiked });
+  return NextResponse.json({ count: count ?? 0, hasLiked });
 }
 
 // POST - Toggle like
@@ -80,25 +85,24 @@ export async function POST(
     .select('id')
     .eq('poem_id', poemId)
     .eq('visitor_id', visitorId)
-    .single();
+    .maybeSingle()
+    .throwOnError();
 
   if (existingLike) {
     // Unlike
     await supabase
       .from('likes')
       .delete()
-      .eq('id', existingLike.id);
+      .eq('id', existingLike.id)
+      .throwOnError();
 
     return NextResponse.json({ liked: false });
   } else {
     // Like
-    const { error: insertError } = await supabase
+    await supabase
       .from('likes')
-      .insert({ poem_id: poemId, visitor_id: visitorId });
-
-    if (insertError) {
-      return NextResponse.json({ error: 'Failed to like' }, { status: 500 });
-    }
+      .insert({ poem_id: poemId, visitor_id: visitorId })
+      .throwOnError();
 
     // Notify the admin's devices. sendLikeNotification never throws, so a
     // push outage can't fail the like itself.

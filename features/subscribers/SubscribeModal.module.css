@@ -1,0 +1,36 @@
+.description {
+  color: var(--mds-text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.successBox {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.successIcon {
+  /* MDS Icon takes its size from the slot it sits in. */
+  --mds-icon-slot: 3rem;
+  color: var(--mds-text-accent);
+  margin-bottom: 1rem;
+}
+
+.successMessage {
+  color: var(--mds-text-primary);
+}
+
+.closeButton {
+  margin-top: 1rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.errorText {
+  color: var(--mds-status-danger);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}

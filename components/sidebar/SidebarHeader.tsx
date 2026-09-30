@@ -2,8 +2,9 @@ import { SITE_NAME } from '@/lib/brand';
 import Link from 'next/link';
 import { BrandLogo } from '../BrandLogo';
 import { Button } from '@/components/mds';
+import { Icon } from '@/components/icons';
 import { ThemeToggle } from '../ThemeToggle';
-import { SubscribeButton } from '../SubscribeButton';
+import { SubscribeButton } from '@/features/subscribers';
 import { InfoButton } from '../InfoButton';
 import { LoginButton } from '../LoginButton';
 import styles from './SidebarHeader.module.css';
@@ -13,45 +14,6 @@ interface SidebarHeaderProps {
   isCollapsed?: boolean;
   onClose?: () => void;
   onToggleCollapse?: () => void;
-}
-
-function CloseIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
-function CollapseIcon({ isCollapsed }: { isCollapsed: boolean }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={`${styles.collapseIcon} ${isCollapsed ? styles.collapseIconRotated : ''}`}
-    >
-      <path d="M11 17l-5-5 5-5" />
-      <path d="M18 17l-5-5 5-5" />
-    </svg>
-  );
 }
 
 export function SidebarHeader({
@@ -83,7 +45,7 @@ export function SidebarHeader({
             onClick={onClose}
             aria-label="Close navigation menu"
           >
-            <CloseIcon />
+            <Icon name="close" size="lg" />
           </Button>
         </div>
       </div>
@@ -115,7 +77,10 @@ export function SidebarHeader({
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           title={isCollapsed ? 'Expand' : 'Collapse'}
         >
-          <CollapseIcon isCollapsed={isCollapsed} />
+          <Icon
+            name="chevrons-left"
+            className={`${styles.collapseIcon} ${isCollapsed ? styles.collapseIconRotated : ''}`}
+          />
         </Button>
       </div>
     </div>

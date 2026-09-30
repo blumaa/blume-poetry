@@ -11,22 +11,17 @@
 }
 
 .iconWrap {
-  color: var(--accent);
+  /* MDS Icon takes its size from the slot it sits in. */
+  --mds-icon-slot: 4rem;
+  color: var(--mds-text-accent);
   margin-bottom: 1.5rem;
-}
-
-.icon {
-  height: 4rem;
-  width: 4rem;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .title {
   font-size: 1.25rem;
   line-height: 1.75rem;
   font-weight: 400;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
   margin-bottom: 1rem;
 }
 
@@ -38,20 +33,6 @@
 }
 
 .message {
-  color: var(--text-secondary);
+  color: var(--mds-text-secondary);
   margin-bottom: 2rem;
-}
-
-.button {
-  text-decoration: none;
-  display: inline-block;
-  padding: 0.75rem 1.5rem;
-  background: var(--accent);
-  color: #fff;
-  border-radius: 0.25rem;
-  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.button:hover {
-  background: var(--accent-hover);
 }

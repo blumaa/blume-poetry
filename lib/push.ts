@@ -52,7 +52,8 @@ export async function sendLikeNotification({ poemTitle, slug }: LikeNotification
       } catch (err) {
         const statusCode = (err as { statusCode?: number }).statusCode;
         if (statusCode === 404 || statusCode === 410) {
-          await supabase.from('push_subscriptions').delete().eq('id', row.id);
+          const { error } = await supabase.from('push_subscriptions').delete().eq('id', row.id);
+          if (error) console.error('Failed to delete gone push subscription:', error);
         } else {
           console.error('Push delivery failed:', err);
         }
