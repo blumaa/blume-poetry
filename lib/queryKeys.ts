@@ -4,4 +4,7 @@ export const queryKeys = {
   admin: {
     activity: () => ['admin', 'activity'] as const,
   },
+  push: {
+    subscription: () => ['push', 'subscription'] as const,
+  },
 } as const;

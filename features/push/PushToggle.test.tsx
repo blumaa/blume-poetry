@@ -4,7 +4,8 @@
  * - disabling unsubscribes the browser and removes the server registration
  * - renders nothing where push is unsupported
  */
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithProviders } from '@/__tests__/test-utils';
 import userEvent from '@testing-library/user-event';
 
 const subscription = {
@@ -35,9 +36,12 @@ function mockPushSupport() {
   });
 }
 
-const fetchMock = jest.fn(async () => ({ ok: true, json: async () => ({ ok: true }) }));
+const fetchMock = jest.fn(async (): Promise<Pick<Response, 'ok' | 'json'>> => ({
+  ok: true,
+  json: async () => ({ ok: true }),
+}));
 
-import { PushToggle } from '@/components/admin/PushToggle';
+import { PushToggle } from './PushToggle';
 
 describe('PushToggle', () => {
   beforeEach(() => {
@@ -49,9 +53,10 @@ describe('PushToggle', () => {
 
   it('enables notifications: subscribes the browser and registers with the server', async () => {
     pushManager.getSubscription.mockResolvedValue(null);
-    render(<PushToggle />);
+    renderWithProviders(<PushToggle />);
 
     const button = await screen.findByRole('button', { name: /enable like notifications/i });
+    pushManager.getSubscription.mockResolvedValue(subscription);
     await userEvent.click(button);
 
     await waitFor(() => {
@@ -69,9 +74,13 @@ describe('PushToggle', () => {
 
   it('disables notifications: unsubscribes and removes the server registration', async () => {
     pushManager.getSubscription.mockResolvedValue(subscription);
-    render(<PushToggle />);
+    renderWithProviders(<PushToggle />);
 
     const button = await screen.findByRole('button', { name: /disable like notifications/i });
+    subscription.unsubscribe.mockImplementation(async () => {
+      pushManager.getSubscription.mockResolvedValue(null);
+      return true;
+    });
     await userEvent.click(button);
 
     await waitFor(() => {
@@ -87,13 +96,60 @@ describe('PushToggle', () => {
     ).toBeInTheDocument();
   });
 
+  it('keeps every mounted toggle on the same subscription state', async () => {
+    pushManager.getSubscription.mockResolvedValue(null);
+    renderWithProviders(
+      <>
+        <PushToggle />
+        <PushToggle />
+      </>
+    );
+
+    const [first] = await screen.findAllByRole('button', { name: /enable like notifications/i });
+    pushManager.getSubscription.mockResolvedValue(subscription);
+    await userEvent.click(first);
+
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /disable like notifications/i })).toHaveLength(2)
+    );
+  });
+
+  it('stays off when permission is refused', async () => {
+    pushManager.getSubscription.mockResolvedValue(null);
+    (window.Notification.requestPermission as jest.Mock).mockResolvedValue('denied');
+    renderWithProviders(<PushToggle />);
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: /enable like notifications/i })
+    );
+
+    expect(
+      await screen.findByRole('button', { name: /enable like notifications/i })
+    ).toBeEnabled();
+    expect(pushManager.subscribe).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed server registration and stays off', async () => {
+    pushManager.getSubscription.mockResolvedValue(null);
+    fetchMock.mockResolvedValueOnce({ ok: false, json: async () => ({}) });
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    renderWithProviders(<PushToggle />);
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: /enable like notifications/i })
+    );
+
+    expect(await screen.findByText("Couldn't enable like notifications")).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Enable like notifications' })).toBeEnabled();
+  });
+
   it('renders nothing where push is unsupported', () => {
     Object.defineProperty(window.navigator, 'serviceWorker', {
       configurable: true,
       value: undefined,
     });
 
-    const { container } = render(<PushToggle />);
-    expect(container).toBeEmptyDOMElement();
+    renderWithProviders(<PushToggle />);
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 });
