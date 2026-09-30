@@ -9,6 +9,7 @@ import { Badge, Button, Chip, ChipGroup, ConfirmDialog, DataTable, Input, useToa
 import type { Poem } from '@/lib/supabase/types';
 import { SkeletonList } from '@/components/Skeleton';
 import { formatDate } from '@/lib/date';
+import { takeFlashToast } from '@/lib/flashToast';
 import styles from './page.module.css';
 
 async function fetchAdminPoems(statusFilter: string | null): Promise<Poem[]> {
@@ -101,18 +102,10 @@ export default function AdminPoemsPage() {
       return 0;
     });
 
-  // Show toast from sessionStorage (e.g., after creating/editing a poem)
+  // Show a toast handed over by the editor after save.
   useEffect(() => {
-    const toastData = sessionStorage.getItem('toast');
-    if (toastData) {
-      sessionStorage.removeItem('toast');
-      try {
-        const { message, type } = JSON.parse(toastData);
-        toast({ title: message, tone: type === 'error' ? 'danger' : 'success' });
-      } catch {
-        // Invalid toast data, ignore
-      }
-    }
+    const flash = takeFlashToast();
+    if (flash) toast(flash);
   }, [toast]);
 
   const handleDeleteClick = (poem: Poem) => {

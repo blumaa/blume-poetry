@@ -11,6 +11,6 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
-  // test-utils is a shared helper, not a suite
-  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/', '<rootDir>/__tests__/test-utils.tsx'],
+  // test-utils is a shared helper, not a suite; scripts/ runs under node --test
+  testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/', '<rootDir>/__tests__/test-utils.tsx', '<rootDir>/scripts/'],
 };

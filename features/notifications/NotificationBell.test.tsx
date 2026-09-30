@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { renderWithProviders } from '../test-utils';
-import { NotificationBell } from '@/components/admin/NotificationBell';
+import { renderWithProviders } from '@/__tests__/test-utils';
+import { NotificationBell } from './NotificationBell';
 
 const commentsData = [
   {
@@ -123,6 +123,25 @@ describe('NotificationBell', () => {
     const bell = await screen.findByRole('button', { name: 'Notifications' });
     await user.click(bell);
     expect(await screen.findByText('No notifications')).toBeInTheDocument();
+  });
+
+  it('clearing in one bell clears every mounted bell (one source of truth)', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <NotificationBell />
+        <NotificationBell />
+      </>
+    );
+
+    const [first] = await screen.findAllByRole('button', { name: 'Notifications (2 unread)' });
+    await user.click(first);
+    await user.click(await screen.findByRole('button', { name: 'Clear notifications' }));
+
+    expect(
+      screen.queryByRole('button', { name: 'Notifications (2 unread)' })
+    ).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Notifications' })).toHaveLength(2);
   });
 
   describe('on mobile', () => {

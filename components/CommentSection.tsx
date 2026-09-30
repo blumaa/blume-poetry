@@ -7,6 +7,7 @@ import { Button, ConfirmDialog, Field, Input, Modal, ModalBody, ModalHeader, Tex
 import { SkeletonComment } from '@/components/Skeleton';
 import { isAdminEmail } from '@/lib/config';
 import { getVisitorId } from '@/lib/visitorId';
+import { readStored, writeStored } from '@/lib/browserStorage';
 import styles from './CommentSection.module.css';
 
 interface Comment {
@@ -180,7 +181,7 @@ interface CommentModalProps {
 /* Mounted per open (see call site), so initializers run at open time. */
 function CommentModal({ onClose, slug }: CommentModalProps) {
   const queryClient = useQueryClient();
-  const [name, setName] = useState(() => localStorage.getItem('comment_name') ?? '');
+  const [name, setName] = useState(() => readStored('commentName') ?? '');
   const [content, setContent] = useState('');
   const [honeypot, setHoneypot] = useState('');
   // Spam check: server rejects submits too soon after the form appeared.
@@ -216,7 +217,7 @@ function CommentModal({ onClose, slug }: CommentModalProps) {
       return;
     }
 
-    localStorage.setItem('comment_name', name.trim());
+    writeStored('commentName', name.trim());
 
     postMutation.mutate({
       visitorId: getVisitorId(),

@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/mds';
-import { useTheme } from './ThemeProvider';
+import { useTheme } from '@/lib/useTheme';
 
 interface ThemeToggleProps {
   className?: string;

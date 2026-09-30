@@ -8,7 +8,7 @@ import { AuthProvider } from '@/components/auth/AuthProvider';
 import { AdminGuard } from '@/components/auth/AdminGuard';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { NotificationBell } from '@/components/admin/NotificationBell';
+import { NotificationBell } from '@/features/notifications';
 import { PushToggle } from '@/components/admin/PushToggle';
 import { Button, Menu, MenuItem, TabBar, TabBarItem } from '@/components/mds';
 import styles from './layout.module.css';

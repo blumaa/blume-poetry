@@ -24,3 +24,17 @@ export function formatDateTime(input: string | number | Date): string {
     timeZone: TIME_ZONE,
   });
 }
+
+const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+
+/** "5m ago" style for recent activity; the regular date after a week. */
+export function formatRelative(input: string | number | Date, now: Date = new Date()): string {
+  const diff = now.getTime() - new Date(input).getTime();
+  if (diff < MINUTE) return 'just now';
+  if (diff < HOUR) return `${Math.floor(diff / MINUTE)}m ago`;
+  if (diff < DAY) return `${Math.floor(diff / HOUR)}h ago`;
+  if (diff < 7 * DAY) return `${Math.floor(diff / DAY)}d ago`;
+  return formatDate(input);
+}

@@ -10,6 +10,7 @@ import { Button, Checkbox, ConfirmDialog, Field, Input, Radio, Tab, TabList, Tab
 import { formatDate } from '@/lib/date';
 import type { Poem, NewPoem } from '@/lib/supabase/types';
 import styles from './PoemEditor.module.css';
+import { setFlashToast, type FlashToast } from '@/lib/flashToast';
 
 const RichTextEditor = dynamic(
   () => import('./RichTextEditor').then((m) => m.RichTextEditor),
@@ -157,7 +158,7 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
       });
 
       let message = isNew ? `"${title.trim()}" created` : 'Changes saved';
-      let type: 'success' | 'error' = 'success';
+      let tone: FlashToast['tone'] = 'success';
 
       // The poem is already saved at this point. A failed send is reported as
       // its own problem rather than rolling anything back, so the admin knows
@@ -176,12 +177,12 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
             ? `${message}. Subscribers had already been emailed about this poem`
             : `${message}. Emailed ${result.sent} subscriber${result.sent === 1 ? '' : 's'}`;
         } catch (err) {
-          type = 'error';
+          tone = 'danger';
           message = `Saved, but the email failed: ${err instanceof Error ? err.message : 'unknown error'}`;
         }
       }
 
-      sessionStorage.setItem('toast', JSON.stringify({ message, type }));
+      setFlashToast({ title: message, tone });
       router.push('/admin/poems');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save poem');
