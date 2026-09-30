@@ -8,7 +8,7 @@
   gap: 0.25rem;
   padding-bottom: 0.75rem;
   margin-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--mds-border-subtle);
 }
 
 .toolbarButton {
@@ -36,13 +36,13 @@
 }
 
 .toolbarButtonActive {
-  background: var(--accent);
-  color: #ffffff;
+  background: var(--mds-accent);
+  color: var(--mds-accent-contrast);
 }
 
 .toolbarButtonInactive {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--mds-surface-card);
+  color: var(--mds-text-primary);
 }
 
 .toolbarButtonInactive:hover {
@@ -65,5 +65,5 @@
 /* ProseMirror is a class Tiptap adds itself, not scoped by CSS Modules. */
 .editorWrapper :global(.ProseMirror) {
   outline: none;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }

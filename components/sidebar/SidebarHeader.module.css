@@ -1,6 +1,6 @@
 .headerMobile {
   padding: 0.5rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--mds-border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -23,7 +23,7 @@
 
 .headerDesktop {
   padding: 1rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--mds-border-subtle);
 }
 
 .headerDesktopCollapsed {
@@ -58,7 +58,7 @@
 }
 
 .iconButton {
-  color: var(--text-secondary);
+  color: var(--mds-text-secondary);
 }
 
 .collapseIcon {

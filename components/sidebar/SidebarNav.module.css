@@ -11,7 +11,7 @@
   padding: 0.5rem 0.75rem;
   font-size: 0.75rem;
   line-height: 1rem;
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.025em;
 }

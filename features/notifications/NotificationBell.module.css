@@ -7,8 +7,8 @@
   position: absolute;
   top: -0.25rem;
   right: -0.25rem;
-  background: #ef4444;
-  color: #ffffff;
+  background: var(--mds-status-danger);
+  color: var(--mds-status-danger-contrast);
   font-size: 0.75rem;
   border-radius: 9999px;
   width: 1.25rem;

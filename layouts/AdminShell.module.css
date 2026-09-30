@@ -5,12 +5,12 @@
 
 .page {
   min-height: 100vh;
-  background: var(--bg-primary);
+  background: var(--mds-surface-page);
 }
 
 .header {
   background: var(--bg-sidebar);
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
   padding: 0.75rem 1rem;
 }
 
@@ -57,13 +57,13 @@
 .navLink {
   text-decoration: none;
   font-size: 0.875rem;
-  color: var(--text-secondary);
+  color: var(--mds-text-secondary);
   transition: color 0.15s ease;
 }
 
 .navLink:hover,
 .navLink[aria-current='page'] {
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .headerRight {
@@ -80,17 +80,17 @@
 
 .userEmail {
   font-size: 0.875rem;
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
 }
 
 .menuEmailRow {
   padding: 0.5rem 1rem;
   font-size: 0.75rem;
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--mds-border-subtle);
 }
 
 .main {

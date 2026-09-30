@@ -1,12 +1,12 @@
 .message {
-  color: var(--text-secondary);
+  color: var(--mds-text-secondary);
 }
 
 .title {
   font-size: 1.25rem;
   line-height: 1.75rem;
   font-weight: 400;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
   margin-bottom: 1rem;
 }
 
@@ -18,12 +18,12 @@
 }
 
 .description {
-  color: var(--text-secondary);
+  color: var(--mds-text-secondary);
   margin-bottom: 2rem;
 }
 
 .notice {
-  color: var(--text-secondary);
+  color: var(--mds-text-secondary);
   margin-bottom: 1rem;
 }
 

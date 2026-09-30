@@ -24,7 +24,7 @@
   font-size: 1rem;
   line-height: 1.5rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
   transition: opacity 0.2s ease;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -37,5 +37,5 @@
 }
 
 .iconButton {
-  color: var(--text-secondary);
+  color: var(--mds-text-secondary);
 }

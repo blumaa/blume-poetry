@@ -1,5 +1,5 @@
 .description {
-  color: var(--text-secondary);
+  color: var(--mds-text-secondary);
   margin-bottom: 1.5rem;
 }
 
@@ -11,12 +11,12 @@
 .successIcon {
   /* MDS Icon takes its size from the slot it sits in. */
   --mds-icon-slot: 3rem;
-  color: var(--accent);
+  color: var(--mds-text-accent);
   margin-bottom: 1rem;
 }
 
 .successMessage {
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .closeButton {
@@ -30,7 +30,7 @@
 }
 
 .errorText {
-  color: var(--color-error);
+  color: var(--mds-status-danger);
   font-size: 0.875rem;
   line-height: 1.25rem;
 }

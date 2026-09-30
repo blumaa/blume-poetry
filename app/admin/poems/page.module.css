@@ -20,7 +20,7 @@
 .title {
   font-weight: 400;
   font-size: 1.25rem;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 @media (min-width: 768px) {
@@ -44,12 +44,12 @@
 .emptyState {
   text-align: center;
   padding: 3rem 0;
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
 }
 
 .emptyLink {
   text-decoration: none;
-  color: var(--accent);
+  color: var(--mds-text-accent);
 }
 
 .titleCell {
@@ -59,18 +59,18 @@
 }
 
 .pinIcon {
-  color: var(--accent);
+  color: var(--mds-text-accent);
   flex-shrink: 0;
 }
 
 .poemLink {
   text-decoration: none;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
   transition: color 0.15s ease;
 }
 
 .poemLink:hover {
-  color: var(--accent);
+  color: var(--mds-text-accent);
 }
 
 .rowActions {

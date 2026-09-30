@@ -17,7 +17,7 @@
 }
 
 .commentIcon {
-  color: #3b82f6;
+  color: var(--color-info);
 }
 
 .likeIcon {
@@ -31,7 +31,7 @@
 
 .itemText {
   font-size: 0.875rem;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .emphasis {
@@ -40,7 +40,7 @@
 
 .itemPreview {
   font-size: 0.75rem;
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -49,16 +49,16 @@
 
 .itemTime {
   font-size: 0.75rem;
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
   margin-top: 0.25rem;
 }
 
 .stateMessage {
   padding: 1rem;
   text-align: center;
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
 }
 
 .list > * + * {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--mds-border-subtle);
 }

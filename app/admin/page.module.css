@@ -16,7 +16,7 @@
 .title {
   font-weight: 400;
   font-size: 1.5rem;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .statGrid {
@@ -50,11 +50,11 @@
   font-size: 1.875rem;
   font-weight: 600;
   margin-bottom: 0.25rem;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .statLabel {
-  color: var(--text-tertiary);
+  color: var(--mds-text-muted);
   font-size: 0.875rem;
 }
 
@@ -66,7 +66,7 @@
   font-weight: 400;
   font-size: 1.125rem;
   margin-bottom: 1rem;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
 }
 
 .quickActionsRow {
@@ -83,5 +83,5 @@
 }
 
 .errorText {
-  color: var(--color-error);
+  color: var(--mds-status-danger);
 }

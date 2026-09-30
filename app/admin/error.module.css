@@ -14,11 +14,11 @@
 .title {
   font-size: 1.25rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--mds-text-primary);
   margin-bottom: 0.5rem;
 }
 
 .message {
-  color: var(--text-secondary);
+  color: var(--mds-text-secondary);
   margin-bottom: 1.5rem;
 }

@@ -3,8 +3,8 @@
   text-align: center;
   font-size: 0.875rem;
   line-height: 1.25rem;
-  color: var(--text-tertiary);
-  border-top: 1px solid var(--border);
+  color: var(--mds-text-muted);
+  border-top: 1px solid var(--mds-border-subtle);
 }
 
 .inner {
@@ -28,5 +28,5 @@
 }
 
 .link:hover {
-  color: var(--text-secondary);
+  color: var(--mds-text-secondary);
 }

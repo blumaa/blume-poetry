@@ -6,7 +6,7 @@
 }
 
 .loadingText {
-  color: var(--text-secondary);
+  color: var(--mds-text-secondary);
 }
 
 .deniedBox {
@@ -20,5 +20,5 @@
 }
 
 .deniedText {
-  color: var(--text-secondary);
+  color: var(--mds-text-secondary);
 }
