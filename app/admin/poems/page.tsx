@@ -4,50 +4,14 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
 import { Badge, Button, Chip, ChipGroup, ConfirmDialog, DataTable, Input, useToast } from '@/components/mds';
 import type { PoemRow } from '@/lib/supabase/types';
 import { SkeletonList } from '@/components/Skeleton';
 import { formatDate } from '@/lib/date';
 import { takeFlashToast } from '@/lib/flashToast';
+import { queryKeys } from '@/lib/queryKeys';
+import { deletePoem, fetchAdminPoems, revalidatePoems, setPoemPinned } from '@/features/poems';
 import styles from './page.module.css';
-
-async function fetchAdminPoems(statusFilter: string | null): Promise<PoemRow[]> {
-  const supabase = createClient();
-  let query = supabase
-    .from('poems')
-    .select('*')
-    .order('published_at', { ascending: false });
-
-  if (statusFilter === 'draft' || statusFilter === 'published') {
-    query = query.eq('status', statusFilter);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw new Error(error.message);
-  return (data as PoemRow[]) || [];
-}
-
-async function updatePoemPinned(id: string, pinned: boolean): Promise<void> {
-  const supabase = createClient();
-  const { error } = await supabase.from('poems').update({ pinned }).eq('id', id);
-  if (error) throw new Error(error.message);
-}
-
-async function deletePoem(id: string): Promise<void> {
-  const supabase = createClient();
-  const { error } = await supabase.from('poems').delete().eq('id', id);
-  if (error) throw new Error(error.message);
-}
-
-async function revalidatePaths(paths: string[]): Promise<void> {
-  await fetch('/api/admin/revalidate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ paths }),
-  });
-}
 
 export default function AdminPoemsPage() {
   const queryClient = useQueryClient();
@@ -58,34 +22,33 @@ export default function AdminPoemsPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const { data: poems = [], isPending } = useQuery({
-    queryKey: ['admin', 'poems', statusFilter],
+  const { data: poems = [], isPending, isError } = useQuery({
+    queryKey: queryKeys.admin.poems(statusFilter),
     queryFn: () => fetchAdminPoems(statusFilter),
   });
 
   const invalidatePoems = () =>
-    queryClient.invalidateQueries({ queryKey: ['admin', 'poems'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.admin.poems() });
 
   /* Deterministic: pin state moves only after the refetch confirms the write. */
   const pinMutation = useMutation({
     mutationFn: async (poem: PoemRow) => {
-      await updatePoemPinned(poem.id, !poem.pinned);
-      await revalidatePaths([]);
+      await setPoemPinned(poem.id, !poem.pinned);
+      await revalidatePoems([]);
     },
     onSuccess: (_data, poem) =>
       toast({
         title: !poem.pinned ? `"${poem.title}" pinned` : `"${poem.title}" unpinned`,
         tone: 'success',
       }),
-    onError: (error) =>
-      toast({ title: error instanceof Error ? error.message : 'Update failed', tone: 'danger' }),
+    onError: (error) => toast({ title: error.message, tone: 'danger' }),
     onSettled: invalidatePoems,
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (target: PoemRow) => {
       await deletePoem(target.id);
-      await revalidatePaths([`/poem/${target.slug}`]);
+      await revalidatePoems([`/poem/${target.slug}`]);
     },
     onSuccess: (_data, target) => toast({ title: `"${target.title}" deleted`, tone: 'success' }),
     onSettled: invalidatePoems,
@@ -156,6 +119,8 @@ export default function AdminPoemsPage() {
 
       {isPending ? (
         <SkeletonList count={8} />
+      ) : isError ? (
+        <div className={styles.emptyState}>Failed to load poems</div>
       ) : poems.length === 0 ? (
         <div className={styles.emptyState}>
           No poems found. <Link href="/admin/poems/new" className={styles.emptyLink}>Create your first poem</Link>

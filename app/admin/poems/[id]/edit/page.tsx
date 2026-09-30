@@ -2,32 +2,19 @@
 
 import { use } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
-import { PoemEditor } from '@/components/admin/PoemEditor';
-import type { PoemRow } from '@/lib/supabase/types';
+import { PoemEditor, fetchPoemById } from '@/features/poems';
+import { queryKeys } from '@/lib/queryKeys';
 import styles from './page.module.css';
 
 interface EditPoemPageProps {
   params: Promise<{ id: string }>;
 }
 
-async function fetchPoemById(id: string): Promise<PoemRow> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('poems')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data as PoemRow;
-}
-
 export default function EditPoemPage({ params }: EditPoemPageProps) {
   const { id } = use(params);
 
   const { data: poem, isPending, error } = useQuery({
-    queryKey: ['admin', 'poems', 'byId', id],
+    queryKey: queryKeys.admin.poem(id),
     queryFn: () => fetchPoemById(id),
   });
 

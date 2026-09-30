@@ -97,7 +97,7 @@ describe('Sidebar', () => {
     await user.type(input, 'found');
 
     expect(await screen.findByRole('link', { name: 'Found Poem' })).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith('/api/poems/search?q=found');
+    expect(fetchMock).toHaveBeenCalledWith('/api/poems/search?q=found', expect.anything());
     // Debounce: one request for the whole word, not one per keystroke.
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });

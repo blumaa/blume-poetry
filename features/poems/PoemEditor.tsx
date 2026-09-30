@@ -3,17 +3,19 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { createClient } from '@/lib/supabase/client';
-import type { RichTextEditorRef } from './RichTextEditor';
+import { useQueryClient } from '@tanstack/react-query';
+import type { RichTextEditorRef } from '@/components/admin/RichTextEditor';
 import { PoemContent } from '@/components/PoemContent';
 import { Button, Checkbox, ConfirmDialog, Field, Input, Radio, Tab, TabList, Tabs } from '@/components/mds';
 import { formatDate } from '@/lib/date';
-import type { PoemRow, PoemInsert } from '@/lib/supabase/types';
+import type { PoemRow } from '@/lib/supabase/types';
+import { queryKeys } from '@/lib/queryKeys';
+import { savePoemFlow } from './savePoemFlow';
 import styles from './PoemEditor.module.css';
-import { setFlashToast, type FlashToast } from '@/lib/flashToast';
+import { setFlashToast } from '@/lib/flashToast';
 
 const RichTextEditor = dynamic(
-  () => import('./RichTextEditor').then((m) => m.RichTextEditor),
+  () => import('@/components/admin/RichTextEditor').then((m) => m.RichTextEditor),
   { ssr: false, loading: () => <div className={styles.previewSkeleton} /> }
 );
 
@@ -43,8 +45,8 @@ function PoemPreview({ title, subtitle, html }: { title: string; subtitle: strin
 }
 
 interface PoemEditorProps {
+  /** Absent for a new poem. */
   poem?: PoemRow;
-  isNew?: boolean;
 }
 
 function generateSlug(title: string): string {
@@ -62,7 +64,8 @@ function formatDateForInput(dateString: string | undefined): string {
   return date.toISOString().slice(0, 16);
 }
 
-export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
+export function PoemEditor({ poem }: PoemEditorProps) {
+  const isNew = !poem;
   const [title, setTitle] = useState(poem?.title || '');
   const [subtitle, setSubtitle] = useState(poem?.subtitle || '');
   const [status, setStatus] = useState<'draft' | 'published'>(poem?.status || 'draft');
@@ -73,6 +76,7 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
   const [contentHtml, setContentHtml] = useState(poem?.content || '');
   const [contentText, setContentText] = useState(poem?.plain_text || '');
   const router = useRouter();
+  const queryClient = useQueryClient();
   const editorRef = useRef<RichTextEditorRef>(null);
 
   // A poem is only ever announced once — the server stamps `notified_at` when
@@ -120,7 +124,6 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
     setError(null);
 
     const slug = poem?.slug || generateSlug(title);
-    const supabase = createClient();
 
     try {
       // Use the date from input, or default to now if empty
@@ -128,61 +131,24 @@ export function PoemEditor({ poem, isNew = false }: PoemEditorProps) {
         ? new Date(publishedAt).toISOString()
         : new Date().toISOString();
 
-      const poemData: PoemInsert = {
-        title: title.trim(),
-        subtitle: subtitle.trim() || null,
-        slug,
-        content: contentHtml,
-        plain_text: contentText,
-        status,
-        published_at: finalPublishedAt,
-      };
-
-      // `.select<...>('id')` so a brand-new poem's id is available to the
-      // notification call below without a second round trip.
-      const { data: saved, error: saveError } = isNew
-        ? await supabase.from('poems').insert(poemData).select<'id', { id: string }>('id').single()
-        : await supabase
-            .from('poems')
-            .update(poemData)
-            .eq('id', poem!.id)
-            .select<'id', { id: string }>('id')
-            .single();
-      if (saveError) throw saveError;
-
-      // Revalidate pages so the change shows up
-      await fetch('/api/admin/revalidate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paths: [`/poem/${slug}`] }),
+      const flash = await savePoemFlow({
+        id: poem?.id ?? null,
+        poem: {
+          title: title.trim(),
+          subtitle: subtitle.trim() || null,
+          slug,
+          content: contentHtml,
+          plain_text: contentText,
+          status,
+          published_at: finalPublishedAt,
+        },
+        notify: willNotify,
       });
 
-      let message = isNew ? `"${title.trim()}" created` : 'Changes saved';
-      let tone: FlashToast['tone'] = 'success';
-
-      // The poem is already saved at this point. A failed send is reported as
-      // its own problem rather than rolling anything back, so the admin knows
-      // exactly which half went wrong.
-      if (willNotify && saved?.id) {
-        try {
-          const res = await fetch('/api/admin/notify-poem', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ poemId: saved.id }),
-          });
-          const result = await res.json();
-          if (!res.ok) throw new Error(result.error || 'Failed to email subscribers');
-
-          message = result.alreadyNotified
-            ? `${message}. Subscribers had already been emailed about this poem`
-            : `${message}. Emailed ${result.sent} subscriber${result.sent === 1 ? '' : 's'}`;
-        } catch (err) {
-          tone = 'danger';
-          message = `Saved, but the email failed: ${err instanceof Error ? err.message : 'unknown error'}`;
-        }
-      }
-
-      setFlashToast({ title: message, tone });
+      // Prefix key: covers every filtered list and the by-id read. Mark only;
+      // each refetches when next mounted, not the edit page we are leaving.
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.poems(), refetchType: 'none' });
+      setFlashToast(flash);
       router.push('/admin/poems');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save poem');
