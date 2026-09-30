@@ -47,7 +47,7 @@ describe('LikeButton', () => {
     expect(fetchMock.mock.calls[1][1]).toMatchObject({ method: 'POST' });
   });
 
-  it('keeps the server count when the like fails', async () => {
+  it('keeps the server count and says why when the like fails', async () => {
     mockFetchSequence([
       { ok: true, body: { count: 3, hasLiked: false } }, // initial GET
       { ok: false, body: { error: 'Failed to like' } }, // POST fails
@@ -57,6 +57,7 @@ describe('LikeButton', () => {
 
     await user.click(await screen.findByRole('button'));
 
+    expect(await screen.findByText('Failed to like')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText('3')).toBeInTheDocument());
     expect(screen.queryByText('4')).not.toBeInTheDocument();
   });

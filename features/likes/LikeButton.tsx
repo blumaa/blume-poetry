@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CountButton, Skeleton } from '@/components/mds';
+import { CountButton, Skeleton, useToast } from '@/components/mds';
 import { Icon } from '@/components/icons';
 import { queryKeys } from '@/lib/queryKeys';
 import { fetchLikeState, toggleLike } from './api/likes';
@@ -14,6 +14,7 @@ interface LikeButtonProps {
 export function LikeButton({ slug }: LikeButtonProps) {
   const queryClient = useQueryClient();
   const likeKey = queryKeys.poem.like(slug);
+  const { toast } = useToast();
 
   const { data, isPending } = useQuery({
     queryKey: likeKey,
@@ -24,6 +25,7 @@ export function LikeButton({ slug }: LikeButtonProps) {
      is in flight; the count changes only after the server-confirmed refetch. */
   const mutation = useMutation({
     mutationFn: () => toggleLike(slug),
+    onError: (error) => toast({ title: error.message, tone: 'danger' }),
     onSettled: () => queryClient.invalidateQueries({ queryKey: likeKey }),
   });
 
