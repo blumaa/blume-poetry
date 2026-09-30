@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Poem, PoemMeta } from '@/lib/poems';
 import { LikeButton } from '@/features/likes';
-import { CommentSection, CommentIcon } from './CommentSection';
+import { CommentSection, CommentIcon } from '@/features/comments';
 import { PoemContent } from './PoemContent';
 import { formatDate } from '@/lib/date';
 import styles from './PoemDisplay.module.css';

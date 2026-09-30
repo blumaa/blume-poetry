@@ -11,6 +11,7 @@ import "./globals.css";
 import { ThemeSync } from "@/components/ThemeSync";
 import { themeBootScript } from "@/lib/theme";
 import { QueryProvider } from "@/components/QueryProvider";
+import { AuthProvider } from "@/features/auth";
 import { ToastProvider } from "@/components/mds";
 import { getSiteUrl } from "@/lib/config";
 import styles from "./layout.module.css";
@@ -81,9 +82,11 @@ export default function RootLayout({
         </a>
         <ThemeSync />
         <QueryProvider>
-          <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
-            {children}
-          </ToastProvider>
+          <AuthProvider>
+            <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
+              {children}
+            </ToastProvider>
+          </AuthProvider>
         </QueryProvider>
         <Analytics />
       </body>

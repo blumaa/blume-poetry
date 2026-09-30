@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { Button, Field, Input, PasswordInput, useToast } from '@/components/mds';
+import { signIn } from './api/auth';
 import styles from './LoginForm.module.css';
 
 export function LoginForm() {
@@ -17,24 +17,16 @@ export function LoginForm() {
     e.preventDefault();
     setIsLoading(true);
 
-    const supabase = createClient();
-
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (authError) {
-        toast({ title: authError.message, tone: 'danger' });
-        return;
-      }
-
+      await signIn(email, password);
       toast({ title: 'Welcome back!', tone: 'success' });
       router.push('/admin');
       router.refresh();
-    } catch {
-      toast({ title: 'An unexpected error occurred', tone: 'danger' });
+    } catch (error) {
+      toast({
+        title: error instanceof Error ? error.message : 'An unexpected error occurred',
+        tone: 'danger',
+      });
     } finally {
       setIsLoading(false);
     }

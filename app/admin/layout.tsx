@@ -1,8 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { AuthProvider, useAuth } from '@/components/auth/AuthProvider';
-import { AdminGuard } from '@/components/auth/AdminGuard';
+import { AdminGuard, useAuth } from '@/features/auth';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/features/notifications';
 import { PushToggle } from '@/features/push';
@@ -65,10 +64,8 @@ function AdminFrame({ children }: { children: ReactNode }) {
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <AuthProvider>
-      <AdminGuard>
-        <AdminFrame>{children}</AdminFrame>
-      </AdminGuard>
-    </AuthProvider>
+    <AdminGuard>
+      <AdminFrame>{children}</AdminFrame>
+    </AdminGuard>
   );
 }

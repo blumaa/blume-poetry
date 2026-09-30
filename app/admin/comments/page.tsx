@@ -3,56 +3,31 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@/lib/supabase/client';
 import { Button, ConfirmDialog, DataTable, useToast } from '@/components/mds';
-import type { CommentRow } from '@/lib/supabase/types';
+import { deleteComment, fetchAdminComments, type AdminComment } from '@/features/comments';
+import { formatDate } from '@/lib/date';
+import { queryKeys } from '@/lib/queryKeys';
 import styles from './page.module.css';
-
-type CommentWithPoem = CommentRow & {
-  poems: { title: string; slug: string } | null;
-};
-
-async function fetchAdminComments(): Promise<CommentWithPoem[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('comments')
-    .select('*, poems(title, slug)')
-    .order('created_at', { ascending: false });
-
-  if (error) throw new Error(error.message);
-  return (data as CommentWithPoem[]) || [];
-}
-
-async function deleteAdminComment(id: string): Promise<void> {
-  const res = await fetch(`/api/admin/comments/${id}`, {
-    method: 'DELETE',
-  });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({ error: 'Failed to delete comment' }));
-    throw new Error(body.error || 'Failed to delete comment');
-  }
-}
 
 export default function AdminCommentsPage() {
   const queryClient = useQueryClient();
-  const [deleteTarget, setDeleteTarget] = useState<CommentWithPoem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminComment | null>(null);
   const { toast } = useToast();
 
-  const { data: comments = [], isPending } = useQuery({
-    queryKey: ['admin', 'comments'],
+  const { data: comments = [], isPending, isError } = useQuery({
+    queryKey: queryKeys.admin.comments(),
     queryFn: fetchAdminComments,
   });
 
   /* Deterministic: the row disappears only after the server confirms the
      delete and the refetch returns. */
   const deleteMutation = useMutation({
-    mutationFn: (target: CommentWithPoem) => deleteAdminComment(target.id),
+    mutationFn: (target: AdminComment) => deleteComment(target.id),
     onSuccess: () => toast({ title: 'Comment deleted', tone: 'success' }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.admin.comments() }),
   });
 
-  const handleDeleteClick = (comment: CommentWithPoem) => {
+  const handleDeleteClick = (comment: AdminComment) => {
     setDeleteTarget(comment);
   };
 
@@ -64,6 +39,8 @@ export default function AdminCommentsPage() {
 
       {isPending ? (
         <div className={styles.loadingText}>Loading comments...</div>
+      ) : isError ? (
+        <div className={styles.emptyState}>Failed to load comments</div>
       ) : comments.length === 0 ? (
         <div className={styles.emptyState}>
           No comments found.
@@ -76,21 +53,21 @@ export default function AdminCommentsPage() {
               {
                 key: 'author',
                 header: 'Author',
-                cell: (comment: CommentWithPoem) => (
+                cell: (comment: AdminComment) => (
                   <span className={styles.authorCell}>{comment.author_name}</span>
                 ),
               },
               {
                 key: 'content',
                 header: 'Comment',
-                cell: (comment: CommentWithPoem) => (
+                cell: (comment: AdminComment) => (
                   <span className={styles.contentCell}>{comment.content}</span>
                 ),
               },
               {
                 key: 'poem',
                 header: 'Poem',
-                cell: (comment: CommentWithPoem) =>
+                cell: (comment: AdminComment) =>
                   comment.poems ? (
                     <Link
                       href={`/poem/${comment.poems.slug}`}
@@ -105,8 +82,7 @@ export default function AdminCommentsPage() {
               {
                 key: 'date',
                 header: 'Date',
-                cell: (comment: CommentWithPoem) =>
-                  new Date(comment.created_at).toLocaleDateString(),
+                cell: (comment: AdminComment) => formatDate(comment.created_at),
               },
             ]}
             rows={comments}

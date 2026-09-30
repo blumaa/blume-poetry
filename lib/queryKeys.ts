@@ -3,6 +3,10 @@
 export const queryKeys = {
   admin: {
     activity: () => ['admin', 'activity'] as const,
+    comments: () => ['admin', 'comments'] as const,
+  },
+  auth: {
+    isAdmin: (userId: string | undefined) => ['auth', 'is-admin', userId] as const,
   },
   poem: {
     like: (slug: string) => ['poems', slug, 'like'] as const,

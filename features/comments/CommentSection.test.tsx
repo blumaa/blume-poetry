@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { renderWithProviders } from '../test-utils';
-import { CommentSection } from '@/components/CommentSection';
+import { renderWithProviders } from '@/__tests__/test-utils';
+import { CommentSection } from './CommentSection';
 
 /* Mirrors the real parent: modal open state lives above and closes on request. */
 function ModalHarness({ slug, onModalClose }: { slug: string; onModalClose: () => void }) {
@@ -23,11 +23,9 @@ jest.mock('@/lib/visitorId', () => ({
   getVisitorId: () => 'visitor-1',
 }));
 
-const mockGetUser = jest.fn();
-jest.mock('@/lib/supabase/client', () => ({
-  createClient: () => ({
-    auth: { getUser: mockGetUser },
-  }),
+let mockIsAdmin = false;
+jest.mock('@/features/auth', () => ({
+  useAuth: () => ({ isAdmin: mockIsAdmin }),
 }));
 
 const comment = (id: string, content: string) => ({
@@ -41,8 +39,7 @@ describe('CommentSection', () => {
   beforeEach(() => {
     jest.restoreAllMocks();
     localStorage.clear();
-    mockGetUser.mockResolvedValue({ data: { user: null } });
-    delete process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    mockIsAdmin = false;
   });
 
   function mockFetchSequence(responses: Array<{ ok: boolean; body: unknown }>) {
@@ -56,6 +53,14 @@ describe('CommentSection', () => {
     global.fetch = fetchMock as unknown as typeof fetch;
     return fetchMock;
   }
+
+  it('offers delete only to the admin', async () => {
+    mockFetchSequence([{ ok: true, body: { comments: [comment('1', 'lovely poem')] } }]);
+    renderWithProviders(<CommentSection slug="gaps" />);
+
+    await screen.findByText('lovely poem');
+    expect(screen.queryByRole('button', { name: 'Delete comment' })).not.toBeInTheDocument();
+  });
 
   it('shows comments from the server', async () => {
     mockFetchSequence([{ ok: true, body: { comments: [comment('1', 'lovely poem')] } }]);
@@ -85,8 +90,7 @@ describe('CommentSection', () => {
   });
 
   it('removes a deleted comment only after the refetch', async () => {
-    process.env.NEXT_PUBLIC_ADMIN_EMAIL = 'admin@test.com';
-    mockGetUser.mockResolvedValue({ data: { user: { email: 'admin@test.com' } } });
+    mockIsAdmin = true;
     const fetchMock = mockFetchSequence([
       { ok: true, body: { comments: [comment('1', 'first'), comment('2', 'second')] } }, // initial GET
       { ok: true, body: {} }, // DELETE

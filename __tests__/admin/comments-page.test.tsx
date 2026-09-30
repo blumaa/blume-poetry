@@ -3,15 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../test-utils';
 import AdminCommentsPage from '@/app/admin/comments/page';
 
+// Each comments query resolves with whatever mockOrder returns at the time.
 const mockOrder = jest.fn();
-const mockSelect = jest.fn(() => ({ order: mockOrder }));
-const mockFrom = jest.fn(() => ({ select: mockSelect }));
 
-jest.mock('@/lib/supabase/client', () => ({
-  createClient: () => ({
-    from: mockFrom,
-  }),
-}));
+jest.mock('@/lib/supabase/client', () => {
+  const { queryMock } = jest.requireActual('@/__tests__/supabaseMock');
+  return { createClient: () => ({ from: () => queryMock(mockOrder()) }) };
+});
 
 function renderPage() {
   return renderWithProviders(<AdminCommentsPage />);
@@ -46,8 +44,16 @@ const comments = [
 describe('AdminCommentsPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockOrder.mockResolvedValue({ data: comments, error: null });
+    mockOrder.mockReturnValue({ data: comments, error: null });
     global.fetch = jest.fn();
+  });
+
+  it('says so when comments fail to load, rather than showing an empty list', async () => {
+    mockOrder.mockReturnValue({ data: null, error: { message: 'connection lost' } });
+    renderPage();
+
+    expect(await screen.findByText('Failed to load comments')).toBeInTheDocument();
+    expect(screen.queryByText('No comments found.')).not.toBeInTheDocument();
   });
 
   it('renders both comments with author and content visible', async () => {
@@ -74,17 +80,18 @@ describe('AdminCommentsPage', () => {
     await confirmInDialog(user);
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith('/api/admin/comments/c1', {
-        method: 'DELETE',
-      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/admin/comments/c1',
+        expect.objectContaining({ method: 'DELETE' })
+      );
     });
   });
 
   it('removes the comment from the list only after the refetch confirms it', async () => {
     // Deterministic: the row disappears via the post-delete refetch, not a local splice.
     mockOrder
-      .mockResolvedValueOnce({ data: comments, error: null })
-      .mockResolvedValueOnce({ data: [comments[1]], error: null });
+      .mockReturnValueOnce({ data: comments, error: null })
+      .mockReturnValueOnce({ data: [comments[1]], error: null });
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({ success: true }),

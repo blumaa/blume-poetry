@@ -1,6 +1,6 @@
 import { SITE_NAME } from '@/lib/brand';
 import type { Metadata } from 'next';
-import { LoginForm } from '@/components/auth/LoginForm';
+import { LoginForm } from '@/features/auth';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
