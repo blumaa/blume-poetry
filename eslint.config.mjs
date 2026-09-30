@@ -25,10 +25,41 @@ const storageGate = {
   },
 };
 
+const barrelPattern = {
+  group: ["@/features/*/**"],
+  message: "Import a feature through its barrel (@/features/<name>). Its files are private.",
+};
+
+const clientPattern = {
+  group: ["@/lib/supabase/client"],
+  message:
+    "Browser queries live in features/<name>/api. Components call those functions, never the client.",
+};
+
+/* no-restricted-imports options replace, not merge, across configs, so the
+   api override restates the barrel rule without the client ban. */
+const importGate = {
+  files: ["**/*.{ts,tsx}"],
+  ignores: ["**/*.test.{ts,tsx}", "__tests__/**"],
+  rules: {
+    "no-restricted-imports": ["error", { patterns: [barrelPattern, clientPattern] }],
+  },
+};
+
+const dataLayerGate = {
+  files: ["features/*/api/**/*.ts", "lib/supabase/**/*.ts"],
+  ignores: ["**/*.test.ts"],
+  rules: {
+    "no-restricted-imports": ["error", { patterns: [barrelPattern] }],
+  },
+};
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   storageGate,
+  importGate,
+  dataLayerGate,
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

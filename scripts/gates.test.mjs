@@ -25,3 +25,32 @@ test('storage gate: browserStorage itself may touch storage', async () => {
   const ids = await ruleIds("export const x = localStorage.getItem('a');\n", 'lib/browserStorage.ts');
   assert.ok(!ids.includes('no-restricted-globals'));
 });
+
+const clientImport = "import { createClient } from '@/lib/supabase/client';\nexport const c = createClient;\n";
+
+test('data gate: browser supabase client outside a feature api fails', async () => {
+  const ids = await ruleIds(clientImport, 'components/Probe.tsx');
+  assert.ok(ids.includes('no-restricted-imports'));
+});
+
+test('data gate: a feature component may not query directly', async () => {
+  const ids = await ruleIds(clientImport, 'features/poems/Probe.tsx');
+  assert.ok(ids.includes('no-restricted-imports'));
+});
+
+test('data gate: a feature api module may use the client', async () => {
+  const ids = await ruleIds(clientImport, 'features/poems/api/probe.ts');
+  assert.ok(!ids.includes('no-restricted-imports'));
+});
+
+test('feature gate: reaching past a feature barrel fails', async () => {
+  const code = "import { PoemEditor } from '@/features/poems/PoemEditor';\nexport const p = PoemEditor;\n";
+  const ids = await ruleIds(code, 'app/Probe.tsx');
+  assert.ok(ids.includes('no-restricted-imports'));
+});
+
+test('feature gate: the barrel is the way in', async () => {
+  const code = "import { PoemEditor } from '@/features/poems';\nexport const p = PoemEditor;\n";
+  const ids = await ruleIds(code, 'app/Probe.tsx');
+  assert.ok(!ids.includes('no-restricted-imports'));
+});
