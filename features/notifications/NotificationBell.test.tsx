@@ -60,11 +60,11 @@ describe('NotificationBell', () => {
 
     // Desktop by default: jest.setup's matchMedia stub matches nothing, so
     // useIsMobile reports desktop and the anchored popover renders.
-    expect((await screen.findAllByText('Alice')).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/commented on/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Autumn/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Lovely poem').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('5m ago').length).toBeGreaterThan(0);
+    expect(await screen.findByText('Alice')).toBeInTheDocument();
+    expect(screen.getByText(/commented on/)).toBeInTheDocument();
+    expect(screen.getByText(/Autumn/)).toBeInTheDocument();
+    expect(screen.getByText('Lovely poem')).toBeInTheDocument();
+    expect(screen.getByText('5m ago')).toBeInTheDocument();
   });
 
   it('renders a like notification with timestamp after opening', async () => {
@@ -77,9 +77,9 @@ describe('NotificationBell', () => {
     );
     await user.click(bellButton);
 
-    expect((await screen.findAllByText(/New like on/)).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Winter/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText('1h ago').length).toBeGreaterThan(0);
+    expect(await screen.findByText(/New like on/)).toBeInTheDocument();
+    expect(screen.getByText(/Winter/)).toBeInTheDocument();
+    expect(screen.getByText('1h ago')).toBeInTheDocument();
   });
 
   it('links each notification to its poem', async () => {
@@ -92,7 +92,7 @@ describe('NotificationBell', () => {
     );
     await user.click(bellButton);
 
-    await screen.findAllByText('Alice');
+    await screen.findByText('Alice');
     const autumnLinks = screen.getAllByRole('link', { name: /Autumn/ });
     expect(autumnLinks.length).toBeGreaterThan(0);
     autumnLinks.forEach((link) => {
@@ -107,7 +107,7 @@ describe('NotificationBell', () => {
     await user.click(
       await screen.findByRole('button', { name: 'Notifications (2 unread)' })
     );
-    await screen.findAllByText('Alice');
+    await screen.findByText('Alice');
 
     await user.click(screen.getByRole('button', { name: 'Clear notifications' }));
 
@@ -179,7 +179,7 @@ describe('NotificationBell', () => {
         'aria-modal',
         'true'
       );
-      expect((await screen.findAllByText('Alice')).length).toBeGreaterThan(0);
+      expect(await screen.findByText('Alice')).toBeInTheDocument();
       expect(
         screen.getByRole('button', { name: 'Clear notifications' })
       ).toBeInTheDocument();

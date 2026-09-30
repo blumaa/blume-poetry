@@ -53,10 +53,10 @@ describe('AdminCommentsPage', () => {
   it('renders both comments with author and content visible', async () => {
     renderPage();
 
-    expect((await screen.findAllByText('Alice')).length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Lovely poem').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Bob').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Great work').length).toBeGreaterThan(0);
+    expect(await screen.findByText('Alice')).toBeInTheDocument();
+    expect(screen.getByText('Lovely poem')).toBeInTheDocument();
+    expect(screen.getByText('Bob')).toBeInTheDocument();
+    expect(screen.getByText('Great work')).toBeInTheDocument();
   });
 
   it('calls the DELETE API with the confirmed comment id after clicking Delete then confirming', async () => {
@@ -67,7 +67,7 @@ describe('AdminCommentsPage', () => {
     const user = userEvent.setup();
 
     renderPage();
-    await screen.findAllByText('Alice');
+    await screen.findByText('Alice');
 
     const deleteButtons = screen.getAllByRole('button', { name: 'Delete' });
     await user.click(deleteButtons[0]);
@@ -92,7 +92,7 @@ describe('AdminCommentsPage', () => {
     const user = userEvent.setup();
 
     renderPage();
-    await screen.findAllByText('Alice');
+    await screen.findByText('Alice');
 
     const deleteButtons = screen.getAllByRole('button', { name: 'Delete' });
     await user.click(deleteButtons[0]);
@@ -101,6 +101,6 @@ describe('AdminCommentsPage', () => {
     await waitFor(() => {
       expect(screen.queryByText('Alice')).not.toBeInTheDocument();
     });
-    expect(screen.getAllByText('Bob').length).toBeGreaterThan(0);
+    expect(screen.getByText('Bob')).toBeInTheDocument();
   });
 });

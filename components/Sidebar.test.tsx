@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { renderWithProviders } from '../test-utils';
+import { renderWithProviders } from '@/__tests__/test-utils';
 import { Sidebar } from '@/components/Sidebar';
 import type { TreeNode } from '@/lib/poems';
 
@@ -34,46 +34,40 @@ function renderSidebar(props: Partial<React.ComponentProps<typeof Sidebar>> = {}
 describe('Sidebar', () => {
   it('renders a search input', () => {
     renderSidebar();
-    // jsdom ignores responsive tailwind classes, so both the mobile and
-    // desktop branches render simultaneously — assert on "some" not "one".
-    expect(screen.getAllByPlaceholderText('Search poems...').length).toBeGreaterThan(0);
+    expect(screen.getByRole('searchbox', { name: 'Search poems' })).toBeInTheDocument();
   });
 
   it('renders the tree nav with folder and top-level poem items', () => {
     renderSidebar();
-    expect(screen.getAllByText('Collection One').length).toBeGreaterThan(0);
-    expect(screen.getAllByRole('link', { name: 'Poem C' }).length).toBeGreaterThan(0);
+    expect(screen.getByText('Collection One')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Poem C' })).toBeInTheDocument();
   });
 
   it('auto-expands the folder containing the active poem and highlights it', () => {
     renderSidebar();
-    const activeLinks = screen.getAllByRole('link', { name: 'Poem B' });
-    expect(activeLinks.length).toBeGreaterThan(0);
-    activeLinks.forEach((link) => {
-      expect(link).toHaveAttribute('aria-current', 'page');
-    });
+    expect(screen.getByRole('link', { name: 'Poem B' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('renders footer content (subscribe form + navigation hint)', () => {
     renderSidebar();
-    expect(screen.getAllByPlaceholderText('your@email.com').length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/navigate/i).length).toBeGreaterThan(0);
+    expect(screen.getByPlaceholderText('your@email.com')).toBeInTheDocument();
+    expect(screen.getByText(/navigate/i)).toBeInTheDocument();
   });
 
   it('renders a close button when isMobile is true', () => {
     renderSidebar({ isMobile: true, isOpen: true });
-    expect(screen.getAllByLabelText('Close navigation menu').length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('Close navigation menu')).toBeInTheDocument();
   });
 
   it('renders a collapse toggle button when isMobile is false', () => {
     renderSidebar({ isMobile: false, isCollapsed: false });
-    expect(screen.getAllByLabelText('Collapse sidebar').length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('Collapse sidebar')).toBeInTheDocument();
   });
 
   it('hides search and footer when the desktop sidebar is collapsed', () => {
     renderSidebar({ isMobile: false, isCollapsed: true });
     expect(screen.queryByPlaceholderText('Search poems...')).not.toBeInTheDocument();
-    expect(screen.getAllByLabelText('Expand sidebar').length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('Expand sidebar')).toBeInTheDocument();
   });
 
   it('shows debounced search results from the server', async () => {
@@ -99,10 +93,10 @@ describe('Sidebar', () => {
     renderSidebar({ isMobile: false });
     const user = userEvent.setup();
 
-    const [input] = screen.getAllByPlaceholderText('Search poems...');
+    const input = screen.getByRole('searchbox', { name: 'Search poems' });
     await user.type(input, 'found');
 
-    expect(await screen.findAllByRole('link', { name: 'Found Poem' })).not.toHaveLength(0);
+    expect(await screen.findByRole('link', { name: 'Found Poem' })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith('/api/poems/search?q=found');
     // Debounce: one request for the whole word, not one per keystroke.
     expect(fetchMock).toHaveBeenCalledTimes(1);

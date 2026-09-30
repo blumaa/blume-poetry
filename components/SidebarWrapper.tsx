@@ -48,34 +48,29 @@ export function SidebarWrapper({ tree }: SidebarWrapperProps) {
     writeStored('sidebarCollapsed', String(!isCollapsed));
   };
 
+  /* One Sidebar at every width, so its state (search, expanded folders, the
+     footer subscribe form) survives a resize. isMobile only picks its
+     presentation: drawer or collapsible rail. */
   return (
     <>
-      {/* Mobile Header */}
       <MobileHeader onMenuClick={openMobileMenu} />
 
-      {/* Desktop Sidebar */}
+      {isMobile && (
+        <div
+          className={`sidebar-overlay ${isMobileMenuOpen ? 'open' : ''}`}
+          onClick={closeMobileMenu}
+          aria-hidden="true"
+        />
+      )}
+
       <Sidebar
         tree={tree}
+        isMobile={isMobile}
+        isOpen={isMobileMenuOpen}
+        onClose={closeMobileMenu}
         isCollapsed={isCollapsed}
         onToggleCollapse={toggleCollapse}
       />
-
-      {/* Mobile Sidebar Overlay */}
-      {isMobile && (
-        <>
-          <div
-            className={`sidebar-overlay ${isMobileMenuOpen ? 'open' : ''}`}
-            onClick={closeMobileMenu}
-            aria-hidden="true"
-          />
-          <Sidebar
-            tree={tree}
-            isOpen={isMobileMenuOpen}
-            onClose={closeMobileMenu}
-            isMobile={true}
-          />
-        </>
-      )}
     </>
   );
 }
