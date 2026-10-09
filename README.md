@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Blumenous Poetry
 
-## Getting Started
+Next.js 16 site for poems, with an admin area, email subscribers and like
+notifications. Data and auth live in Supabase. See
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how it fits together.
 
-First, run the development server:
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+cp .env.example .env.local   # fill in the values
+bun install
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `bun run verify`: lint, typecheck, tests, gates and build. Run before a PR.
+- `bun run db:types`: regenerate `lib/supabase/database.types.ts` from the
+  linked project. Run after every migration.
+- `supabase db push`: apply new files in `supabase/migrations/` to the linked
+  project.
 
-## Learn More
+## Admin access
 
-To learn more about Next.js, take a look at the following resources:
+Admin rights come from the `role` claim in a user's `app_metadata`, which only
+the service role can write. To make someone an admin, run this once in the
+Supabase SQL editor:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```sql
+update auth.users
+set raw_app_meta_data = raw_app_meta_data || '{"role":"admin"}'
+where email = 'admin@example.com';
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The claim is read from the session token, so the user must sign out and back
+in before it takes effect.

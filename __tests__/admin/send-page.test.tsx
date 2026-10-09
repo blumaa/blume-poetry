@@ -3,7 +3,7 @@ import { renderWithProviders } from '../test-utils';
 import SendNewsletterPage from '@/app/admin/subscribers/send/page';
 
 jest.mock('next/navigation', () => ({ useRouter: () => ({ back: jest.fn() }) }));
-jest.mock('@/components/admin/RichTextEditor', () => ({ RichTextEditor: () => null }));
+jest.mock('@/components/admin/LazyRichTextEditor', () => ({ RichTextEditor: () => null }));
 
 const results: Array<{ data?: unknown; count?: number; error?: { message: string } }> = [];
 

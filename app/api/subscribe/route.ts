@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   const csrfError = verifyOrigin(request);
   if (csrfError) return csrfError;
 
-  const rateLimitError = checkRateLimit(request, RATE_LIMITS.subscriptions);
+  const rateLimitError = await checkRateLimit(request, RATE_LIMITS.subscriptions);
   if (rateLimitError) return rateLimitError;
 
   try {
@@ -26,18 +26,7 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient();
 
-    // Check if already subscribed / reactivate if previously unsubscribed /
-    // insert if new. Emails are lowercased inside upsertSubscriber so this
-    // matches up with the (also lowercased) unsubscribe lookup.
-    const result = await upsertSubscriber(
-      supabase,
-      email,
-      {
-        status: 'active',
-        subscribed_at: new Date().toISOString(),
-      },
-      notifyNewPoems
-    );
+    const result = await upsertSubscriber(supabase, email, notifyNewPoems);
 
     if (result.outcome === 'already_active') {
       return NextResponse.json(

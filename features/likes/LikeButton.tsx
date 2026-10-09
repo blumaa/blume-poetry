@@ -22,11 +22,15 @@ export function LikeButton({ slug }: LikeButtonProps) {
   });
 
   /* Deterministic: no optimistic flip. Button shows pending while the POST
-     is in flight; the count changes only after the server-confirmed refetch. */
+     is in flight; the POST answers the new state, which replaces the cache.
+     On failure the state is unknown, so refetch it. */
   const mutation = useMutation({
     mutationFn: () => toggleLike(slug),
-    onError: (error) => toast({ title: error.message, tone: 'danger' }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: likeKey }),
+    onSuccess: (state) => queryClient.setQueryData(likeKey, state),
+    onError: (error) => {
+      toast({ title: error.message, tone: 'danger' });
+      return queryClient.invalidateQueries({ queryKey: likeKey });
+    },
   });
 
   if (isPending || !data) {

@@ -31,9 +31,8 @@ describe('verifyOrigin', () => {
     expect(verifyOrigin(request)).toBeNull();
   });
 
-  it('allows requests with no origin or referer (same-origin)', () => {
-    const request = mockRequest();
-    expect(verifyOrigin(request)).toBeNull();
+  it('blocks requests with no Origin: browsers always send it on writes', () => {
+    expect(verifyOrigin(mockRequest())?.status).toBe(403);
   });
 
   it('blocks requests from unknown origins', () => {
@@ -43,16 +42,19 @@ describe('verifyOrigin', () => {
     expect(result?.status).toBe(403);
   });
 
-  it('checks referer when origin is absent', () => {
-    const request = mockRequest({ referer: 'https://evil-site.com/page' });
-    const result = verifyOrigin(request);
-    expect(result).not.toBeNull();
-    expect(result?.status).toBe(403);
+  it('does not fall back to Referer when Origin is absent', () => {
+    const request = mockRequest({ referer: 'https://blumenous-poetry.vercel.app/poems' });
+    expect(verifyOrigin(request)?.status).toBe(403);
   });
 
-  it('allows matching referer when origin is absent', () => {
-    const request = mockRequest({ referer: 'https://blumenous-poetry.vercel.app/poems' });
-    expect(verifyOrigin(request)).toBeNull();
+  it('allows localhost only outside production', () => {
+    (process.env as Record<string, string>).NODE_ENV = 'production';
+    expect(verifyOrigin(mockRequest({ origin: 'http://localhost:3000' }))?.status).toBe(403);
+  });
+
+  it("allows the current Vercel deployment's own host", () => {
+    process.env.VERCEL_URL = 'blume-poetry-git-x.vercel.app';
+    expect(verifyOrigin(mockRequest({ origin: 'https://blume-poetry-git-x.vercel.app' }))).toBeNull();
   });
 
   it('treats www and apex as equivalent', () => {

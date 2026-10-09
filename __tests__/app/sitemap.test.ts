@@ -22,6 +22,7 @@ describe('sitemap', () => {
         title: 'Poem One',
         subtitle: null,
         publishedAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-03-05T00:00:00.000Z',
         url: '',
         pinned: false,
       },
@@ -31,6 +32,7 @@ describe('sitemap', () => {
         title: 'Poem Two',
         subtitle: null,
         publishedAt: '2024-02-01T00:00:00.000Z',
+        updatedAt: '2024-02-01T00:00:00.000Z',
         url: '',
         pinned: false,
       },
@@ -45,12 +47,12 @@ describe('sitemap', () => {
     expect(home?.priority).toBe(1);
   });
 
-  it('includes an absolute entry per poem with lastModified from publishedAt', async () => {
+  it('includes an absolute entry per poem with lastModified from its last edit', async () => {
     const result = await sitemap();
 
     const poemOne = result.find((entry) => entry.url === `${BASE_URL}/poem/poem-one`);
     expect(poemOne).toBeDefined();
-    expect(poemOne?.lastModified).toEqual(new Date('2024-01-01T00:00:00.000Z'));
+    expect(poemOne?.lastModified).toEqual(new Date('2024-03-05T00:00:00.000Z'));
 
     const poemTwo = result.find((entry) => entry.url === `${BASE_URL}/poem/poem-two`);
     expect(poemTwo).toBeDefined();

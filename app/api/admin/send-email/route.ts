@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
-import { sendEmail, generateNewsletterHtml, generateNewsletterText } from '@/lib/email';
+import {
+  sendEmail,
+  sendToSubscribers,
+  generateNewsletterHtml,
+  generateNewsletterText,
+} from '@/lib/email';
 import { requireAdmin } from '@/lib/auth';
-import { recordEmailSend } from '@/lib/emailLog';
+import { finishEmailLog, startEmailLog } from '@/lib/emailLog';
 import { z } from 'zod';
-import type { PoemRow, SubscriberRow } from '@/lib/supabase/types';
+
+// A whole-list send outlives the default function timeout.
+export const maxDuration = 300;
 
 const sendEmailSchema = z.object({
   subject: z.string().min(1, 'Subject is required'),
@@ -16,160 +23,77 @@ const sendEmailSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    // Verify admin authentication
-    const auth = await requireAdmin();
-    if (auth instanceof NextResponse) return auth;
+    const auth = await requireAdmin(request);
+    if (auth instanceof Response) return auth;
 
     const body = await request.json();
     const { subject, bodyHtml, bodyText, poemId, testEmail } = sendEmailSchema.parse(body);
 
     const adminSupabase = createAdminClient();
 
-    // Get the poem if provided
-    let poemData: PoemRow | null = null;
+    let poem: { title: string; content: string; slug: string } | undefined;
     if (poemId) {
-      const { data: poem } = await adminSupabase
+      const { data } = await adminSupabase
         .from('poems')
-        .select('*')
+        .select('title, slug, content, plain_text')
         .eq('id', poemId)
         .maybeSingle()
         .throwOnError();
 
-      if (!poem) {
+      if (!data) {
         return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
       }
-      poemData = poem;
+      // `content` is the canonical copy the site renders; `plain_text` is a
+      // lossy search index and only a fallback for rows saved before rich text.
+      poem = { title: data.title, content: data.content || data.plain_text || '', slug: data.slug };
     }
 
-    // Build poem attachment data if poem is selected.
-    // `content` is the canonical copy the site renders; `plain_text` is a lossy
-    // search index and is only a fallback for rows saved before rich text.
-    const poemAttachment = poemData ? {
-      title: poemData.title,
-      content: poemData.content || poemData.plain_text || '',
-      slug: poemData.slug,
-    } : undefined;
+    const build = (email: string) => {
+      const newsletter = { subject, bodyHtml, bodyText, poem, unsubscribeEmail: email };
+      return { subject, html: generateNewsletterHtml(newsletter), text: generateNewsletterText(newsletter) };
+    };
 
-    // If test email, send only to that address
     if (testEmail) {
-      const html = generateNewsletterHtml({
-        subject,
-        bodyHtml,
-        bodyText,
-        poem: poemAttachment,
-        unsubscribeEmail: testEmail,
-      });
-      const text = generateNewsletterText({
-        subject,
-        bodyHtml,
-        bodyText,
-        poem: poemAttachment,
-        unsubscribeEmail: testEmail,
-      });
-
+      const mail = build(testEmail);
       try {
-        await sendEmail({
-          to: testEmail,
-          subject: `[TEST] ${subject}`,
-          html,
-          text,
-        });
+        await sendEmail({ ...mail, to: testEmail, subject: `[TEST] ${subject}` });
       } catch (emailError) {
         console.error('Test email error:', emailError);
         const errorMessage = emailError instanceof Error ? emailError.message : 'Unknown error';
-        return NextResponse.json({
-          error: `Failed to send test email: ${errorMessage}`,
-        }, { status: 500 });
+        return NextResponse.json({ error: `Failed to send test email: ${errorMessage}` }, { status: 500 });
       }
-
-      return NextResponse.json({
-        message: 'Test email sent successfully',
-        recipientCount: 1,
-      });
+      return NextResponse.json({ message: 'Test email sent successfully', recipientCount: 1 });
     }
 
-    // Get all active subscribers
-    const { data: subscribers, error: subscribersError } = await adminSupabase
+    const { data: subscribers } = await adminSupabase
       .from('subscribers')
-      .select('*')
-      .eq('status', 'active');
+      .select('email')
+      .eq('status', 'active')
+      .throwOnError();
 
-    if (subscribersError) {
-      return NextResponse.json({ error: 'Failed to fetch subscribers' }, { status: 500 });
-    }
-
-    const activeSubscribers = (subscribers as SubscriberRow[]) || [];
-
-    if (activeSubscribers.length === 0) {
+    if (subscribers.length === 0) {
       return NextResponse.json({ error: 'No active subscribers' }, { status: 400 });
     }
 
-    // Send emails in batches
-    const batchSize = 50;
-    let sent = 0;
-    const errors: string[] = [];
-    const resendEmailIds: string[] = [];
+    const logId = await startEmailLog(adminSupabase, { subject, poem_id: poemId ?? null });
+    const result = await sendToSubscribers(subscribers.map((s) => s.email), build);
+    await finishEmailLog(adminSupabase, logId, result);
 
-    for (let i = 0; i < activeSubscribers.length; i += batchSize) {
-      const batch = activeSubscribers.slice(i, i + batchSize);
-
-      await Promise.all(
-        batch.map(async (subscriber) => {
-          try {
-            const html = generateNewsletterHtml({
-              subject,
-              bodyHtml,
-              bodyText,
-              poem: poemAttachment,
-              unsubscribeEmail: subscriber.email,
-            });
-            const text = generateNewsletterText({
-              subject,
-              bodyHtml,
-              bodyText,
-              poem: poemAttachment,
-              unsubscribeEmail: subscriber.email,
-            });
-
-            const result = await sendEmail({
-              to: subscriber.email,
-              subject,
-              html,
-              text,
-            });
-            sent++;
-            if (result?.id) {
-              resendEmailIds.push(result.id);
-            }
-          } catch (err) {
-            errors.push(subscriber.email);
-            console.error(`Failed to send to ${subscriber.email}:`, err);
-          }
-        })
+    const { sent, failed } = result;
+    if (sent === 0) {
+      return NextResponse.json(
+        {
+          error: `Failed to send to all ${failed.length} subscribers. Check your email configuration.`,
+          errors: failed,
+        },
+        { status: 500 }
       );
     }
 
-    // If all emails failed, return an error
-    if (sent === 0 && errors.length > 0) {
-      return NextResponse.json({
-        error: `Failed to send to all ${errors.length} subscribers. Check your email configuration.`,
-        errors,
-      }, { status: 500 });
-    }
-
-    // Log the email send
-    await recordEmailSend(adminSupabase, {
-      subject,
-      poem_id: poemId || null,
-      recipient_count: sent,
-      status: errors.length > 0 ? 'partial' : 'sent',
-      resend_email_id: resendEmailIds[0] || null,
-    });
-
     return NextResponse.json({
-      message: `Sent to ${sent} subscriber${sent !== 1 ? 's' : ''}${errors.length > 0 ? ` (${errors.length} failed)` : ''}`,
+      message: `Sent to ${sent} subscriber${sent !== 1 ? 's' : ''}${failed.length > 0 ? ` (${failed.length} failed)` : ''}`,
       recipientCount: sent,
-      errors: errors.length > 0 ? errors : undefined,
+      errors: failed.length > 0 ? failed : undefined,
     });
   } catch (err) {
     if (err instanceof z.ZodError) {
@@ -177,9 +101,6 @@ export async function POST(request: Request) {
     }
 
     console.error('Send email error:', err);
-    return NextResponse.json(
-      { error: 'Failed to send emails' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to send emails' }, { status: 500 });
   }
 }

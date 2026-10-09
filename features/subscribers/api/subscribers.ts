@@ -9,8 +9,11 @@ export interface SubscribeInput {
   notifyNewPoems: boolean;
 }
 
+/** What the send page's poem picker and preview show. */
+export type SendPoem = Pick<PoemRow, 'id' | 'title' | 'content' | 'plain_text'>;
+
 export interface SendData {
-  poems: PoemRow[];
+  poems: SendPoem[];
   subscriberCount: number;
 }
 
@@ -64,19 +67,20 @@ export async function addSubscriber(email: string): Promise<void> {
 export async function fetchSendData(): Promise<SendData> {
   const supabase = createClient();
 
-  const { data: poems } = await supabase
-    .from('poems')
-    .select('*')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false })
-    .limit(20)
-    .throwOnError();
-
-  const { count } = await supabase
-    .from('subscribers')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'active')
-    .throwOnError();
+  const [{ data: poems }, { count }] = await Promise.all([
+    supabase
+      .from('poems')
+      .select('id, title, content, plain_text')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(20)
+      .throwOnError(),
+    supabase
+      .from('subscribers')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'active')
+      .throwOnError(),
+  ]);
 
   return { poems, subscriberCount: count ?? 0 };
 }

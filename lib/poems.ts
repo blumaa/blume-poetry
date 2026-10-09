@@ -1,6 +1,6 @@
 import { cache } from 'react';
 import type { Database } from './supabase/types';
-import { getCachedPoemClient } from './supabase/anon';
+import { getAnonClient, getCachedPoemClient } from './supabase/anon';
 
 export interface Poem {
   id: string;
@@ -20,8 +20,17 @@ export interface PoemMeta {
   title: string;
   subtitle: string | null;
   publishedAt: string;
+  /** Last write to the row (a trigger keeps it). */
+  updatedAt: string;
   url: string;
   pinned: boolean;
+}
+
+/** A search hit: what the sidebar lists. */
+export interface PoemSearchHit {
+  id: string;
+  slug: string;
+  title: string;
 }
 
 export interface TreeNode {
@@ -56,23 +65,11 @@ function mapPoemRow(row: PoemColumns): Poem {
    error keeps the last good page; returning [] or "not found" instead would
    regenerate and cache an empty site or a 404 for a poem that exists. */
 
-// Get all poems sorted by date (newest first) — deduplicated with React cache()
-export const getAllPoems = cache(async (): Promise<Poem[]> => {
-  const { data } = await getCachedPoemClient()
-    .from('poems')
-    .select('id, slug, title, subtitle, content, plain_text, published_at, url')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false })
-    .throwOnError();
-
-  return data.map(mapPoemRow);
-});
-
 // Lightweight query for tree/navigation — only fetches metadata fields
 export const getAllPoemsMeta = cache(async (): Promise<PoemMeta[]> => {
   const { data } = await getCachedPoemClient()
     .from('poems')
-    .select('id, slug, title, subtitle, published_at, url, pinned')
+    .select('id, slug, title, subtitle, published_at, updated_at, url, pinned')
     .eq('status', 'published')
     .order('published_at', { ascending: false })
     .throwOnError();
@@ -83,8 +80,9 @@ export const getAllPoemsMeta = cache(async (): Promise<PoemMeta[]> => {
     title: row.title,
     subtitle: row.subtitle,
     publishedAt: row.published_at,
+    updatedAt: row.updated_at,
     url: row.url || '',
-    pinned: row.pinned ?? false,
+    pinned: row.pinned,
   }));
 });
 
@@ -114,28 +112,28 @@ export const getRecentPoems = cache(async (count: number = 10): Promise<Poem[]> 
   return data.map(mapPoemRow);
 });
 
-// Shared, cached slug→id lookup — matches the routes' existing slug-only filter
-// (likes/comments do not restrict by status, so this doesn't either)
+// Shared, cached slug→id lookup for the like and comment routes. Published
+// only: a draft's slug must not take likes or comments.
 export const getPoemIdBySlug = cache(async (slug: string): Promise<string | null> => {
   const { data } = await getCachedPoemClient()
     .from('poems')
     .select('id')
     .eq('slug', slug)
+    .eq('status', 'published')
     .maybeSingle()
     .throwOnError();
 
   return data?.id ?? null;
 });
 
-// Search poems by title or content
-export async function searchPoems(query: string): Promise<Poem[]> {
-  const q = query.toLowerCase();
-  const poems = await getAllPoems();
-  return poems.filter(
-    (p) =>
-      p.title.toLowerCase().includes(q) ||
-      p.content.toLowerCase().includes(q)
-  );
+// Published poems whose title or text contains the query, newest first, at
+// most 50. Matched in Postgres on trigram indexes
+// (supabase/migrations/20261009000400_add_search_poems.sql).
+export async function searchPoems(query: string): Promise<PoemSearchHit[]> {
+  const { data } = await getAnonClient()
+    .rpc('search_poems', { p_query: query })
+    .throwOnError();
+  return data;
 }
 
 // Detect series from poem titles or subtitles
@@ -183,9 +181,8 @@ function groupByYear(poems: PoemMeta[]): Map<string, PoemMeta[]> {
   return years;
 }
 
-// Build the tree structure for navigation — uses lightweight metadata query
-export async function buildPoemTree(): Promise<TreeNode[]> {
-  const poems = await getAllPoemsMeta();
+// The sidebar's navigation tree. Pure: the caller supplies the poems, newest first.
+export function buildPoemTree(poems: PoemMeta[]): TreeNode[] {
   const series = detectSeries(poems);
   const years = groupByYear(poems);
 

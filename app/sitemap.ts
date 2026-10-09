@@ -8,7 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const poemEntries: MetadataRoute.Sitemap = poems.map((poem) => ({
     url: `${baseUrl}/poem/${poem.slug}`,
-    lastModified: poem.publishedAt ? new Date(poem.publishedAt) : undefined,
+    lastModified: new Date(poem.updatedAt),
   }));
 
   return [

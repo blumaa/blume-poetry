@@ -12,15 +12,15 @@ export async function POST(request: Request) {
   try {
     // Verify admin authentication — this route uses the service-role client,
     // so it must never be reachable by anonymous callers.
-    const auth = await requireAdmin();
-    if (auth instanceof NextResponse) return auth;
+    const auth = await requireAdmin(request);
+    if (auth instanceof Response) return auth;
 
     const body = await request.json();
     const { email } = subscriberSchema.parse(body);
 
     const supabase = createAdminClient();
 
-    const result = await upsertSubscriber(supabase, email, { status: 'active', verified: true });
+    const result = await upsertSubscriber(supabase, email);
 
     if (result.outcome === 'already_active') {
       return NextResponse.json(

@@ -7,6 +7,20 @@
   left: 0;
   top: 0;
   z-index: 50;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  /* Fallback for browsers that don't support dvh */
+  height: 100vh;
+  height: 100dvh;
+}
+
+.mobileAside.open {
+  transform: translateX(0);
+}
+
+/* The page behind an open drawer does not scroll. */
+:global(body):has(.mobileAside.open) {
+  overflow: hidden;
 }
 
 .desktopAside {
@@ -29,7 +43,7 @@
 }
 
 .collapsed {
-  width: 60px;
+  width: var(--sidebar-collapsed-width);
 }
 
 .kbd {

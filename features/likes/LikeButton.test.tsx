@@ -31,11 +31,10 @@ describe('LikeButton', () => {
     expect(await screen.findByText('3')).toBeInTheDocument();
   });
 
-  it('updates the count only after the server confirms the like', async () => {
+  it('shows the state the server answers the like with, without a refetch', async () => {
     const fetchMock = mockFetchSequence([
       { ok: true, body: { count: 3, hasLiked: false } }, // initial GET
-      { ok: true, body: { liked: true } }, // POST
-      { ok: true, body: { count: 4, hasLiked: true } }, // refetch GET
+      { ok: true, body: { count: 4, hasLiked: true } }, // POST answers the new state
     ]);
     renderWithProviders(<LikeButton slug="gaps" />);
     const user = userEvent.setup();
@@ -43,7 +42,7 @@ describe('LikeButton', () => {
     await user.click(await screen.findByRole('button'));
 
     expect(await screen.findByText('4')).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[1][1]).toMatchObject({ method: 'POST' });
   });
 

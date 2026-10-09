@@ -1,64 +1,13 @@
-'use client';
-
 import type { ReactNode } from 'react';
-import { AdminGuard, useAuth } from '@/features/auth';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { NotificationBell } from '@/features/notifications';
-import { PushToggle } from '@/features/push';
-import { Icon } from '@/components/icons';
-import { AdminShell } from '@/layouts/AdminShell';
-import type { NavDestination } from '@/layouts/nav';
-import styles from './layout.module.css';
+import { createClient } from '@/lib/supabase/server';
+import { AdminFrame } from './AdminFrame';
 
-const destinations: NavDestination[] = [
-  {
-    href: '/admin',
-    label: 'Dashboard',
-    exact: true,
-    icon: <Icon name="dashboard" />,
-  },
-  {
-    href: '/admin/poems',
-    label: 'Poems',
-    icon: <Icon name="edit" />,
-  },
-  {
-    href: '/admin/subscribers',
-    label: 'Subscribers',
-    icon: <Icon name="users" />,
-  },
-  {
-    href: '/admin/comments',
-    label: 'Comments',
-    icon: <Icon name="comment" />,
-  },
-];
+/* The proxy redirects non-admins before this renders; every admin route
+   handler and RLS policy re-checks the role. This only reads the email. */
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const email = data?.claims.email;
 
-/* Wiring only: features meet here, the shell stays feature-agnostic. */
-function AdminFrame({ children }: { children: ReactNode }) {
-  const { user, signOut } = useAuth();
-
-  return (
-    <AdminShell
-      destinations={destinations}
-      actions={
-        <>
-          <PushToggle />
-          <NotificationBell />
-          <ThemeToggle className={styles.themeToggle} />
-        </>
-      }
-      account={{ email: user?.email, onSignOut: signOut }}
-    >
-      {children}
-    </AdminShell>
-  );
-}
-
-export default function AdminLayout({ children }: { children: ReactNode }) {
-  return (
-    <AdminGuard>
-      <AdminFrame>{children}</AdminFrame>
-    </AdminGuard>
-  );
+  return <AdminFrame email={typeof email === 'string' ? email : undefined}>{children}</AdminFrame>;
 }

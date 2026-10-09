@@ -5,8 +5,10 @@ import { useToast } from '@/components/mds';
 import { queryKeys } from '@/lib/queryKeys';
 import { isPushSupported, isSubscribed, subscribe, unsubscribe } from './api/pushSubscription';
 
-/* Deterministic: the toggle shows what the browser reports after the write,
-   via refetch. Every mounted reader shares the one query. */
+/* Deterministic: the toggle moves only once the browser confirms the write.
+   subscribe() and unsubscribe() resolve to the state they left, which is
+   written to the cache with no second round trip; a failure re-reads what
+   the browser reports. Every mounted reader shares the one query. */
 export function usePushSubscription() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -23,7 +25,7 @@ export function usePushSubscription() {
 
   const toggle = useMutation({
     mutationFn: (next: boolean) => (next ? subscribe() : unsubscribe()),
-    onSuccess: refresh,
+    onSuccess: (enabled) => queryClient.setQueryData(queryKeys.push.subscription(), enabled),
     onError: (err, next) => {
       console.error(`${next ? 'Enabling' : 'Disabling'} push failed:`, err);
       toast({

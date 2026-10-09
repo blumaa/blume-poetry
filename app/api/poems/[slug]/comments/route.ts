@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getAnonClient } from '@/lib/supabase/anon';
 import { createAdminClient } from '@/lib/supabase/server';
 import { getPoemIdBySlug } from '@/lib/poems';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { verifyOrigin } from '@/lib/csrf';
+
+const COMMENT_COLUMNS = 'id, author_name, content, created_at';
+
+/* Bot checks run before validation, so a bot never learns which fields failed. */
+const required = 'Name and comment are required';
+const commentSchema = z.object({
+  visitorId: z.string(required).min(1, required),
+  authorName: z.string(required).trim().min(1, required).max(100, 'Name is too long'),
+  content: z.string(required).trim().min(1, required).max(2000, 'Comment is too long'),
+});
+
+const botFields = z.object({
+  honeypot: z.string().optional(),
+  timestamp: z.number().optional(),
+});
+
+// Database errors throw (.throwOnError) and Next answers 500.
 
 // GET - Get comments for a poem
 export async function GET(
@@ -12,30 +30,22 @@ export async function GET(
 ) {
   const { slug } = await params;
 
-  const supabase = getAnonClient();
-
-  // Get poem ID from slug
   const poemId = await getPoemIdBySlug(slug);
-
   if (!poemId) {
     return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
   }
 
-  // Get comments
-  const { data: comments, error: commentsError } = await supabase
+  const { data: comments } = await getAnonClient()
     .from('comments')
-    .select('id, author_name, content, created_at')
+    .select(COMMENT_COLUMNS)
     .eq('poem_id', poemId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .throwOnError();
 
-  if (commentsError) {
-    return NextResponse.json({ error: 'Failed to fetch comments' }, { status: 500 });
-  }
-
-  return NextResponse.json({ comments: comments || [] });
+  return NextResponse.json({ comments });
 }
 
-// POST - Add a comment
+// POST - Add a comment; answers the saved comment
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -45,59 +55,48 @@ export async function POST(
   const csrfError = verifyOrigin(request);
   if (csrfError) return csrfError;
 
-  const rateLimitError = checkRateLimit(request, RATE_LIMITS.comments);
+  const rateLimitError = await checkRateLimit(request, RATE_LIMITS.comments);
   if (rateLimitError) return rateLimitError;
 
-  const body = await request.json();
-  const { visitorId, authorName, content, honeypot, timestamp } = body;
-
-  // Bot protection: honeypot field should be empty
-  if (honeypot) {
-    // Silently reject - looks like success to bots
-    return NextResponse.json({ success: true });
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  // Bot protection: form should take at least 3 seconds to fill out
-  if (timestamp && Date.now() - timestamp < 3000) {
+  const bot = botFields.safeParse(body);
+  // Honeypot filled: silently reject, looks like success to bots.
+  if (bot.success && bot.data.honeypot) {
+    return NextResponse.json({ success: true });
+  }
+  // A human takes at least 3 seconds to write a comment.
+  if (bot.success && bot.data.timestamp && Date.now() - bot.data.timestamp < 3000) {
     return NextResponse.json({ error: 'Please take your time' }, { status: 400 });
   }
 
-  // Validation
-  if (!visitorId || !authorName?.trim() || !content?.trim()) {
-    return NextResponse.json({ error: 'Name and comment are required' }, { status: 400 });
+  const parsed = commentSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
+  const { visitorId, authorName, content } = parsed.data;
 
-  const trimmedName = authorName.trim().slice(0, 100);
-  const trimmedContent = content.trim().slice(0, 2000);
-
-  if (trimmedName.length < 1 || trimmedContent.length < 1) {
-    return NextResponse.json({ error: 'Name and comment are required' }, { status: 400 });
-  }
-
-  const supabase = createAdminClient();
-
-  // Get poem ID from slug
   const poemId = await getPoemIdBySlug(slug);
-
   if (!poemId) {
     return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
   }
 
-  // Insert comment
-  const { data: newComment, error: insertError } = await supabase
+  const { data: comment } = await createAdminClient()
     .from('comments')
     .insert({
       poem_id: poemId,
       visitor_id: visitorId,
-      author_name: trimmedName,
-      content: trimmedContent,
+      author_name: authorName,
+      content,
     })
-    .select('id, author_name, content, created_at')
-    .single();
+    .select(COMMENT_COLUMNS)
+    .single()
+    .throwOnError();
 
-  if (insertError) {
-    return NextResponse.json({ error: 'Failed to add comment' }, { status: 500 });
-  }
-
-  return NextResponse.json({ comment: newComment });
+  return NextResponse.json({ comment });
 }

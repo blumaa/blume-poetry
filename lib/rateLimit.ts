@@ -1,69 +1,43 @@
-/**
- * Simple in-memory rate limiting
- * Note: This resets on server restart. For production, consider using Redis/Upstash.
- */
+import { createAdminClient } from '@/lib/supabase/server';
 
-interface RateLimitRecord {
-  count: number;
-  resetTime: number;
-}
-
-// Store rate limit records by key (usually IP address)
-const rateLimitMap = new Map<string, RateLimitRecord>();
-
-interface RateLimitOptions {
-  /** Maximum number of requests allowed in the window */
+/** A fixed-window limit. `name` scopes the counter, so buckets never share one. */
+export interface RateLimit {
+  name: string;
   limit: number;
-  /** Time window in milliseconds */
-  windowMs: number;
+  windowSeconds: number;
 }
 
-/**
- * Check if a key (usually IP address) is rate limited
- * Returns true if rate limited, false if allowed
- */
-export function isRateLimited(key: string, options: RateLimitOptions): boolean {
-  const { limit, windowMs } = options;
-  const now = Date.now();
-  const record = rateLimitMap.get(key);
-
-  if (!record || now > record.resetTime) {
-    rateLimitMap.set(key, { count: 1, resetTime: now + windowMs });
-    return false;
-  }
-
-  if (record.count >= limit) {
-    return true;
-  }
-
-  record.count++;
-  return false;
-}
-
-/**
- * Get the client IP address from a request
- */
+/** Vercel sets x-real-ip itself; x-forwarded-for is the fallback off-platform. */
 export function getClientIp(request: Request): string {
-  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  return (
+    request.headers.get('x-real-ip') ||
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    'unknown'
+  );
 }
 
 /**
- * Check rate limit and return a 429 Response if exceeded, or null if allowed
+ * Counts this request in the shared Postgres counter
+ * (supabase/migrations/20261009000300_add_rate_limits.sql).
+ * Answers a 429 Response when over the limit, or null when allowed.
  */
-export function checkRateLimit(request: Request, options: RateLimitOptions): Response | null {
-  const ip = getClientIp(request);
-  if (isRateLimited(ip, options)) {
-    return Response.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
-  }
-  return null;
+export async function checkRateLimit(request: Request, rule: RateLimit): Promise<Response | null> {
+  const { data: allowed } = await createAdminClient()
+    .rpc('check_rate_limit', {
+      p_key: `${rule.name}:${getClientIp(request)}`,
+      p_limit: rule.limit,
+      p_window_seconds: rule.windowSeconds,
+    })
+    .throwOnError();
+
+  if (allowed) return null;
+  return Response.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
 }
 
-// Preset configurations for common use cases
 export const RATE_LIMITS = {
-  /** Comments: 10 per 5 minutes */
-  comments: { limit: 10, windowMs: 5 * 60 * 1000 },
-  /** Likes: 30 per minute */
-  likes: { limit: 30, windowMs: 60 * 1000 },
-  /** Subscriptions: 5 per minute */
-  subscriptions: { limit: 5, windowMs: 60 * 1000 },
-} as const;
+  comments: { name: 'comments', limit: 10, windowSeconds: 5 * 60 },
+  likes: { name: 'likes', limit: 30, windowSeconds: 60 },
+  subscriptions: { name: 'subscriptions', limit: 5, windowSeconds: 60 },
+  notifications: { name: 'notifications', limit: 5, windowSeconds: 60 },
+  search: { name: 'search', limit: 60, windowSeconds: 60 },
+} as const satisfies Record<string, RateLimit>;

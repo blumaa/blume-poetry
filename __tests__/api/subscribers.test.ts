@@ -4,7 +4,7 @@
 import { POST } from '@/app/api/admin/subscribers/route';
 import { clientMock, queryMock } from '@/__tests__/supabaseMock';
 
-let currentUser: { email: string } | null = null;
+let currentUser: { email: string; app_metadata: { role?: string } } | null = null;
 let adminClient: ReturnType<typeof clientMock>;
 
 jest.mock('@/lib/supabase/server', () => ({
@@ -15,14 +15,14 @@ jest.mock('@/lib/supabase/server', () => ({
 }));
 
 jest.mock('@/lib/config', () => ({
-  isAdminEmail: (email: string | undefined) => email === 'admin@site.test',
+  getSiteUrl: () => 'https://site.test',
 }));
 
 function post(body: unknown) {
   return POST(
     new Request('https://site.test/api/admin/subscribers', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', origin: 'https://site.test' },
       body: JSON.stringify(body),
     })
   );
@@ -33,7 +33,7 @@ describe('POST /api/admin/subscribers', () => {
 
   beforeEach(() => {
     adminClient = clientMock({
-      subscribers: [queryMock({ data: null }), queryMock({ data: { id: '1' } })],
+      upsert_subscriber: [queryMock({ data: { outcome: 'inserted', subscriber: { id: '1' } } })],
     });
   });
 
@@ -41,26 +41,28 @@ describe('POST /api/admin/subscribers', () => {
     currentUser = null;
     const res = await post({ email: 'new@example.com' });
     expect(res.status).toBe(401);
-    expect(adminClient.from).not.toHaveBeenCalled();
+    expect(adminClient.rpc).not.toHaveBeenCalled();
   });
 
   it('rejects a logged-in non-admin with 403 and never writes', async () => {
-    currentUser = { email: 'notadmin@example.com' };
+    currentUser = { email: 'notadmin@example.com', app_metadata: {} };
     const res = await post({ email: 'new@example.com' });
     expect(res.status).toBe(403);
-    expect(adminClient.from).not.toHaveBeenCalled();
+    expect(adminClient.rpc).not.toHaveBeenCalled();
   });
 
   it('allows the admin to add a subscriber', async () => {
-    currentUser = { email: 'admin@site.test' };
+    currentUser = { email: 'admin@site.test', app_metadata: { role: 'admin' } };
     const res = await post({ email: 'new@example.com' });
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ subscriber: { id: '1' } });
   });
 
   it('answers 500 when the database fails', async () => {
-    currentUser = { email: 'admin@site.test' };
-    adminClient = clientMock({ subscribers: [queryMock({ error: { message: 'connection lost' } })] });
+    currentUser = { email: 'admin@site.test', app_metadata: { role: 'admin' } };
+    adminClient = clientMock({
+      upsert_subscriber: [queryMock({ error: { message: 'connection lost' } })],
+    });
     jest.spyOn(console, 'error').mockImplementation(() => {});
 
     const res = await post({ email: 'new@example.com' });

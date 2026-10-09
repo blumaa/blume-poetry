@@ -57,6 +57,12 @@ describe('fetchSendData', () => {
     await expect(fetchSendData()).resolves.toEqual({ poems: [{ id: 'p1' }], subscriberCount: 4 });
   });
 
+  it('selects only what the picker and preview show', async () => {
+    pending.push({ data: [] }, { count: 0 });
+    await fetchSendData();
+    expect(queries[0].argsOf('select')).toEqual([['id, title, content, plain_text']]);
+  });
+
   /* A failed count must not read as "0 subscribers". */
   it('throws when the count fails', async () => {
     pending.push({ data: [] }, { error: dbError });

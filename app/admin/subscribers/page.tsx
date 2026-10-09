@@ -12,7 +12,7 @@ import {
 import { Badge, Button, ButtonLink, Checkbox, Chip, ChipGroup, ConfirmDialog, DataTable, useToast } from '@/components/mds';
 import type { SubscriberRow } from '@/lib/supabase/types';
 import { formatDate } from '@/lib/date';
-import { queryKeys } from '@/lib/queryKeys';
+import { invalidateKeys, queryKeys, staleAfterWrite } from '@/lib/queryKeys';
 import { Icon } from '@/components/icons';
 import styles from './page.module.css';
 
@@ -28,8 +28,7 @@ export default function AdminSubscribersPage() {
     queryFn: () => fetchSubscribers(filter),
   });
 
-  const invalidateSubscribers = () =>
-    queryClient.invalidateQueries({ queryKey: queryKeys.admin.all() });
+  const invalidateSubscribers = () => invalidateKeys(queryClient, staleAfterWrite.subscribers());
 
   const deleteMutation = useMutation({
     mutationFn: (target: SubscriberRow) => deleteSubscriber(target.id),
@@ -60,9 +59,9 @@ export default function AdminSubscribersPage() {
 
   const handleExportCSV = () => {
     const csv = [
-      'Email,Status,Subscribed At,Verified,New Poem Emails',
+      'Email,Status,Subscribed At,New Poem Emails',
       ...subscribers.map((s) =>
-        `${s.email},${s.status},${s.subscribed_at},${s.verified},${s.notify_new_poems}`
+        `${s.email},${s.status},${s.subscribed_at},${s.notify_new_poems}`
       ),
     ].join('\n');
 
@@ -151,12 +150,6 @@ export default function AdminSubscribersPage() {
                 key: 'subscribed',
                 header: 'Subscribed',
                 cell: (subscriber: SubscriberRow) => formatDate(subscriber.subscribed_at),
-              },
-              {
-                key: 'verified',
-                header: 'Verified',
-                cell: (subscriber: SubscriberRow) =>
-                  subscriber.verified ? <Badge tone="success">Yes</Badge> : 'No',
               },
               {
                 key: 'notify',

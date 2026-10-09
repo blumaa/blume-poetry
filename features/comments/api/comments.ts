@@ -21,8 +21,13 @@ export async function fetchComments(slug: string): Promise<Comment[]> {
   return comments;
 }
 
-export async function postComment(slug: string, input: PostCommentInput): Promise<void> {
-  await apiFetch(`/api/poems/${slug}/comments`, { method: 'POST', json: input });
+/** Answers the saved comment. */
+export async function postComment(slug: string, input: PostCommentInput): Promise<Comment> {
+  const { comment } = await apiFetch<{ comment: Comment }>(`/api/poems/${slug}/comments`, {
+    method: 'POST',
+    json: input,
+  });
+  return comment;
 }
 
 /** Admin only; the route checks. */

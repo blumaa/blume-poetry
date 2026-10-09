@@ -23,8 +23,12 @@ const subscriptionRows = [
 ];
 
 const deleteEq = jest.fn(async (): Promise<{ error: { message: string } | null }> => ({ error: null }));
+const selectMock = jest.fn((columns: string) => {
+  void columns;
+  return Promise.resolve({ data: subscriptionRows, error: null });
+});
 const fromMock = jest.fn(() => ({
-  select: async () => ({ data: subscriptionRows, error: null }),
+  select: selectMock,
   delete: () => ({ eq: deleteEq }),
 }));
 
@@ -45,12 +49,20 @@ describe('sendLikeNotification', () => {
     await sendLikeNotification({ poemTitle: 'Autumn Rain', slug: 'autumn-rain' });
 
     expect(fromMock).toHaveBeenCalledWith('push_subscriptions');
+    expect(selectMock).toHaveBeenCalledWith('id, endpoint, p256dh, auth');
     expect(sendNotification).toHaveBeenCalledTimes(2);
 
-    const [subscription, payload] = sendNotification.mock.calls[0] as unknown as [
+    const [subscription, payload, options] = sendNotification.mock.calls[0] as unknown as [
       { endpoint: string; keys: { p256dh: string; auth: string } },
       string,
+      { vapidDetails: { publicKey: string; privateKey: string } },
     ];
+    // Keys go with each send, not into web-push's global state.
+    expect(setVapidDetails).not.toHaveBeenCalled();
+    expect(options.vapidDetails).toMatchObject({
+      publicKey: 'test-public-key',
+      privateKey: 'test-private-key',
+    });
     expect(subscription).toEqual({
       endpoint: 'https://push.test/1',
       keys: { p256dh: 'key1', auth: 'auth1' },

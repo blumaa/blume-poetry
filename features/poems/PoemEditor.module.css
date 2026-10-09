@@ -1,21 +1,3 @@
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.previewSkeleton {
-  min-height: 300px;
-  background: var(--mds-surface-page);
-  border: 1px solid var(--mds-border-subtle);
-  border-radius: 0.25rem;
-  animation: pulse 2s ease-in-out infinite;
-}
-
 .previewArticle {
   max-width: 50.25rem;
   margin-left: auto;

@@ -2,24 +2,14 @@ import { SITE_NAME } from '@/lib/brand';
 import type { Metadata } from 'next';
 import { LoginForm } from '@/features/auth';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
   title: 'Login',
 };
 
-export default async function LoginPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    redirect('/admin');
-  }
-
+/* The proxy sends a signed-in admin straight to /admin. */
+export default function LoginPage() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>

@@ -1,18 +1,19 @@
 import webpush from 'web-push';
 import { createAdminClient } from '@/lib/supabase/server';
 import { getSiteUrl } from '@/lib/config';
-import type { PushSubscriptionRow } from '@/lib/supabase/types';
 
 interface LikeNotification {
   poemTitle: string;
   slug: string;
 }
 
-function getVapidKeys(): { publicKey: string; privateKey: string } | null {
+// Passed with each send rather than set with webpush.setVapidDetails, which
+// writes web-push's module-wide state.
+function getVapidDetails(): webpush.VapidKeys & { subject: string } | null {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
   if (!publicKey || !privateKey) return null;
-  return { publicKey, privateKey };
+  return { subject: `mailto:admin@${new URL(getSiteUrl()).hostname}`, publicKey, privateKey };
 }
 
 /**
@@ -23,13 +24,11 @@ function getVapidKeys(): { publicKey: string; privateKey: string } | null {
  * don't accumulate.
  */
 export async function sendLikeNotification({ poemTitle, slug }: LikeNotification): Promise<void> {
-  const vapid = getVapidKeys();
-  if (!vapid) return;
-
-  webpush.setVapidDetails(`mailto:admin@${new URL(getSiteUrl()).hostname}`, vapid.publicKey, vapid.privateKey);
+  const vapidDetails = getVapidDetails();
+  if (!vapidDetails) return;
 
   const supabase = createAdminClient();
-  const { data, error } = await supabase.from('push_subscriptions').select();
+  const { data, error } = await supabase.from('push_subscriptions').select('id, endpoint, p256dh, auth');
 
   if (error || !data) {
     if (error) console.error('Push subscription lookup failed:', error);
@@ -43,11 +42,12 @@ export async function sendLikeNotification({ poemTitle, slug }: LikeNotification
   });
 
   await Promise.all(
-    (data as PushSubscriptionRow[]).map(async (row) => {
+    data.map(async (row) => {
       try {
         await webpush.sendNotification(
           { endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } },
-          payload
+          payload,
+          { vapidDetails }
         );
       } catch (err) {
         const statusCode = (err as { statusCode?: number }).statusCode;

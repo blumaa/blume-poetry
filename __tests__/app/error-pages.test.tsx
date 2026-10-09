@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import GlobalError from '@/app/error';
-import PoemError from '@/app/poem/[slug]/error';
+import PoemError from '@/app/(site)/poem/[slug]/error';
 
 const error = new Error('boom');
 

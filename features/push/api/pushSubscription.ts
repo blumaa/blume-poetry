@@ -29,10 +29,13 @@ export async function isSubscribed(): Promise<boolean> {
   return (await registration.pushManager.getSubscription()) !== null;
 }
 
-/** Asks permission, subscribes, registers with the server. A refused permission is not an error. */
-export async function subscribe(): Promise<void> {
+/* subscribe() and unsubscribe() resolve to whether push is on afterwards, so
+   the caller learns the outcome from the write itself. */
+
+/** Asks permission, subscribes, registers with the server. A refused permission is not an error: it resolves false. */
+export async function subscribe(): Promise<boolean> {
   const permission = await Notification.requestPermission();
-  if (permission !== 'granted') return;
+  if (permission !== 'granted') return false;
 
   const registration = await getRegistration();
   const subscription = await registration.pushManager.subscribe({
@@ -43,13 +46,15 @@ export async function subscribe(): Promise<void> {
   });
 
   await apiFetch('/api/push', { method: 'POST', json: subscription.toJSON() });
+  return true;
 }
 
-export async function unsubscribe(): Promise<void> {
+export async function unsubscribe(): Promise<boolean> {
   const registration = await getRegistration();
   const subscription = await registration.pushManager.getSubscription();
-  if (!subscription) return;
+  if (!subscription) return false;
 
   await subscription.unsubscribe();
   await apiFetch('/api/push', { method: 'DELETE', json: { endpoint: subscription.endpoint } });
+  return false;
 }

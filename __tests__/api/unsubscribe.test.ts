@@ -1,53 +1,76 @@
 /**
  * @jest-environment node
+ *
+ * /api/unsubscribe
+ * - GET never unsubscribes: mail scanners follow links in delivered email, so
+ *   the link opens a confirm page instead
+ * - POST is the one-click unsubscribe (RFC 8058) a mail client sends from the
+ *   List-Unsubscribe header, and works only with a valid signed token
  */
-import { GET } from '@/app/api/unsubscribe/route';
+import { GET, POST } from '@/app/api/unsubscribe/route';
 import { createUnsubscribeToken } from '@/lib/unsubscribeToken';
+import { clientMock, queryMock } from '@/__tests__/supabaseMock';
 
-// Capture what the DB was asked to do
-const eqMock = jest.fn().mockResolvedValue({ error: null });
-const updateMock = jest.fn(() => ({ eq: eqMock }));
-const fromMock = jest.fn(() => ({ update: updateMock }));
+let adminClient: ReturnType<typeof clientMock>;
 
 jest.mock('@/lib/supabase/server', () => ({
-  createAdminClient: () => ({ from: fromMock }),
+  createAdminClient: () => adminClient,
 }));
 
-function get(url: string) {
-  return GET(new Request(url));
+function oneClick(url: string) {
+  return POST(
+    new Request(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'List-Unsubscribe=One-Click',
+    })
+  );
 }
 
-describe('GET /api/unsubscribe', () => {
-  beforeEach(() => {
-    process.env.UNSUBSCRIBE_SECRET = 'test-secret-value';
-    jest.clearAllMocks();
-  });
+beforeEach(() => {
+  process.env.UNSUBSCRIBE_SECRET = 'test-secret-value';
+  adminClient = clientMock({ subscribers: [queryMock()] });
+});
 
-  it('unsubscribes the token holder and redirects on a valid token', async () => {
+describe('GET', () => {
+  it('sends the reader to the confirm page and unsubscribes no one', async () => {
     const token = createUnsubscribeToken('reader@example.com');
-    const res = await get(`https://site.test/api/unsubscribe?token=${token}`);
 
-    expect(res.status).toBe(307); // redirect
-    expect(res.headers.get('location')).toContain('/unsubscribe');
-    expect(updateMock).toHaveBeenCalledWith({ status: 'unsubscribed' });
-    expect(eqMock).toHaveBeenCalledWith('email', 'reader@example.com');
+    const res = await GET(new Request(`https://site.test/api/unsubscribe?token=${token}`));
+
+    expect(res.status).toBe(303);
+    expect(res.headers.get('location')).toBe(`https://site.test/unsubscribe?token=${token}`);
+    expect(adminClient.from).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST (one-click)', () => {
+  it('unsubscribes the token holder', async () => {
+    const query = queryMock();
+    adminClient = clientMock({ subscribers: [query] });
+    const token = createUnsubscribeToken('reader@example.com');
+
+    const res = await oneClick(`https://site.test/api/unsubscribe?token=${token}`);
+
+    expect(res.status).toBe(200);
+    expect(query.argsOf('eq')).toEqual([['email', 'reader@example.com']]);
   });
 
-  it('does NOT unsubscribe when the token is missing', async () => {
-    const res = await get('https://site.test/api/unsubscribe');
+  it('rejects a missing token', async () => {
+    const res = await oneClick('https://site.test/api/unsubscribe');
     expect(res.status).toBe(400);
-    expect(updateMock).not.toHaveBeenCalled();
+    expect(adminClient.from).not.toHaveBeenCalled();
   });
 
-  it('does NOT unsubscribe when the token is forged', async () => {
-    const res = await get('https://site.test/api/unsubscribe?token=attacker.forged');
+  it('rejects a forged token', async () => {
+    const res = await oneClick('https://site.test/api/unsubscribe?token=attacker.forged');
     expect(res.status).toBe(400);
-    expect(updateMock).not.toHaveBeenCalled();
+    expect(adminClient.from).not.toHaveBeenCalled();
   });
 
-  it('does NOT accept a raw email in place of a token', async () => {
-    const res = await get('https://site.test/api/unsubscribe?email=victim@example.com');
+  it('does not accept a raw email in place of a token', async () => {
+    const res = await oneClick('https://site.test/api/unsubscribe?email=victim@example.com');
     expect(res.status).toBe(400);
-    expect(updateMock).not.toHaveBeenCalled();
+    expect(adminClient.from).not.toHaveBeenCalled();
   });
 });

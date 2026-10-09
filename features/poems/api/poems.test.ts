@@ -42,6 +42,15 @@ describe('fetchAdminPoems', () => {
     expect(queries[0].argsOf('eq')).toEqual([['status', 'draft']]);
   });
 
+  /* The list never shows a poem's body; it searches plain_text. */
+  it('selects the list columns only, not the poem bodies', async () => {
+    pending.push({ data: [] });
+    await fetchAdminPoems(null);
+    expect(queries[0].argsOf('select')).toEqual([[
+      'id, slug, title, status, pinned, published_at, plain_text',
+    ]]);
+  });
+
   it('ignores an unknown status', async () => {
     pending.push({ data: [] });
     await fetchAdminPoems('bogus');
@@ -77,15 +86,16 @@ describe('savePoem', () => {
     published_at: '2026-01-01T00:00:00.000Z',
   };
 
-  it('inserts a new poem and returns its id', async () => {
-    pending.push({ data: { id: 'new-id' } });
-    await expect(savePoem(null, input)).resolves.toBe('new-id');
+  it('inserts a new poem and returns the saved row', async () => {
+    pending.push({ data: { id: 'new-id', ...input } });
+    await expect(savePoem(null, input)).resolves.toEqual({ id: 'new-id', ...input });
+    expect(queries[0].argsOf('select')).toEqual([['*']]);
     expect(queries[0].argsOf('insert')).toEqual([[input]]);
   });
 
   it('updates an existing poem by id', async () => {
-    pending.push({ data: { id: 'p1' } });
-    await expect(savePoem('p1', input)).resolves.toBe('p1');
+    pending.push({ data: { id: 'p1', ...input } });
+    await expect(savePoem('p1', input)).resolves.toEqual({ id: 'p1', ...input });
     expect(queries[0].argsOf('update')).toEqual([[input]]);
     expect(queries[0].argsOf('eq')).toEqual([['id', 'p1']]);
   });
@@ -100,15 +110,15 @@ describe('revalidatePoems', () => {
   /* A failed refresh leaves the public site stale; it must not pass silently. */
   it('throws when the server refuses', async () => {
     fetchMock.mockResolvedValue(respond(500, { error: 'Failed to revalidate' }));
-    await expect(revalidatePoems(['/poem/x'])).rejects.toThrow('Failed to revalidate');
+    await expect(revalidatePoems()).rejects.toThrow('Failed to revalidate');
   });
 
-  it('posts the paths', async () => {
+  it('posts to the revalidate route', async () => {
     fetchMock.mockResolvedValue(respond(200, { revalidated: true }));
-    await revalidatePoems(['/poem/x']);
+    await revalidatePoems();
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/admin/revalidate',
-      expect.objectContaining({ method: 'POST', body: '{"paths":["/poem/x"]}' })
+      expect.objectContaining({ method: 'POST' })
     );
   });
 });

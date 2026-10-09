@@ -101,4 +101,49 @@ describe('Sidebar', () => {
     // Debounce: one request for the whole word, not one per keystroke.
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it('takes a closed mobile drawer out of focus order and the accessibility tree', () => {
+    const { container, rerender } = renderSidebar({ isMobile: true, isOpen: false });
+    expect(container.querySelector('aside')).toHaveAttribute('inert');
+    rerender(<Sidebar tree={tree} isMobile isOpen />);
+    expect(container.querySelector('aside')).not.toHaveAttribute('inert');
+  });
+
+  it('never makes the desktop sidebar inert', () => {
+    const { container } = renderSidebar({ isMobile: false, isOpen: false });
+    expect(container.querySelector('aside')).not.toHaveAttribute('inert');
+  });
+
+  it('closes the drawer when a poem link is clicked', async () => {
+    const onClose = jest.fn();
+    renderSidebar({ isMobile: true, isOpen: true, onClose });
+    await userEvent.click(screen.getByRole('link', { name: 'Poem C' }));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('marks the collapsed desktop sidebar so the page margin can follow it in CSS', () => {
+    const { container } = renderSidebar({ isMobile: false, isCollapsed: true });
+    expect(container.querySelector('aside')).toHaveAttribute('data-sidebar-collapsed');
+  });
+
+  it("lets the reader close the active poem's folder and open it again", async () => {
+    renderSidebar();
+    const folder = screen.getByRole('button', { name: /Collection One/ });
+    expect(folder).toHaveAttribute('aria-expanded', 'true');
+
+    await userEvent.click(folder);
+    expect(folder).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('link', { name: 'Poem B' })).not.toBeInTheDocument();
+
+    await userEvent.click(folder);
+    expect(folder).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it("keeps a closed folder's group in the DOM, hidden, so aria-controls points at it", async () => {
+    const { container } = renderSidebar();
+    const folder = screen.getByRole('button', { name: /Collection One/ });
+    await userEvent.click(folder);
+    const group = container.querySelector(`#${folder.getAttribute('aria-controls')}`);
+    expect(group).toHaveAttribute('hidden');
+  });
 });

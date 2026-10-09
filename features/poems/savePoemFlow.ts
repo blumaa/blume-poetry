@@ -1,5 +1,5 @@
 import type { FlashToast } from '@/lib/flashToast';
-import type { PoemInsert } from '@/lib/supabase/types';
+import type { PoemInsert, PoemRow } from '@/lib/supabase/types';
 import { notifyPoem, revalidatePoems, savePoem } from './api/poems';
 
 interface SavePoemFlowInput {
@@ -16,22 +16,26 @@ const reason = (error: unknown) => (error instanceof Error ? error.message : 'un
  * Saves the poem, then refreshes the public site and optionally emails
  * subscribers. A failed save throws. Once saved, nothing is rolled back: each
  * failed follow-up is named in the returned toast so the admin knows which
- * half went wrong.
+ * half went wrong. Returns the row as saved, for the cache.
  */
-export async function savePoemFlow({ id, poem, notify }: SavePoemFlowInput): Promise<FlashToast> {
-  const savedId = await savePoem(id, poem);
+export async function savePoemFlow({
+  id,
+  poem,
+  notify,
+}: SavePoemFlowInput): Promise<{ poem: PoemRow; flash: FlashToast }> {
+  const saved = await savePoem(id, poem);
   const failures: string[] = [];
   let message = id ? 'Changes saved' : `"${poem.title}" created`;
 
   try {
-    await revalidatePoems([`/poem/${poem.slug}`]);
+    await revalidatePoems();
   } catch (error) {
     failures.push(`the site refresh failed: ${reason(error)}`);
   }
 
   if (notify) {
     try {
-      const result = await notifyPoem(savedId);
+      const result = await notifyPoem(saved.id);
       message = result.alreadyNotified
         ? `${message}. Subscribers had already been emailed about this poem`
         : `${message}. Emailed ${result.sent} subscriber${result.sent === 1 ? '' : 's'}`;
@@ -40,7 +44,9 @@ export async function savePoemFlow({ id, poem, notify }: SavePoemFlowInput): Pro
     }
   }
 
-  return failures.length > 0
-    ? { title: `Saved, but ${failures.join('; ')}`, tone: 'danger' }
-    : { title: message, tone: 'success' };
+  const flash: FlashToast =
+    failures.length > 0
+      ? { title: `Saved, but ${failures.join('; ')}`, tone: 'danger' }
+      : { title: message, tone: 'success' };
+  return { poem: saved, flash };
 }

@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
 import { Button, Checkbox, Input, Modal, ModalBody, ModalHeader } from '@/components/mds';
 import { Icon } from '@/components/icons';
 import { addSubscriber, subscribe } from './api/subscribers';
+import { useSubscribeForm } from './useSubscribeForm';
 import styles from './SubscribeModal.module.css';
 
 interface SubscribeModalProps {
@@ -15,25 +14,14 @@ interface SubscribeModalProps {
 }
 
 export function SubscribeModal({ isOpen, onClose, onSuccess, isAdmin = false }: SubscribeModalProps) {
-  const [email, setEmail] = useState('');
-  const [notifyNewPoems, setNotifyNewPoems] = useState(true);
-
-  const mutation = useMutation({
-    mutationFn: () => (isAdmin ? addSubscriber(email) : subscribe({ email, notifyNewPoems })),
-    onSuccess: () => {
-      setEmail('');
-      onSuccess?.();
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    mutation.mutate();
-  };
+  const { email, setEmail, notifyNewPoems, setNotifyNewPoems, mutation, handleSubmit, reset } =
+    useSubscribeForm({
+      submit: (input) => (isAdmin ? addSubscriber(input.email) : subscribe(input)),
+      onSuccess,
+    });
 
   const resetAndClose = () => {
-    mutation.reset();
-    setEmail('');
+    reset();
     onClose();
   };
 

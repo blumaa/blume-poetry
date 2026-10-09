@@ -21,12 +21,16 @@ function smtpError(responseCode: number) {
   return Object.assign(new Error(`SMTP ${responseCode}`), { responseCode });
 }
 
-async function loadSendEmail() {
+async function loadEmail() {
   let mod!: typeof import('@/lib/email');
   await jest.isolateModulesAsync(async () => {
     mod = await import('@/lib/email');
   });
-  return mod.sendEmail;
+  return mod;
+}
+
+async function loadSendEmail() {
+  return (await loadEmail()).sendEmail;
 }
 
 const message = { to: 'reader@example.com', subject: 'New poem', html: '<p>hi</p>' };
@@ -34,6 +38,8 @@ const message = { to: 'reader@example.com', subject: 'New poem', html: '<p>hi</p
 beforeEach(() => {
   process.env.GMAIL_USER = 'poet@example.com';
   process.env.GMAIL_APP_PASSWORD = 'secret';
+  process.env.UNSUBSCRIBE_SECRET = 'test-secret-value';
+  process.env.NEXT_PUBLIC_SITE_URL = 'https://site.test';
   jest.useFakeTimers();
   sendMail.mockReset();
   createTransport.mockReset().mockReturnValue({ sendMail });
@@ -41,6 +47,7 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.useRealTimers();
+  jest.restoreAllMocks();
 });
 
 describe('sendEmail', () => {
@@ -82,5 +89,37 @@ describe('sendEmail', () => {
 
     await expect(sendEmail(message)).rejects.toMatchObject({ responseCode: 550 });
     expect(sendMail).toHaveBeenCalledTimes(1);
+  });
+});
+
+/* A whole-list send: every recipient gets their own mail, one failure does not
+   stop the rest, and each mail names its one-click unsubscribe (RFC 8058) so
+   Gmail and Yahoo accept bulk mail and show their own unsubscribe button. */
+describe('sendToSubscribers', () => {
+  const build = (email: string) => ({ subject: 'New poem', html: `<p>${email}</p>`, text: email });
+
+  it('sends one mail per recipient with one-click unsubscribe headers', async () => {
+    sendMail.mockResolvedValue({ messageId: 'id' });
+    const { sendToSubscribers } = await loadEmail();
+
+    const result = await sendToSubscribers(['a@example.com', 'b@example.com'], build);
+
+    expect(result).toEqual({ sent: 2, failed: [] });
+    const mail = sendMail.mock.calls[0][0];
+    expect(mail.to).toBe('a@example.com');
+    expect(mail.headers['List-Unsubscribe']).toMatch(
+      /^<https:\/\/site\.test\/api\/unsubscribe\?token=.+>$/
+    );
+    expect(mail.headers['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
+  });
+
+  it('counts a failed recipient and keeps sending to the rest', async () => {
+    sendMail.mockRejectedValueOnce(smtpError(550)).mockResolvedValue({ messageId: 'id' });
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const { sendToSubscribers } = await loadEmail();
+
+    const result = await sendToSubscribers(['a@example.com', 'b@example.com'], build);
+
+    expect(result).toEqual({ sent: 1, failed: ['a@example.com'] });
   });
 });

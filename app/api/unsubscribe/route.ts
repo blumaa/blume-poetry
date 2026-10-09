@@ -1,34 +1,28 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
-import { verifyUnsubscribeToken } from '@/lib/unsubscribeToken';
+import { unsubscribeByToken } from '@/lib/subscribers';
 
-// One-click unsubscribe from an email link. The link carries a signed token
-// (see lib/unsubscribeToken) instead of the raw email, so it can only
-// unsubscribe the address it was issued for — not an arbitrary victim.
+// Unsubscribe links carry a signed token (lib/unsubscribeToken) instead of the
+// raw email, so a link can only unsubscribe the address it was issued for.
+
+// The link in the email footer, and in mail sent before the confirm page
+// existed. Mail scanners follow links in delivered email, so a GET never
+// unsubscribes: it opens the confirm page.
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const token = searchParams.get('token');
+  const url = new URL('/unsubscribe', request.url);
+  const token = new URL(request.url).searchParams.get('token');
+  if (token) url.searchParams.set('token', token);
+  return NextResponse.redirect(url, 303);
+}
 
-  const email = token ? verifyUnsubscribeToken(token) : null;
-  if (!email) {
-    return NextResponse.json(
-      { error: 'Invalid or missing unsubscribe token' },
-      { status: 400 }
-    );
+// One-click unsubscribe (RFC 8058): the mail client POSTs here from the
+// List-Unsubscribe header. It sends no Origin and no cookies, so the token is
+// the only check, and it is enough. Database errors throw (500).
+export async function POST(request: Request) {
+  const token = new URL(request.url).searchParams.get('token');
+  const ok = await unsubscribeByToken(createAdminClient(), token);
+  if (!ok) {
+    return NextResponse.json({ error: 'Invalid or missing unsubscribe token' }, { status: 400 });
   }
-
-  const supabase = createAdminClient();
-
-  const { error } = await supabase
-    .from('subscribers')
-    .update({ status: 'unsubscribed' })
-    .eq('email', email);
-
-  if (error) {
-    console.error('Unsubscribe error:', error);
-    return NextResponse.json({ error: 'Failed to unsubscribe' }, { status: 500 });
-  }
-
-  // Redirect to the unsubscribe confirmation page
-  return NextResponse.redirect(new URL('/unsubscribe', request.url));
+  return NextResponse.json({ success: true });
 }
