@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, ConfirmDialog, DataTable, useToast } from '@/components/mds';
 import { deleteComment, fetchAdminComments, type AdminComment } from '@/features/comments';
 import { formatDate } from '@/lib/date';
-import { queryKeys } from '@/lib/queryKeys';
+import { invalidateKeys, queryKeys, staleAfterWrite } from '@/lib/queryKeys';
 import styles from './page.module.css';
 
 export default function AdminCommentsPage() {
@@ -25,10 +25,9 @@ export default function AdminCommentsPage() {
     mutationFn: (target: AdminComment) => deleteComment(target.id),
     onSuccess: () => toast({ title: 'Comment deleted', tone: 'success' }),
     onSettled: (_data, _error, target) =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.admin.all() }),
-        target.poems &&
-          queryClient.invalidateQueries({ queryKey: queryKeys.poem.comments(target.poems.slug) }),
+      invalidateKeys(queryClient, [
+        ...staleAfterWrite.comments(),
+        ...(target.poems ? [queryKeys.poem.comments(target.poems.slug)] : []),
       ]),
   });
 

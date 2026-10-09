@@ -21,4 +21,7 @@
 
 .content {
   flex: 1 1 0%;
+  /* A column, so a page's own wrapper can grow to fill it. */
+  display: flex;
+  flex-direction: column;
 }

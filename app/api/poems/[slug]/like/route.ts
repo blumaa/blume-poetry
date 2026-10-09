@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { getAnonClient } from '@/lib/supabase/anon';
 import { createAdminClient } from '@/lib/supabase/server';
 import { getPoemIdBySlug, getPoemBySlug } from '@/lib/poems';
 import { sendLikeNotification } from '@/lib/push';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { verifyOrigin } from '@/lib/csrf';
+import type { LikeState } from '@/features/likes';
 
 // Database errors throw (.throwOnError) and Next answers 500: a failed read
 // must not pass as "no likes", nor a failed write as success.
@@ -19,38 +20,35 @@ export async function GET(
 
   const supabase = getAnonClient();
 
-  // Get poem ID from slug
   const poemId = await getPoemIdBySlug(slug);
 
   if (!poemId) {
     return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
   }
 
-  // Get like count
-  const { count } = await supabase
-    .from('likes')
-    .select('*', { count: 'exact', head: true })
-    .eq('poem_id', poemId)
-    .throwOnError();
-
-  // Check if visitor has liked
-  let hasLiked = false;
-  if (visitorId) {
-    const { data: existingLike } = await supabase
+  // Count and visitor check are independent: run them together.
+  const [{ count }, existingLike] = await Promise.all([
+    supabase
       .from('likes')
-      .select('id')
+      .select('*', { count: 'exact', head: true })
       .eq('poem_id', poemId)
-      .eq('visitor_id', visitorId)
-      .maybeSingle()
-      .throwOnError();
+      .throwOnError(),
+    visitorId
+      ? supabase
+          .from('likes')
+          .select('id')
+          .eq('poem_id', poemId)
+          .eq('visitor_id', visitorId)
+          .maybeSingle()
+          .throwOnError()
+      : null,
+  ]);
 
-    hasLiked = !!existingLike;
-  }
-
-  return NextResponse.json({ count: count ?? 0, hasLiked });
+  const state: LikeState = { count: count ?? 0, hasLiked: !!existingLike?.data };
+  return NextResponse.json(state);
 }
 
-// POST - Toggle like
+// POST - Toggle like; answers the new state
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -60,7 +58,7 @@ export async function POST(
   const csrfError = verifyOrigin(request);
   if (csrfError) return csrfError;
 
-  const rateLimitError = checkRateLimit(request, RATE_LIMITS.likes);
+  const rateLimitError = await checkRateLimit(request, RATE_LIMITS.likes);
   if (rateLimitError) return rateLimitError;
 
   const body = await request.json();
@@ -70,47 +68,27 @@ export async function POST(
     return NextResponse.json({ error: 'Visitor ID required' }, { status: 400 });
   }
 
-  const supabase = createAdminClient();
-
-  // Get poem ID from slug
   const poemId = await getPoemIdBySlug(slug);
 
   if (!poemId) {
     return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
   }
 
-  // Check if already liked
-  const { data: existingLike } = await supabase
-    .from('likes')
-    .select('id')
-    .eq('poem_id', poemId)
-    .eq('visitor_id', visitorId)
-    .maybeSingle()
+  // One atomic call: toggles and counts (supabase/migrations/20261009_add_toggle_like.sql).
+  const { data } = await createAdminClient()
+    .rpc('toggle_like', { p_poem_id: poemId, p_visitor_id: visitorId })
+    .single()
     .throwOnError();
 
-  if (existingLike) {
-    // Unlike
-    await supabase
-      .from('likes')
-      .delete()
-      .eq('id', existingLike.id)
-      .throwOnError();
-
-    return NextResponse.json({ liked: false });
-  } else {
-    // Like
-    await supabase
-      .from('likes')
-      .insert({ poem_id: poemId, visitor_id: visitorId })
-      .throwOnError();
-
-    // Notify the admin's devices. sendLikeNotification never throws, so a
-    // push outage can't fail the like itself.
-    const poem = await getPoemBySlug(slug);
-    if (poem) {
-      await sendLikeNotification({ poemTitle: poem.title, slug });
-    }
-
-    return NextResponse.json({ liked: true });
+  if (data.liked) {
+    // Push goes to Apple/Google servers: send it after the response so the
+    // like never waits on it. sendLikeNotification never throws.
+    after(async () => {
+      const poem = await getPoemBySlug(slug);
+      if (poem) await sendLikeNotification({ poemTitle: poem.title, slug });
+    });
   }
+
+  const state: LikeState = { count: data.like_count, hasLiked: data.liked };
+  return NextResponse.json(state);
 }

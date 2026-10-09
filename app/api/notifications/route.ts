@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   const csrfError = verifyOrigin(request);
   if (csrfError) return csrfError;
 
-  const rateLimitError = checkRateLimit(request, RATE_LIMITS.subscriptions);
+  const rateLimitError = await checkRateLimit(request, RATE_LIMITS.notifications);
   if (rateLimitError) return rateLimitError;
 
   try {

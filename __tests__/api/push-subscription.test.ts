@@ -19,17 +19,13 @@ jest.mock('@/lib/supabase/server', () => ({
 }));
 
 const requireAdmin = jest.fn(
-  async (): Promise<{ user: { email: string } } | NextResponse> => ({
+  async (): Promise<{ user: { email: string } } | Response> => ({
     user: { email: 'admin@site.test' },
   })
 );
 
 jest.mock('@/lib/auth', () => ({
   requireAdmin: () => requireAdmin(),
-}));
-
-jest.mock('@/lib/csrf', () => ({
-  verifyOrigin: () => null,
 }));
 
 import { POST, DELETE } from '@/app/api/push/route';
@@ -42,7 +38,7 @@ const subscription = {
 function request(method: string, body: unknown) {
   return new Request('https://site.test/api/push', {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', origin: 'https://site.test' },
     body: JSON.stringify(body),
   });
 }

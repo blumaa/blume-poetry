@@ -12,6 +12,7 @@
     "test:coverage": "jest --coverage",
     "typecheck": "tsc --noEmit",
     "test:gates": "node --test scripts/gates.test.mjs",
+    "db:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts",
     "verify": "bun run lint && bun run typecheck && bun run test && bun run test:gates && bun run build"
   },
   "dependencies": {

@@ -28,7 +28,12 @@
 }
 
 @media (min-width: 768px) {
+  /* Clear the fixed sidebar, at its full or collapsed width. */
   .skipLink:focus {
-    left: calc(var(--sidebar-current-width) + 1rem);
+    left: calc(var(--sidebar-width) + 1rem);
+  }
+
+  .body:has([data-sidebar-collapsed]) .skipLink:focus {
+    left: calc(var(--sidebar-collapsed-width) + 1rem);
   }
 }

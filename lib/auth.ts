@@ -1,21 +1,27 @@
 import { NextResponse } from 'next/server';
+import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
-import { isAdminEmail } from '@/lib/config';
+import { hasAdminRole } from '@/lib/adminRole';
+import { verifyOrigin } from '@/lib/csrf';
+
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 /**
- * Single source of truth for "is this request from the admin?" across every
- * admin API route. Standardizes the response for the two failure modes that
- * were previously inconsistent between routes: no session at all (401) vs.
- * an authenticated-but-non-admin session (403).
+ * Guard for every admin API route. Writes must come from the site's origin
+ * (the session cookie alone would let another site post on the admin's
+ * behalf), then the session must belong to a user with the admin role.
  *
- * Returns `{ user }` on success, or a NextResponse the caller should return
- * immediately:
- *   const auth = await requireAdmin();
- *   if (auth instanceof NextResponse) return auth;
+ * Returns `{ user }`, or a response the caller returns as is:
+ *   const auth = await requireAdmin(request);
+ *   if (auth instanceof Response) return auth;
  */
-export async function requireAdmin(): Promise<
-  { user: { email?: string | null } } | NextResponse
-> {
+export async function requireAdmin(request: Request): Promise<{ user: User } | Response> {
+  if (!SAFE_METHODS.has(request.method)) {
+    const csrfError = verifyOrigin(request);
+    if (csrfError) return csrfError;
+  }
+
+  // getUser asks the auth server, so a revoked session fails here.
   const supabase = await createClient();
   const {
     data: { user },
@@ -25,7 +31,7 @@ export async function requireAdmin(): Promise<
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!isAdminEmail(user.email)) {
+  if (!hasAdminRole(user)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

@@ -1,17 +1,17 @@
 import Link from 'next/link';
 import { SideNav, SideNavItem } from '@/components/mds';
-import type { TreeNode, Poem } from '@/lib/poems';
+import type { PoemSearchHit, TreeNode } from '@/lib/poems';
 import { TreeItem } from './TreeItem';
 import styles from './SidebarNav.module.css';
 
 interface SidebarNavProps {
   tree: TreeNode[];
-  searchResults: Poem[] | null;
+  searchResults: PoemSearchHit[] | null;
   activeSlug?: string;
   expandedNodes: Set<string>;
   toggleNode: (id: string) => void;
-  onNavigate?: (slug: string, title: string) => void;
-  onSearchResultClick?: () => void;
+  /** Called when any poem link is clicked. */
+  onNavigate?: () => void;
 }
 
 export function SidebarNav({
@@ -21,7 +21,6 @@ export function SidebarNav({
   expandedNodes,
   toggleNode,
   onNavigate,
-  onSearchResultClick,
 }: SidebarNavProps) {
   return (
     <SideNav label="Poems" className={styles.nav}>
@@ -37,7 +36,7 @@ export function SidebarNav({
               href={`/poem/${poem.slug}`}
               label={poem.title}
               active={poem.slug === activeSlug}
-              onClick={onSearchResultClick}
+              onClick={onNavigate}
             />
           ))}
         </div>

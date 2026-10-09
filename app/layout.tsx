@@ -11,23 +11,22 @@ import "./globals.css";
 import { ThemeSync } from "@/components/ThemeSync";
 import { themeBootScript } from "@/lib/theme";
 import { QueryProvider } from "@/components/QueryProvider";
-import { AuthProvider } from "@/features/auth";
 import { ToastProvider } from "@/components/mds";
 import { getSiteUrl } from "@/lib/config";
 import { IconRegistry } from "@/components/icons";
 import styles from "./layout.module.css";
 
+/* Both faces are variable fonts: with no weight list, one file serves every
+   weight the app and MDS use (400, 500, 600, 700). */
 const sourceSans = Source_Sans_3({
   variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["300", "400", "600", "700"],
 });
 
 /* The logo wordmark's face; the inline SVG in BrandLogo reads --font-logo. */
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-logo",
   subsets: ["latin"],
-  weight: ["300", "400"],
 });
 
 export const viewport: Viewport = {
@@ -83,13 +82,11 @@ export default function RootLayout({
         </a>
         <ThemeSync />
         <QueryProvider>
-          <AuthProvider>
-            <IconRegistry>
-              <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
-                {children}
-              </ToastProvider>
-            </IconRegistry>
-          </AuthProvider>
+          <IconRegistry>
+            <ToastProvider regionLabel="Notifications" dismissLabel="Dismiss:">
+              {children}
+            </ToastProvider>
+          </IconRegistry>
         </QueryProvider>
         <Analytics />
       </body>

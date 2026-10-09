@@ -1,0 +1,16 @@
+/* The scrim behind the open mobile drawer. Mobile only: the wrapper renders it
+   only below the desktop breakpoint. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--mds-scrim);
+  z-index: 45;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.open {
+  opacity: 1;
+  visibility: visible;
+}

@@ -3,25 +3,25 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/auth';
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
 
-  const auth = await requireAdmin();
-  if (auth instanceof NextResponse) return auth;
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
 
-  // Auth is verified above via the cookie-auth client; the actual delete runs
-  // through the service-role client so it doesn't depend on RLS's hardcoded-email
-  // policy. isAdminEmail() is the single source of truth for delete authorization.
-  const adminSupabase = createAdminClient();
-  const { error: deleteError } = await adminSupabase
+  // requireAdmin is the authorization; the delete runs as the service role.
+  // A database error throws and Next answers a generic 500.
+  const { data: deleted } = await createAdminClient()
     .from('comments')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .select('id')
+    .throwOnError();
 
-  if (deleteError) {
-    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+  if (deleted.length === 0) {
+    return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
   }
 
   return NextResponse.json({ success: true });

@@ -2,22 +2,17 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import { useQueryClient } from '@tanstack/react-query';
 import type { RichTextEditorRef } from '@/components/admin/RichTextEditor';
+import { RichTextEditor } from '@/components/admin/LazyRichTextEditor';
 import { PoemContent } from '@/components/PoemContent';
 import { Button, Checkbox, ConfirmDialog, Field, Input, Radio, Tab, TabList, Tabs } from '@/components/mds';
 import { formatDate } from '@/lib/date';
-import type { PoemRow } from '@/lib/supabase/types';
-import { queryKeys } from '@/lib/queryKeys';
+import type { PoemRow, PoemStatus } from '@/lib/supabase/types';
+import { invalidateKeys, queryKeys, staleAfterWrite } from '@/lib/queryKeys';
 import { savePoemFlow } from './savePoemFlow';
 import styles from './PoemEditor.module.css';
 import { setFlashToast } from '@/lib/flashToast';
-
-const RichTextEditor = dynamic(
-  () => import('@/components/admin/RichTextEditor').then((m) => m.RichTextEditor),
-  { ssr: false, loading: () => <div className={styles.previewSkeleton} /> }
-);
 
 // Preview component that matches PoemDisplay exactly
 function PoemPreview({ title, subtitle, html }: { title: string; subtitle: string; html: string }) {
@@ -68,7 +63,7 @@ export function PoemEditor({ poem }: PoemEditorProps) {
   const isNew = !poem;
   const [title, setTitle] = useState(poem?.title || '');
   const [subtitle, setSubtitle] = useState(poem?.subtitle || '');
-  const [status, setStatus] = useState<'draft' | 'published'>(poem?.status || 'draft');
+  const [status, setStatus] = useState<PoemStatus>(poem?.status ?? 'draft');
   const [publishedAt, setPublishedAt] = useState(formatDateForInput(poem?.published_at));
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -131,7 +126,7 @@ export function PoemEditor({ poem }: PoemEditorProps) {
         ? new Date(publishedAt).toISOString()
         : new Date().toISOString();
 
-      const flash = await savePoemFlow({
+      const { poem: saved, flash } = await savePoemFlow({
         id: poem?.id ?? null,
         poem: {
           title: title.trim(),
@@ -146,8 +141,10 @@ export function PoemEditor({ poem }: PoemEditorProps) {
       });
 
       // Mark only: each read refetches when next mounted, not the edit page
-      // we are leaving.
-      queryClient.invalidateQueries({ queryKey: queryKeys.admin.all(), refetchType: 'none' });
+      // we are leaving. Then the saved row, as the server returned it, is the
+      // poem's cache entry, so reopening the editor needs no fetch.
+      await invalidateKeys(queryClient, staleAfterWrite.poems(), { refetchType: 'none' });
+      queryClient.setQueryData(queryKeys.admin.poem(saved.id), saved);
       setFlashToast(flash);
       router.push('/admin/poems');
     } catch (err) {

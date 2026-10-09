@@ -16,7 +16,7 @@ import {
 import { getVisitorId } from '@/lib/visitorId';
 import { readStored, writeStored } from '@/lib/browserStorage';
 import { queryKeys } from '@/lib/queryKeys';
-import { postComment, type PostCommentInput } from './api/comments';
+import { postComment, type Comment, type PostCommentInput } from './api/comments';
 import styles from './CommentModal.module.css';
 
 interface CommentModalProps {
@@ -38,12 +38,15 @@ export function CommentModal({ onClose, slug }: CommentModalProps) {
     formLoadTime.current = Date.now();
   }, []);
 
-  /* Deterministic: the new comment appears only via the refetch after the
-     server accepts it; the modal closes once that refetch settles. */
+  /* Deterministic: the comment appears only once the server has saved it,
+     taken from the server's answer (no refetch). */
   const postMutation = useMutation({
     mutationFn: (input: PostCommentInput) => postComment(slug, input),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.poem.comments(slug) });
+    onSuccess: (comment) => {
+      queryClient.setQueryData<Comment[]>(queryKeys.poem.comments(slug), (current) => [
+        comment,
+        ...(current ?? []),
+      ]);
       toast({ title: 'Comment posted!', tone: 'success' });
       onClose();
     },

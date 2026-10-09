@@ -44,13 +44,16 @@ export function queryMock(result: QueryResult = {}): QueryMock {
   return chain;
 }
 
-/** A client whose from(table) hands out the queued queries for that table, in order. */
+/** A client whose from(table) and rpc(fn) hand out the queued queries for that
+    table or function name, in order. rpc records its arguments as an "rpc" call. */
 export function clientMock(queries: Record<string, QueryMock[]>) {
-  const queues = Object.fromEntries(Object.entries(queries).map(([table, q]) => [table, [...q]]));
-  const from = jest.fn((table: string) => {
-    const next = queues[table]?.shift();
-    if (!next) throw new Error(`Unexpected query on "${table}"`);
+  const queues = Object.fromEntries(Object.entries(queries).map(([name, q]) => [name, [...q]]));
+  const take = (name: string) => {
+    const next = queues[name]?.shift();
+    if (!next) throw new Error(`Unexpected query on "${name}"`);
     return next;
-  });
-  return { from };
+  };
+  const from = jest.fn((table: string) => take(table));
+  const rpc = jest.fn((fn: string, args?: unknown) => take(fn).rpc(args));
+  return { from, rpc };
 }

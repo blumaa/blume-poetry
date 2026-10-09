@@ -22,8 +22,8 @@ jest.mock('@/lib/supabase/server', () => ({
 
 jest.mock('@/lib/csrf', () => ({ verifyOrigin: () => null }));
 jest.mock('@/lib/rateLimit', () => ({
-  checkRateLimit: () => null,
-  RATE_LIMITS: { subscriptions: {} },
+  ...jest.requireActual('@/lib/rateLimit'),
+  checkRateLimit: async () => null,
 }));
 
 function post(body: unknown) {

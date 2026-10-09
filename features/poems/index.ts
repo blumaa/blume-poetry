@@ -7,5 +7,6 @@ export {
   savePoem,
   searchPoems,
   setPoemPinned,
+  type AdminPoem,
 } from './api/poems';
 export { PoemEditor } from './PoemEditor';

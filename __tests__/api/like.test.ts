@@ -4,7 +4,9 @@
  * /api/poems/[slug]/like
  * - writes go through the service-role client, never the anon client (the
  *   anon key's RLS policies are read-only)
- * - a new like notifies the admin's devices; removing one does not
+ * - a toggle is one atomic database call that returns the new state
+ * - a new like notifies the admin's devices after the response; removing one
+ *   does not
  * - a database error fails the request instead of passing as "no like"
  */
 import { NextRequest } from 'next/server';
@@ -36,13 +38,24 @@ jest.mock('@/lib/push', () => ({
   sendLikeNotification: (arg: unknown) => sendLikeNotification(arg),
 }));
 
+// after() needs a live request scope; collect the callbacks and run them by hand.
+let afterCallbacks: Array<() => unknown> = [];
+jest.mock('next/server', () => ({
+  ...jest.requireActual('next/server'),
+  after: (callback: () => unknown) => afterCallbacks.push(callback),
+}));
+
+async function runAfter() {
+  await Promise.all(afterCallbacks.map((callback) => callback()));
+}
+
 jest.mock('@/lib/csrf', () => ({
   verifyOrigin: () => null,
 }));
 
 jest.mock('@/lib/rateLimit', () => ({
-  checkRateLimit: () => null,
-  RATE_LIMITS: { likes: { limit: 30, windowMs: 60 * 1000 } },
+  ...jest.requireActual('@/lib/rateLimit'),
+  checkRateLimit: async () => null,
 }));
 
 const params = { params: Promise.resolve({ slug: 'autumn-rain' }) };
@@ -69,6 +82,7 @@ function get() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  afterCallbacks = [];
   anonClient = clientMock({});
 });
 
@@ -101,55 +115,50 @@ describe('GET', () => {
 });
 
 describe('POST', () => {
-  it('likes via the service-role client and notifies the admin', async () => {
-    const insert = queryMock();
-    adminClient = clientMock({ likes: [queryMock({ data: null }), insert] });
+  it('likes in one atomic call and answers with the new state', async () => {
+    const toggle = queryMock({ data: { liked: true, like_count: 5 } });
+    adminClient = clientMock({ toggle_like: [toggle] });
 
     const res = await post();
 
-    expect(await res.json()).toEqual({ liked: true });
-    expect(insert.argsOf('insert')).toEqual([[{ poem_id: POEM_ID, visitor_id: 'visitor-1' }]]);
+    expect(await res.json()).toEqual({ count: 5, hasLiked: true });
+    expect(toggle.argsOf('rpc')).toEqual([[{ p_poem_id: POEM_ID, p_visitor_id: 'visitor-1' }]]);
+    expect(adminClient.from).not.toHaveBeenCalled();
     expect(anonClient.from).not.toHaveBeenCalled();
+  });
+
+  it('notifies the admin after the response, not before', async () => {
+    adminClient = clientMock({
+      toggle_like: [queryMock({ data: { liked: true, like_count: 5 } })],
+    });
+
+    await post();
+    expect(sendLikeNotification).not.toHaveBeenCalled();
+
+    await runAfter();
     expect(sendLikeNotification).toHaveBeenCalledWith({
       poemTitle: 'Autumn Rain',
       slug: 'autumn-rain',
     });
   });
 
-  it('unlikes via the service-role client without notifying', async () => {
-    const remove = queryMock();
-    adminClient = clientMock({ likes: [queryMock({ data: { id: 'like-1' } }), remove] });
+  it('unlikes without notifying', async () => {
+    adminClient = clientMock({
+      toggle_like: [queryMock({ data: { liked: false, like_count: 4 } })],
+    });
 
     const res = await post();
+    await runAfter();
 
-    expect(await res.json()).toEqual({ liked: false });
-    expect(remove.argsOf('eq')).toEqual([['id', 'like-1']]);
-    expect(anonClient.from).not.toHaveBeenCalled();
+    expect(await res.json()).toEqual({ count: 4, hasLiked: false });
     expect(sendLikeNotification).not.toHaveBeenCalled();
   });
 
-  it('does not add a like when the existing-like lookup fails', async () => {
-    const insert = queryMock();
-    adminClient = clientMock({ likes: [queryMock({ error: dbError }), insert] });
+  it('fails and does not notify when the toggle fails', async () => {
+    adminClient = clientMock({ toggle_like: [queryMock({ error: dbError })] });
 
     await expect(post()).rejects.toThrow('connection lost');
-    expect(insert.calls).toEqual([]);
-  });
-
-  it('does not report an unlike that failed', async () => {
-    adminClient = clientMock({
-      likes: [queryMock({ data: { id: 'like-1' } }), queryMock({ error: dbError })],
-    });
-
-    await expect(post()).rejects.toThrow('connection lost');
-  });
-
-  it('does not notify for a like that failed', async () => {
-    adminClient = clientMock({
-      likes: [queryMock({ data: null }), queryMock({ error: dbError })],
-    });
-
-    await expect(post()).rejects.toThrow('connection lost');
+    await runAfter();
     expect(sendLikeNotification).not.toHaveBeenCalled();
   });
 });

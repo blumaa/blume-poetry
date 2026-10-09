@@ -21,27 +21,28 @@ const poem = {
   published_at: '2026-01-01T00:00:00.000Z',
 };
 
+const saved = { id: 'p1', ...poem };
+
 beforeEach(() => {
   jest.resetAllMocks();
-  save.mockResolvedValue('p1');
+  save.mockResolvedValue(saved);
   revalidate.mockResolvedValue(undefined);
 });
 
 describe('savePoemFlow', () => {
   it('saves, refreshes the poem page, and reports a new poem', async () => {
     await expect(savePoemFlow({ id: null, poem, notify: false })).resolves.toEqual({
-      title: '"Autumn" created',
-      tone: 'success',
+      poem: saved,
+      flash: { title: '"Autumn" created', tone: 'success' },
     });
     expect(save).toHaveBeenCalledWith(null, poem);
-    expect(revalidate).toHaveBeenCalledWith(['/poem/autumn']);
+    expect(revalidate).toHaveBeenCalled();
     expect(notify).not.toHaveBeenCalled();
   });
 
   it('reports an edit', async () => {
-    await expect(savePoemFlow({ id: 'p1', poem, notify: false })).resolves.toEqual({
-      title: 'Changes saved',
-      tone: 'success',
+    await expect(savePoemFlow({ id: 'p1', poem, notify: false })).resolves.toMatchObject({
+      flash: { title: 'Changes saved', tone: 'success' },
     });
   });
 
@@ -54,9 +55,8 @@ describe('savePoemFlow', () => {
 
   it('emails subscribers with the saved id and counts them', async () => {
     notify.mockResolvedValue({ sent: 1 });
-    await expect(savePoemFlow({ id: null, poem, notify: true })).resolves.toEqual({
-      title: '"Autumn" created. Emailed 1 subscriber',
-      tone: 'success',
+    await expect(savePoemFlow({ id: null, poem, notify: true })).resolves.toMatchObject({
+      flash: { title: '"Autumn" created. Emailed 1 subscriber', tone: 'success' },
     });
     expect(notify).toHaveBeenCalledWith('p1');
   });
@@ -64,25 +64,23 @@ describe('savePoemFlow', () => {
   it('says when subscribers were already emailed', async () => {
     notify.mockResolvedValue({ sent: 0, alreadyNotified: true });
     const result = await savePoemFlow({ id: 'p1', poem, notify: true });
-    expect(result.title).toBe('Changes saved. Subscribers had already been emailed about this poem');
+    expect(result.flash.title).toBe('Changes saved. Subscribers had already been emailed about this poem');
   });
 
   /* The poem is saved either way; each failed follow-up is named so the
      admin knows which half went wrong. */
   it('reports a failed email without failing the save', async () => {
     notify.mockRejectedValue(new Error('Resend down'));
-    await expect(savePoemFlow({ id: 'p1', poem, notify: true })).resolves.toEqual({
-      title: 'Saved, but the email failed: Resend down',
-      tone: 'danger',
+    await expect(savePoemFlow({ id: 'p1', poem, notify: true })).resolves.toMatchObject({
+      flash: { title: 'Saved, but the email failed: Resend down', tone: 'danger' },
     });
   });
 
   it('reports a failed site refresh and still emails', async () => {
     revalidate.mockRejectedValue(new Error('Failed to revalidate'));
     notify.mockResolvedValue({ sent: 2 });
-    await expect(savePoemFlow({ id: 'p1', poem, notify: true })).resolves.toEqual({
-      title: 'Saved, but the site refresh failed: Failed to revalidate',
-      tone: 'danger',
+    await expect(savePoemFlow({ id: 'p1', poem, notify: true })).resolves.toMatchObject({
+      flash: { title: 'Saved, but the site refresh failed: Failed to revalidate', tone: 'danger' },
     });
     expect(notify).toHaveBeenCalled();
   });

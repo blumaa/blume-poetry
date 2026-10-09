@@ -3,10 +3,11 @@
  *
  * Security property: writes to `comments` must go through the service-role
  * client (createAdminClient), never the public anon client. See
- * __tests__/api/like-writes.test.ts for the full rationale.
+ * __tests__/api/like.test.ts for the full rationale.
  */
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/poems/[slug]/comments/route';
+import { clientMock, queryMock } from '@/__tests__/supabaseMock';
 
 const FIXED_POEM_ID = 'poem-123';
 const NEW_COMMENT = {
@@ -16,24 +17,15 @@ const NEW_COMMENT = {
   created_at: '2026-01-01T00:00:00.000Z',
 };
 
-// Service-role client mocks — the POST mutation MUST go through these.
-const adminSingle = jest.fn(async () => ({ data: NEW_COMMENT, error: null }));
-const adminSelect = jest.fn(() => ({ single: adminSingle }));
-const adminInsert = jest.fn(() => ({ select: adminSelect }));
-const adminFromMock = jest.fn(() => ({ insert: adminInsert }));
-
-// Public anon client mocks — must NEVER be touched by the comment-insert mutation.
-const anonSingle = jest.fn(async () => ({ data: NEW_COMMENT, error: null }));
-const anonSelect = jest.fn(() => ({ single: anonSingle }));
-const anonInsert = jest.fn(() => ({ select: anonSelect }));
-const anonFromMock = jest.fn(() => ({ insert: anonInsert }));
+let adminClient: ReturnType<typeof clientMock>;
+const anonClient = clientMock({});
 
 jest.mock('@/lib/supabase/server', () => ({
-  createAdminClient: () => ({ from: adminFromMock }),
+  createAdminClient: () => adminClient,
 }));
 
 jest.mock('@/lib/supabase/anon', () => ({
-  getAnonClient: () => ({ from: anonFromMock }),
+  getAnonClient: () => anonClient,
 }));
 
 jest.mock('@/lib/poems', () => ({
@@ -45,11 +37,8 @@ jest.mock('@/lib/csrf', () => ({
 }));
 
 jest.mock('@/lib/rateLimit', () => ({
-  checkRateLimit: () => null,
-  RATE_LIMITS: {
-    likes: { limit: 30, windowMs: 60 * 1000 },
-    comments: { limit: 10, windowMs: 5 * 60 * 1000 },
-  },
+  ...jest.requireActual('@/lib/rateLimit'),
+  checkRateLimit: async () => null,
 }));
 
 function post(body: unknown) {
@@ -57,52 +46,71 @@ function post(body: unknown) {
     new NextRequest('https://site.test/api/poems/some-slug/comments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: typeof body === 'string' ? body : JSON.stringify(body),
     }),
     { params: Promise.resolve({ slug: 'some-slug' }) }
   );
 }
 
-describe('POST /api/poems/[slug]/comments — writes go through the service-role client', () => {
+const valid = { visitorId: 'visitor-1', authorName: '  Ada ', content: ' Lovely poem. ' };
+
+describe('POST /api/poems/[slug]/comments', () => {
+  let insert: ReturnType<typeof queryMock>;
+
   beforeEach(() => {
-    jest.clearAllMocks();
+    insert = queryMock({ data: NEW_COMMENT });
+    adminClient = clientMock({ comments: [insert] });
   });
 
-  it('inserts the new comment via the service-role client, and never touches the anon client', async () => {
-    const res = await post({
-      visitorId: 'visitor-1',
-      authorName: 'Ada',
-      content: 'Lovely poem.',
-    });
-    const json = await res.json();
+  it('inserts the trimmed comment via the service-role client and answers it', async () => {
+    const res = await post(valid);
 
     expect(res.status).toBe(200);
-    expect(json).toEqual({ comment: NEW_COMMENT });
-
-    expect(adminFromMock).toHaveBeenCalledWith('comments');
-    expect(adminInsert).toHaveBeenCalledWith({
+    expect(await res.json()).toEqual({ comment: NEW_COMMENT });
+    expect(insert.argsOf('insert')[0][0]).toEqual({
       poem_id: FIXED_POEM_ID,
       visitor_id: 'visitor-1',
       author_name: 'Ada',
       content: 'Lovely poem.',
     });
-
-    expect(anonFromMock).not.toHaveBeenCalled();
-    expect(anonInsert).not.toHaveBeenCalled();
+    expect(anonClient.from).not.toHaveBeenCalled();
   });
 
-  it('still rejects honeypot-tripped submissions without writing (existing validation preserved)', async () => {
-    const res = await post({
-      visitorId: 'visitor-1',
-      authorName: 'Bot',
-      content: 'spam',
-      honeypot: 'filled-in',
-    });
-    const json = await res.json();
+  it('silently accepts a honeypot-tripped submission without writing', async () => {
+    const res = await post({ ...valid, honeypot: 'filled-in' });
 
     expect(res.status).toBe(200);
-    expect(json).toEqual({ success: true });
-    expect(adminInsert).not.toHaveBeenCalled();
-    expect(anonInsert).not.toHaveBeenCalled();
+    expect(await res.json()).toEqual({ success: true });
+    expect(adminClient.from).not.toHaveBeenCalled();
+  });
+
+  it('rejects a submission sent too soon after the form opened', async () => {
+    const res = await post({ ...valid, timestamp: Date.now() });
+
+    expect(res.status).toBe(400);
+    expect(adminClient.from).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [{ ...valid, authorName: '   ' }, 'Name and comment are required'],
+    [{ ...valid, content: undefined }, 'Name and comment are required'],
+    [{ ...valid, visitorId: 42 }, 'Name and comment are required'],
+    [{ ...valid, content: 'x'.repeat(2001) }, 'Comment is too long'],
+  ])('rejects an invalid body with 400 (%#)', async (body, message) => {
+    const res = await post(body);
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: message });
+    expect(adminClient.from).not.toHaveBeenCalled();
+  });
+
+  it('answers 400 for a body that is not JSON', async () => {
+    const res = await post('not json');
+    expect(res.status).toBe(400);
+  });
+
+  it('throws when the insert fails, so Next answers 500', async () => {
+    adminClient = clientMock({ comments: [queryMock({ error: { message: 'db down' } })] });
+    await expect(post(valid)).rejects.toThrow('db down');
   });
 });

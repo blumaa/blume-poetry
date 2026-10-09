@@ -11,7 +11,7 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, back: jest.fn() }),
 }));
 jest.mock('./savePoemFlow', () => ({ savePoemFlow: jest.fn() }));
-jest.mock('@/components/admin/RichTextEditor', () => ({ RichTextEditor: () => null }));
+jest.mock('@/components/admin/LazyRichTextEditor', () => ({ RichTextEditor: () => null }));
 
 const poem: PoemRow = {
   id: 'p1',
@@ -27,8 +27,12 @@ const poem: PoemRow = {
 } as PoemRow;
 
 describe('PoemEditor', () => {
-  it('marks cached admin poem reads stale after a save', async () => {
-    (savePoemFlow as jest.Mock).mockResolvedValue({ title: 'Changes saved', tone: 'success' });
+  it('marks admin lists stale and caches the saved row from the server', async () => {
+    const saved = { ...poem, title: 'Saved title' };
+    (savePoemFlow as jest.Mock).mockResolvedValue({
+      poem: saved,
+      flash: { title: 'Changes saved', tone: 'success' },
+    });
     const user = userEvent.setup();
     const { queryClient } = renderWithProviders(<PoemEditor poem={poem} />);
     queryClient.setQueryData(queryKeys.admin.poems(null), [poem]);
@@ -41,6 +45,7 @@ describe('PoemEditor', () => {
       expect.objectContaining({ id: 'p1', notify: false })
     );
     expect(queryClient.getQueryState(queryKeys.admin.poems(null))?.isInvalidated).toBe(true);
-    expect(queryClient.getQueryState(queryKeys.admin.poem('p1'))?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryData(queryKeys.admin.poem('p1'))).toEqual(saved);
+    expect(queryClient.getQueryState(queryKeys.admin.poem('p1'))?.isInvalidated).toBe(false);
   });
 });

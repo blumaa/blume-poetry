@@ -1,14 +1,44 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
 
-type EmailLogInsert = Database['public']['Tables']['email_logs']['Insert'];
+type Client = SupabaseClient<Database>;
+type EmailLogStatus = Database['public']['Enums']['email_log_status'];
 
 /**
- * Records a finished send in email_logs. The emails have already gone out, so
- * a failed write is reported, not thrown: throwing would tell the admin the
- * send failed and invite a duplicate send.
+ * Logs a whole-list send before the first mail goes out. Throws on failure:
+ * nothing has been sent yet, so failing the request is safe.
  */
-export async function recordEmailSend(client: SupabaseClient<Database>, entry: EmailLogInsert) {
-  const { error } = await client.from('email_logs').insert(entry);
-  if (error) console.error('Failed to record email send:', error);
+export async function startEmailLog(
+  client: Client,
+  entry: { subject: string; poem_id: string | null }
+): Promise<string> {
+  const { data } = await client
+    .from('email_logs')
+    .insert({ ...entry, status: 'sending' })
+    .select('id')
+    .single()
+    .throwOnError();
+  return data.id;
+}
+
+function outcomeStatus({ sent, failed }: { sent: number; failed: string[] }): EmailLogStatus {
+  if (sent === 0) return 'failed';
+  return failed.length > 0 ? 'partial' : 'sent';
+}
+
+/**
+ * Records how the send ended. The emails have already gone out, so a failed
+ * write is reported, not thrown: throwing would tell the admin the send failed
+ * and invite a duplicate send.
+ */
+export async function finishEmailLog(
+  client: Client,
+  id: string,
+  result: { sent: number; failed: string[] }
+) {
+  const { error } = await client
+    .from('email_logs')
+    .update({ status: outcomeStatus(result), recipient_count: result.sent })
+    .eq('id', id);
+  if (error) console.error('Failed to finish email log:', error);
 }

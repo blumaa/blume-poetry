@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { screen, waitFor } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/__tests__/test-utils';
 import { CommentSection } from './CommentSection';
@@ -23,11 +23,6 @@ jest.mock('@/lib/visitorId', () => ({
   getVisitorId: () => 'visitor-1',
 }));
 
-let mockIsAdmin = false;
-jest.mock('@/features/auth', () => ({
-  useAuth: () => ({ isAdmin: mockIsAdmin }),
-}));
-
 const comment = (id: string, content: string) => ({
   id,
   author_name: 'Ana',
@@ -39,7 +34,6 @@ describe('CommentSection', () => {
   beforeEach(() => {
     jest.restoreAllMocks();
     localStorage.clear();
-    mockIsAdmin = false;
   });
 
   function mockFetchSequence(responses: Array<{ ok: boolean; body: unknown }>) {
@@ -54,12 +48,12 @@ describe('CommentSection', () => {
     return fetchMock;
   }
 
-  it('offers delete only to the admin', async () => {
+  it('offers no moderation on the public page', async () => {
     mockFetchSequence([{ ok: true, body: { comments: [comment('1', 'lovely poem')] } }]);
     renderWithProviders(<CommentSection slug="gaps" />);
 
     await screen.findByText('lovely poem');
-    expect(screen.queryByRole('button', { name: 'Delete comment' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();
   });
 
   it('shows comments from the server', async () => {
@@ -69,11 +63,10 @@ describe('CommentSection', () => {
     expect(await screen.findByText('lovely poem')).toBeInTheDocument();
   });
 
-  it('shows the new comment only after the refetch confirms it', async () => {
+  it('shows the new comment from the server answer, without a refetch', async () => {
     const fetchMock = mockFetchSequence([
       { ok: true, body: { comments: [comment('1', 'first')] } }, // initial GET
       { ok: true, body: { comment: comment('2', 'second') } }, // POST
-      { ok: true, body: { comments: [comment('2', 'second'), comment('1', 'first')] } }, // refetch
     ]);
     const onModalClose = jest.fn();
     renderWithProviders(<ModalHarness slug="gaps" onModalClose={onModalClose} />);
@@ -84,28 +77,9 @@ describe('CommentSection', () => {
     await user.click(screen.getByRole('button', { name: 'Post Comment' }));
 
     expect(await screen.findByText('second')).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(screen.getByText('first')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[1][1]).toMatchObject({ method: 'POST' });
     expect(onModalClose).toHaveBeenCalled();
-  });
-
-  it('removes a deleted comment only after the refetch', async () => {
-    mockIsAdmin = true;
-    const fetchMock = mockFetchSequence([
-      { ok: true, body: { comments: [comment('1', 'first'), comment('2', 'second')] } }, // initial GET
-      { ok: true, body: {} }, // DELETE
-      { ok: true, body: { comments: [comment('2', 'second')] } }, // refetch
-    ]);
-    renderWithProviders(<CommentSection slug="gaps" />);
-    const user = userEvent.setup();
-
-    const deleteButtons = await screen.findAllByRole('button', { name: 'Delete comment' });
-    await user.click(deleteButtons[0]);
-    await user.click(screen.getByRole('button', { name: 'Delete' }));
-
-    await waitFor(() => expect(screen.queryByText('first')).not.toBeInTheDocument());
-    expect(screen.getByText('second')).toBeInTheDocument();
-    expect(fetchMock.mock.calls[1][0]).toBe('/api/admin/comments/1');
-    expect(fetchMock.mock.calls[1][1]).toMatchObject({ method: 'DELETE' });
   });
 });

@@ -96,6 +96,7 @@ interface SendEmailOptions {
   subject: string;
   html: string;
   text?: string;
+  headers?: Record<string, string>;
 }
 
 const MAX_SEND_ATTEMPTS = 3;
@@ -107,7 +108,7 @@ function isTemporarySmtpError(err: unknown): boolean {
   return typeof code === 'number' && code >= 400 && code < 500;
 }
 
-export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
+export async function sendEmail({ to, subject, html, text, headers }: SendEmailOptions) {
   const transport = getTransporter();
   const fromName = process.env.EMAIL_FROM_NAME || SITE_NAME;
   const fromEmail = process.env.GMAIL_USER;
@@ -117,6 +118,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
     subject,
     html,
     text,
+    headers,
   };
 
   for (let attempt = 1; ; attempt++) {
@@ -128,6 +130,52 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * attempt));
     }
   }
+}
+
+/**
+ * One-click unsubscribe headers (RFC 8058). Gmail and Yahoo require them for
+ * bulk mail and show their own unsubscribe button. The mail client POSTs to
+ * the URL, so /api/unsubscribe must unsubscribe on POST.
+ */
+function unsubscribeHeaders(email: string): Record<string, string> {
+  return {
+    'List-Unsubscribe': `<${buildUnsubscribeUrl(email)}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  };
+}
+
+type SubscriberMail = Pick<SendEmailOptions, 'subject' | 'html' | 'text'>;
+
+/** Sends at once per batch; the pooled transport caps the open connections. */
+const SEND_BATCH_SIZE = 50;
+
+/**
+ * Send each recipient their own mail, built by `build`. A failed recipient is
+ * logged and counted; it never stops the rest, because mail already sent
+ * cannot be recalled and a retry would send it twice.
+ */
+export async function sendToSubscribers(
+  recipients: string[],
+  build: (email: string) => SubscriberMail
+): Promise<{ sent: number; failed: string[] }> {
+  let sent = 0;
+  const failed: string[] = [];
+
+  for (let i = 0; i < recipients.length; i += SEND_BATCH_SIZE) {
+    await Promise.all(
+      recipients.slice(i, i + SEND_BATCH_SIZE).map(async (email) => {
+        try {
+          await sendEmail({ to: email, ...build(email), headers: unsubscribeHeaders(email) });
+          sent++;
+        } catch (err) {
+          failed.push(email);
+          console.error(`Failed to send to ${email}:`, err);
+        }
+      })
+    );
+  }
+
+  return { sent, failed };
 }
 
 interface PoemEmailData {

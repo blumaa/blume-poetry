@@ -10,7 +10,7 @@ interface TreeItemProps {
   activeSlug?: string;
   expandedNodes: Set<string>;
   toggleNode: (id: string) => void;
-  onNavigate?: (slug: string, title: string) => void;
+  onNavigate?: () => void;
 }
 
 export function TreeItem({
@@ -31,7 +31,7 @@ export function TreeItem({
         href={`/poem/${node.slug}`}
         label={node.label}
         active={node.slug === activeSlug}
-        onClick={() => onNavigate?.(node.slug!, node.label)}
+        onClick={onNavigate}
       />
     );
   }
@@ -56,8 +56,14 @@ export function TreeItem({
           <span className={styles.count}>{node.count}</span>
         )}
       </button>
-      {isExpanded && hasChildren && (
-        <div id={`tree-children-${node.id}`} role="group" style={{ paddingLeft: `${(depth + 1) * 12}px` }}>
+      {/* Always rendered, so aria-controls names an element that exists. */}
+      {hasChildren && (
+        <div
+          id={`tree-children-${node.id}`}
+          role="group"
+          hidden={!isExpanded}
+          style={{ paddingLeft: `${(depth + 1) * 12}px` }}
+        >
           {node.children!.map((child) => (
             <TreeItem
               key={child.id}

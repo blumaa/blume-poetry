@@ -13,6 +13,10 @@ export function useInbox() {
   const { data = [], isPending, isError } = useQuery({
     queryKey: queryKeys.admin.activity(),
     queryFn: fetchActivity,
+    /* The bell sits on every admin page; a minute keeps navigation from
+       refetching on each mount. A focus after that minute still refetches,
+       so returning to the tab shows new likes. */
+    staleTime: 60_000,
   });
   const clearedAt = useStored('notificationsCleared');
   const lastSeen = useStored('notificationsLastSeen');

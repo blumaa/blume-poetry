@@ -1,112 +1,85 @@
 /**
  * @jest-environment node
  */
-import { upsertSubscriber } from '@/lib/subscribers';
+import { unsubscribeByToken, upsertSubscriber } from '@/lib/subscribers';
+import { createUnsubscribeToken } from '@/lib/unsubscribeToken';
 import { clientMock, queryMock, type QueryResult } from '@/__tests__/supabaseMock';
 
 type Client = Parameters<typeof upsertSubscriber>[0];
-const dbError = { message: 'connection lost' };
 
-/* The lookup query, then the write it leads to (update or insert). */
-function setup(lookup: QueryResult, write: QueryResult = {}) {
-  const find = queryMock(lookup);
-  const save = queryMock(write);
-  const client = clientMock({ subscribers: [find, save] }) as unknown as Client;
-  return { client, find, save };
+function setup(result: QueryResult) {
+  const query = queryMock(result);
+  const client = clientMock({ upsert_subscriber: [query] }) as unknown as Client;
+  return { client, query };
 }
 
-const saved = { id: 'sub-1', status: 'active' };
+const row = { id: 'sub-1', email: 'a@x.com', status: 'active' };
 
 describe('upsertSubscriber', () => {
-  it('lowercases the email before looking up an existing subscriber', async () => {
-    const { client, find } = setup({ data: null }, { data: saved });
+  it('makes one atomic call with the email and preference', async () => {
+    const { client, query } = setup({ data: { outcome: 'inserted', subscriber: row } });
 
-    await upsertSubscriber(client, 'Foo@Example.com', { status: 'active' });
+    await upsertSubscriber(client, 'A@x.com', false);
 
-    expect(find.argsOf('eq')).toEqual([['email', 'foo@example.com']]);
+    expect(query.argsOf('rpc')[0][0]).toEqual({ p_email: 'A@x.com', p_notify_new_poems: false });
   });
 
-  it('lowercases the email before inserting a new subscriber (the casing bug fix)', async () => {
-    const { client, save } = setup({ data: null }, { data: saved });
+  it('opts in to new-poem emails by default', async () => {
+    const { client, query } = setup({ data: { outcome: 'inserted', subscriber: row } });
 
-    const result = await upsertSubscriber(client, 'Foo@Example.com', { status: 'active' });
+    await upsertSubscriber(client, 'a@x.com');
 
-    expect(save.argsOf('insert')).toEqual([
-      [expect.objectContaining({ email: 'foo@example.com', status: 'active', verified: true })],
-    ]);
-    expect(result).toEqual({ outcome: 'inserted', subscriber: saved });
+    expect(query.argsOf('rpc')[0][0]).toMatchObject({ p_notify_new_poems: true });
   });
 
-  it('returns already_active without writing when the subscriber is already active', async () => {
-    const { client, save } = setup({ data: { id: 'sub-1', status: 'active' } });
+  it.each(['inserted', 'reactivated'] as const)('answers %s with the row', async (outcome) => {
+    const { client } = setup({ data: { outcome, subscriber: row } });
 
-    const result = await upsertSubscriber(client, 'foo@example.com', { status: 'active' });
-
-    expect(result).toEqual({ outcome: 'already_active' });
-    expect(save.calls).toEqual([]);
+    expect(await upsertSubscriber(client, 'a@x.com')).toEqual({ outcome, subscriber: row });
   });
 
-  it('reactivates an unsubscribed row using the caller-provided fields', async () => {
-    const { client, save } = setup({ data: { id: 'sub-1', status: 'unsubscribed' } }, { data: saved });
+  it('answers already_active without a row', async () => {
+    const { client } = setup({ data: { outcome: 'already_active', subscriber: null } });
 
-    const result = await upsertSubscriber(client, 'foo@example.com', { status: 'active', verified: true });
-
-    expect(save.argsOf('update')).toEqual([[{ status: 'active', verified: true, notify_new_poems: true }]]);
-    expect(save.argsOf('eq')).toEqual([['id', 'sub-1']]);
-    expect(save.argsOf('insert')).toEqual([]);
-    expect(result).toEqual({ outcome: 'reactivated', subscriber: saved });
+    expect(await upsertSubscriber(client, 'a@x.com')).toEqual({ outcome: 'already_active' });
   });
 
-  describe('database errors', () => {
-    it('throws when the lookup fails, rather than inserting a duplicate', async () => {
-      const { client, save } = setup({ error: dbError });
+  it('throws when the database fails', async () => {
+    const { client } = setup({ error: { message: 'connection lost' } });
 
-      await expect(upsertSubscriber(client, 'foo@example.com', { status: 'active' })).rejects.toThrow(
-        'connection lost'
-      );
-      expect(save.calls).toEqual([]);
-    });
+    await expect(upsertSubscriber(client, 'a@x.com')).rejects.toThrow('connection lost');
+  });
+});
 
-    it('throws when the insert fails', async () => {
-      const { client } = setup({ data: null }, { error: dbError });
-
-      await expect(upsertSubscriber(client, 'foo@example.com', { status: 'active' })).rejects.toThrow(
-        'connection lost'
-      );
-    });
-
-    it('throws when the reactivation fails', async () => {
-      const { client } = setup({ data: { id: 'sub-1', status: 'unsubscribed' } }, { error: dbError });
-
-      await expect(upsertSubscriber(client, 'foo@example.com', { status: 'active' })).rejects.toThrow(
-        'connection lost'
-      );
-    });
+describe('unsubscribeByToken', () => {
+  beforeEach(() => {
+    process.env.UNSUBSCRIBE_SECRET = 'test-secret-value';
   });
 
-  describe('new-poem notification preference', () => {
-    it('opts a new subscriber in by default', async () => {
-      const { client, save } = setup({ data: null }, { data: saved });
+  it('unsubscribes the address the token was issued for', async () => {
+    const query = queryMock();
+    const client = clientMock({ subscribers: [query] }) as unknown as Client;
 
-      await upsertSubscriber(client, 'foo@example.com', { status: 'active' });
+    const ok = await unsubscribeByToken(client, createUnsubscribeToken('reader@example.com'));
 
-      expect(save.argsOf('insert')).toEqual([[expect.objectContaining({ notify_new_poems: true })]]);
-    });
+    expect(ok).toBe(true);
+    expect(query.argsOf('update')).toEqual([[{ status: 'unsubscribed' }]]);
+    expect(query.argsOf('eq')).toEqual([['email', 'reader@example.com']]);
+  });
 
-    it('records a new subscriber who declined', async () => {
-      const { client, save } = setup({ data: null }, { data: saved });
+  it('touches nothing for a forged or missing token', async () => {
+    const client = clientMock({});
 
-      await upsertSubscriber(client, 'foo@example.com', { status: 'active' }, false);
+    expect(await unsubscribeByToken(client as unknown as Client, 'attacker.forged')).toBe(false);
+    expect(await unsubscribeByToken(client as unknown as Client, null)).toBe(false);
+    expect(client.from).not.toHaveBeenCalled();
+  });
 
-      expect(save.argsOf('insert')).toEqual([[expect.objectContaining({ notify_new_poems: false })]]);
-    });
+  it('throws on a database error instead of claiming success', async () => {
+    const client = clientMock({ subscribers: [queryMock({ error: { message: 'connection lost' } })] });
 
-    it('applies the choice when reactivating, so an old preference cannot override a fresh one', async () => {
-      const { client, save } = setup({ data: { id: 'sub-1', status: 'unsubscribed' } }, { data: saved });
-
-      await upsertSubscriber(client, 'foo@example.com', { status: 'active' }, false);
-
-      expect(save.argsOf('update')).toEqual([[expect.objectContaining({ notify_new_poems: false })]]);
-    });
+    await expect(
+      unsubscribeByToken(client as unknown as Client, createUnsubscribeToken('reader@example.com'))
+    ).rejects.toThrow('connection lost');
   });
 });

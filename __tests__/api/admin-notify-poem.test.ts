@@ -7,83 +7,33 @@
  *    retry, because email cannot be recalled
  */
 import { POST } from '@/app/api/admin/notify-poem/route';
+import { clientMock, queryMock } from '@/__tests__/supabaseMock';
 
-let currentUser: { email: string } | null = null;
+let currentUser: { email: string; app_metadata: { role?: string } } | null = null;
+let adminClient: ReturnType<typeof clientMock>;
 
 const POEM = {
   id: '11111111-2222-4333-8444-555555555555',
   title: 'Tide',
   slug: 'tide',
   content: '<p>a line</p>',
-  status: 'published',
+  plain_text: 'a line',
 };
-
-// Rows the claiming UPDATE returns: one row = claimed, empty = already sent.
-let claimedRows: Array<typeof POEM> = [];
-let claimError: { message: string } | null = null;
-let subscriberRows: Array<{ email: string; notify_new_poems: boolean }> = [];
-
-const releaseClaim = jest.fn();
-const insertLog = jest.fn(async () => ({ error: null }));
-const subscriberFilters: Array<[string, unknown]> = [];
-
-/**
- * Chainable stub. The claim ends in `.select()` and resolves to the claimed
- * rows; the release is awaited directly off the builder, which is what
- * `then` below catches.
- */
-function poemsTable() {
-  let values: Record<string, unknown> = {};
-  const builder = {
-    update: (next: Record<string, unknown>) => {
-      values = next;
-      return builder;
-    },
-    eq: () => builder,
-    is: () => builder,
-    select: () => Promise.resolve({ data: claimedRows, error: claimError }),
-    then: (resolve: (r: unknown) => void, reject: (e: unknown) => void) => {
-      releaseClaim(values);
-      return Promise.resolve({ error: null }).then(resolve, reject);
-    },
-  };
-  return builder;
-}
-
-function subscribersTable() {
-  const builder = {
-    select: () => builder,
-    eq: (column: string, value: unknown) => {
-      subscriberFilters.push([column, value]);
-      return builder;
-    },
-    then: (resolve: (r: unknown) => void, reject: (e: unknown) => void) =>
-      Promise.resolve({ data: subscriberRows, error: null }).then(resolve, reject),
-  };
-  return builder;
-}
-
-const fromMock = jest.fn((table: string) => {
-  if (table === 'poems') return poemsTable();
-  if (table === 'subscribers') return subscribersTable();
-  return { insert: insertLog };
-});
 
 jest.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: { getUser: async () => ({ data: { user: currentUser }, error: null }) },
   }),
-  createAdminClient: () => ({ from: fromMock }),
+  createAdminClient: () => adminClient,
 }));
 
 jest.mock('@/lib/config', () => ({
-  isAdminEmail: (email: string | undefined) => email === 'admin@site.test',
   getSiteUrl: () => 'https://site.test',
 }));
 
-const sendEmail = jest.fn(async () => ({ id: 'msg-1' }));
+const sendToSubscribers: jest.Mock = jest.fn();
 jest.mock('@/lib/email', () => ({
-  sendEmail: (...args: unknown[]) => sendEmail(...(args as [])),
+  sendToSubscribers: (...args: unknown[]) => sendToSubscribers(...args),
   generatePoemEmailHtml: () => '<html>poem</html>',
   generatePoemEmailText: () => 'poem',
 }));
@@ -92,97 +42,130 @@ function post(body: unknown) {
   return POST(
     new Request('https://site.test/api/admin/notify-poem', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', origin: 'https://site.test' },
       body: JSON.stringify(body),
     })
   );
 }
 
-describe('POST /api/admin/notify-poem', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    subscriberFilters.length = 0;
-    process.env.UNSUBSCRIBE_SECRET = 'test-secret-value';
-    currentUser = { email: 'admin@site.test' };
-    claimedRows = [POEM];
-    claimError = null;
-    subscriberRows = [
-      { email: 'a@example.com', notify_new_poems: true },
-      { email: 'b@example.com', notify_new_poems: true },
-    ];
-  });
+const subscriberRows = [{ email: 'a@example.com' }, { email: 'b@example.com' }];
 
+/** Claim succeeds, two subscribers, log start and finish, plus a spare poems
+    query for a release. */
+function happyClient(overrides: Partial<Record<string, ReturnType<typeof queryMock>[]>> = {}) {
+  return clientMock({
+    poems: [queryMock({ data: [POEM] }), queryMock()],
+    subscribers: [queryMock({ data: subscriberRows })],
+    email_logs: [queryMock({ data: { id: 'log-1' } }), queryMock()],
+    ...overrides,
+  });
+}
+
+function released() {
+  return adminClient.from.mock.calls.filter(([table]) => table === 'poems').length === 2;
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  currentUser = { email: 'admin@site.test', app_metadata: { role: 'admin' } };
+  sendToSubscribers.mockResolvedValue({ sent: 2, failed: [] });
+  adminClient = happyClient();
+});
+
+afterEach(() => jest.restoreAllMocks());
+
+describe('POST /api/admin/notify-poem', () => {
   it('rejects an unauthenticated request and sends nothing', async () => {
     currentUser = null;
     const res = await post({ poemId: POEM.id });
 
     expect(res.status).toBe(401);
-    expect(sendEmail).not.toHaveBeenCalled();
+    expect(sendToSubscribers).not.toHaveBeenCalled();
   });
 
   it('rejects a signed-in non-admin and sends nothing', async () => {
-    currentUser = { email: 'someone@example.com' };
+    currentUser = { email: 'someone@example.com', app_metadata: {} };
     const res = await post({ poemId: POEM.id });
 
     expect(res.status).toBe(403);
-    expect(sendEmail).not.toHaveBeenCalled();
+    expect(sendToSubscribers).not.toHaveBeenCalled();
   });
 
-  it('emails every opted-in active subscriber', async () => {
+  it('emails every active, opted-in subscriber and logs the send', async () => {
+    const subscribers = queryMock({ data: subscriberRows });
+    const finish = queryMock();
+    adminClient = happyClient({
+      subscribers: [subscribers],
+      email_logs: [queryMock({ data: { id: 'log-1' } }), finish],
+    });
+
     const res = await post({ poemId: POEM.id });
 
     expect(res.status).toBe(200);
-    expect(sendEmail).toHaveBeenCalledTimes(2);
     await expect(res.json()).resolves.toMatchObject({ sent: 2 });
+    expect(subscribers.argsOf('eq')).toEqual([
+      ['status', 'active'],
+      ['notify_new_poems', true],
+    ]);
+    expect(sendToSubscribers).toHaveBeenCalledWith(['a@example.com', 'b@example.com'], expect.any(Function));
+    expect(finish.argsOf('update')).toEqual([[{ status: 'sent', recipient_count: 2 }]]);
+    expect(released()).toBe(false);
   });
 
-  it('asks the database for active, opted-in subscribers only', async () => {
-    await post({ poemId: POEM.id });
+  it('sends nothing when the claim finds no unnotified row', async () => {
+    adminClient = clientMock({ poems: [queryMock({ data: [] })] });
 
-    expect(subscriberFilters).toEqual(
-      expect.arrayContaining([
-        ['status', 'active'],
-        ['notify_new_poems', true],
-      ])
-    );
-  });
-
-  it('sends nothing the second time, because the claim finds no unnotified row', async () => {
-    await post({ poemId: POEM.id });
-    sendEmail.mockClear();
-
-    claimedRows = [];
     const res = await post({ poemId: POEM.id });
 
-    expect(sendEmail).not.toHaveBeenCalled();
+    expect(sendToSubscribers).not.toHaveBeenCalled();
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toMatchObject({ sent: 0, alreadyNotified: true });
   });
 
   it('releases the claim when nobody is opted in, so the poem can still be announced later', async () => {
-    subscriberRows = [];
+    adminClient = happyClient({ subscribers: [queryMock({ data: [] })] });
 
     const res = await post({ poemId: POEM.id });
 
     expect(res.status).toBe(200);
-    expect(sendEmail).not.toHaveBeenCalled();
-    expect(releaseClaim).toHaveBeenCalled();
+    expect(sendToSubscribers).not.toHaveBeenCalled();
+    expect(released()).toBe(true);
     await expect(res.json()).resolves.toMatchObject({ sent: 0, recipientCount: 0 });
   });
 
-  it('releases the claim when every send fails, so it can be retried', async () => {
-    sendEmail.mockRejectedValue(new Error('smtp down'));
+  it('releases the claim when the subscribers cannot be read', async () => {
+    adminClient = happyClient({ subscribers: [queryMock({ error: { message: 'connection lost' } })] });
+    jest.spyOn(console, 'error').mockImplementation(() => {});
 
     const res = await post({ poemId: POEM.id });
 
     expect(res.status).toBe(500);
-    expect(releaseClaim).toHaveBeenCalled();
+    expect(sendToSubscribers).not.toHaveBeenCalled();
+    expect(released()).toBe(true);
+  });
+
+  it('releases the claim when every send fails, so it can be retried', async () => {
+    sendToSubscribers.mockResolvedValue({ sent: 0, failed: ['a@example.com', 'b@example.com'] });
+
+    const res = await post({ poemId: POEM.id });
+
+    expect(res.status).toBe(500);
+    expect(released()).toBe(true);
+  });
+
+  it('keeps the claim after a partial send, since some mail went out', async () => {
+    sendToSubscribers.mockResolvedValue({ sent: 1, failed: ['b@example.com'] });
+
+    const res = await post({ poemId: POEM.id });
+
+    expect(res.status).toBe(200);
+    expect(released()).toBe(false);
   });
 
   it('rejects a request without a poem id', async () => {
     const res = await post({});
 
     expect(res.status).toBe(400);
-    expect(sendEmail).not.toHaveBeenCalled();
+    expect(sendToSubscribers).not.toHaveBeenCalled();
   });
 });

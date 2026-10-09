@@ -1,78 +1,53 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, SubscriberRow } from '@/lib/supabase/types';
-
-type SubscribersClient = SupabaseClient<Database>;
-type SubscriberUpdate = Database['public']['Tables']['subscribers']['Update'];
+import { verifyUnsubscribeToken } from '@/lib/unsubscribeToken';
 
 export type UpsertSubscriberResult =
   | { outcome: 'already_active' }
   | { outcome: 'reactivated' | 'inserted'; subscriber: SubscriberRow };
 
 /**
- * Shared check-existing -> reactivate-if-unsubscribed -> insert-if-new flow
- * used by both the public /api/subscribe endpoint and the admin "add
- * subscriber" endpoint.
+ * Subscribes an email in one atomic call
+ * (supabase/migrations/20261009000700_tighten_columns.sql): inserts it, or
+ * reactivates an unsubscribed row, or reports it already active. The
+ * function lowercases and trims the email, so every lookup matches.
  *
- * Always lowercases the email before lookup and insert. This is the fix for
- * a bug where the public route stored emails as-typed while the admin route
- * lowercased them — a subscriber added as `Foo@x.com` couldn't later
- * unsubscribe as `foo@x.com` because the lookup wouldn't match.
- *
- * `reactivateFields` lets each caller control what gets written when
- * reactivating a previously-unsubscribed row (the two routes update
- * different fields here); the insert-new fields are identical for both
- * callers so they aren't parameterized.
- *
- * `notifyNewPoems` is its own argument rather than part of
- * `reactivateFields` because it applies to both paths: whichever answer the
- * subscriber just gave wins over whatever an earlier signup left behind.
- *
- * Database errors throw. A failed lookup must not read as "new subscriber"
- * and fall through to an insert.
+ * Shared by the public /api/subscribe route and the admin "add subscriber"
+ * route. Database errors throw.
  */
 export async function upsertSubscriber(
-  client: SubscribersClient,
-  rawEmail: string,
-  reactivateFields: SubscriberUpdate,
+  client: SupabaseClient<Database>,
+  email: string,
   notifyNewPoems: boolean = true
 ): Promise<UpsertSubscriberResult> {
-  const email = rawEmail.toLowerCase();
-
-  const { data: existing } = await client
-    .from('subscribers')
-    .select('id, status')
-    .eq('email', email)
-    .maybeSingle()
-    .throwOnError();
-
-  if (existing) {
-    if (existing.status === 'active') {
-      return { outcome: 'already_active' };
-    }
-
-    const { data } = await client
-      .from('subscribers')
-      .update({ ...reactivateFields, notify_new_poems: notifyNewPoems })
-      .eq('id', existing.id)
-      // `.select<'*', SubscriberRow>('*')` instead of bare `.select()`: in the
-      // installed postgrest-js version, a bare `.select()` after
-      // `.update()`/`.insert()` resolves `data`'s type to `{}` instead of the
-      // table row (a known upstream generic-inference gap — reproduces even
-      // for a plain read). The explicit generic is a type-only assertion; the
-      // runtime query ("*") is unchanged.
-      .select<'*', SubscriberRow>('*')
-      .single()
-      .throwOnError();
-
-    return { outcome: 'reactivated', subscriber: data };
-  }
-
   const { data } = await client
-    .from('subscribers')
-    .insert({ email, status: 'active', verified: true, notify_new_poems: notifyNewPoems })
-    .select<'*', SubscriberRow>('*')
+    .rpc('upsert_subscriber', { p_email: email, p_notify_new_poems: notifyNewPoems })
     .single()
     .throwOnError();
 
-  return { outcome: 'inserted', subscriber: data };
+  if (data.outcome === 'already_active') return { outcome: 'already_active' };
+  return {
+    outcome: data.outcome as 'inserted' | 'reactivated',
+    subscriber: data.subscriber,
+  };
+}
+
+/**
+ * Unsubscribes the address a signed unsubscribe token was issued for. Returns
+ * false, touching nothing, when the token is missing or forged. Shared by the
+ * one-click POST and the confirm page. Database errors throw.
+ */
+export async function unsubscribeByToken(
+  client: SupabaseClient<Database>,
+  token: string | null
+): Promise<boolean> {
+  const email = token ? verifyUnsubscribeToken(token) : null;
+  if (!email) return false;
+
+  await client
+    .from('subscribers')
+    .update({ status: 'unsubscribed' })
+    .eq('email', email)
+    .throwOnError();
+  return true;
 }

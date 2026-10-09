@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase/server';
-import { verifyOrigin } from '@/lib/csrf';
 
 // Registers the admin's browser as a push notification target. Admin-only:
 // these rows are exactly the set of devices that receive like notifications.
@@ -19,11 +18,8 @@ const unsubscribeSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const csrfError = verifyOrigin(request);
-  if (csrfError) return csrfError;
-
-  const auth = await requireAdmin();
-  if (auth instanceof NextResponse) return auth;
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
 
   try {
     const body = await request.json();
@@ -52,11 +48,8 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const csrfError = verifyOrigin(request);
-  if (csrfError) return csrfError;
-
-  const auth = await requireAdmin();
-  if (auth instanceof NextResponse) return auth;
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
 
   try {
     const body = await request.json();

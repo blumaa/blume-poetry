@@ -1,80 +1,67 @@
-import { isRateLimited, getClientIp, checkRateLimit } from '@/lib/rateLimit';
+/**
+ * @jest-environment node
+ */
+import { clientMock, queryMock } from '../supabaseMock';
+import { getClientIp, checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
-// Mock Request for jsdom environment
+let mockClient: ReturnType<typeof clientMock>;
+jest.mock('@/lib/supabase/server', () => ({
+  createAdminClient: () => mockClient,
+}));
+
 function mockRequest(headers: Record<string, string> = {}): Request {
-  return {
-    headers: {
-      get: (name: string) => headers[name.toLowerCase()] ?? null,
-    },
-  } as unknown as Request;
+  return new Request('https://site.test/api/x', { headers });
 }
 
-describe('isRateLimited', () => {
-  const options = { limit: 3, windowMs: 1000 };
-
-  it('allows requests under the limit', () => {
-    const key = `test-${Date.now()}-under`;
-    expect(isRateLimited(key, options)).toBe(false);
-    expect(isRateLimited(key, options)).toBe(false);
-    expect(isRateLimited(key, options)).toBe(false);
-  });
-
-  it('blocks requests over the limit', () => {
-    const key = `test-${Date.now()}-over`;
-    isRateLimited(key, options);
-    isRateLimited(key, options);
-    isRateLimited(key, options);
-    expect(isRateLimited(key, options)).toBe(true);
-  });
-
-  it('resets after the window expires', async () => {
-    const shortWindow = { limit: 1, windowMs: 50 };
-    const key = `test-${Date.now()}-reset`;
-    isRateLimited(key, shortWindow);
-    expect(isRateLimited(key, shortWindow)).toBe(true);
-
-    await new Promise((r) => setTimeout(r, 60));
-    expect(isRateLimited(key, shortWindow)).toBe(false);
-  });
-
-  it('tracks different keys independently', () => {
-    const key1 = `test-${Date.now()}-a`;
-    const key2 = `test-${Date.now()}-b`;
-    const opts = { limit: 1, windowMs: 10000 };
-
-    isRateLimited(key1, opts);
-    expect(isRateLimited(key1, opts)).toBe(true);
-    expect(isRateLimited(key2, opts)).toBe(false);
-  });
-});
-
 describe('getClientIp', () => {
-  it('extracts IP from x-forwarded-for header', () => {
-    const request = mockRequest({ 'x-forwarded-for': '1.2.3.4, 5.6.7.8' });
-    expect(getClientIp(request)).toBe('1.2.3.4');
+  it('prefers x-real-ip, which the platform sets and clients cannot forge', () => {
+    const request = mockRequest({ 'x-real-ip': '9.9.9.9', 'x-forwarded-for': '1.2.3.4' });
+    expect(getClientIp(request)).toBe('9.9.9.9');
   });
 
-  it('returns unknown when no header present', () => {
-    const request = mockRequest();
-    expect(getClientIp(request)).toBe('unknown');
+  it('falls back to the first x-forwarded-for hop', () => {
+    expect(getClientIp(mockRequest({ 'x-forwarded-for': '1.2.3.4, 5.6.7.8' }))).toBe('1.2.3.4');
+  });
+
+  it('returns unknown when no header is present', () => {
+    expect(getClientIp(mockRequest())).toBe('unknown');
   });
 });
 
 describe('checkRateLimit', () => {
-  it('returns null when within limit', () => {
-    const request = mockRequest({ 'x-forwarded-for': `check-${Date.now()}` });
-    const result = checkRateLimit(request, { limit: 5, windowMs: 10000 });
-    expect(result).toBeNull();
+  it('counts against a key scoped to the bucket and IP', async () => {
+    const query = queryMock({ data: true });
+    mockClient = clientMock({ check_rate_limit: [query] });
+
+    await checkRateLimit(mockRequest({ 'x-real-ip': '1.2.3.4' }), RATE_LIMITS.likes);
+
+    expect(query.argsOf('rpc')[0][0]).toEqual({
+      p_key: 'likes:1.2.3.4',
+      p_limit: RATE_LIMITS.likes.limit,
+      p_window_seconds: RATE_LIMITS.likes.windowSeconds,
+    });
   });
 
-  it('returns 429 response when rate limited', () => {
-    const ip = `check-limited-${Date.now()}`;
-    const opts = { limit: 1, windowMs: 10000 };
+  it('gives each bucket its own counter', () => {
+    const names = Object.values(RATE_LIMITS).map((rule) => rule.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
 
-    checkRateLimit(mockRequest({ 'x-forwarded-for': ip }), opts);
+  it('returns null within the limit', async () => {
+    mockClient = clientMock({ check_rate_limit: [queryMock({ data: true })] });
+    expect(await checkRateLimit(mockRequest(), RATE_LIMITS.comments)).toBeNull();
+  });
 
-    const result = checkRateLimit(mockRequest({ 'x-forwarded-for': ip }), opts);
-    expect(result).not.toBeNull();
+  it('returns 429 over the limit', async () => {
+    mockClient = clientMock({ check_rate_limit: [queryMock({ data: false })] });
+    const result = await checkRateLimit(mockRequest(), RATE_LIMITS.comments);
     expect(result?.status).toBe(429);
+  });
+
+  it('throws when the counter cannot be read', async () => {
+    mockClient = clientMock({
+      check_rate_limit: [queryMock({ error: { message: 'db down' } })],
+    });
+    await expect(checkRateLimit(mockRequest(), RATE_LIMITS.comments)).rejects.toThrow('db down');
   });
 });

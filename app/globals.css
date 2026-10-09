@@ -19,7 +19,6 @@
   /* Spacing */
   --sidebar-width: 280px;
   --sidebar-collapsed-width: 60px;
-  --sidebar-current-width: var(--sidebar-width);
   --mobile-header-height: 56px;
 
   /* Typography. One family, everywhere: the sidebar tree, the chrome and the
@@ -227,43 +226,17 @@ pre {
    Mobile-First Responsive Layout
    ========================================================================== */
 
-/* Desktop: Add left margin for sidebar (uses dynamic width for collapse) */
-/* Only applies to pages with .has-sidebar wrapper */
+/* Desktop: the main column starts past the fixed sidebar, and follows it when
+   the sidebar collapses to its icon rail. Only on pages with .has-sidebar. */
 @media (min-width: 768px) {
   .has-sidebar main {
-    margin-left: var(--sidebar-current-width);
+    margin-left: var(--sidebar-width);
     transition: margin-left 0.3s ease;
   }
-}
 
-/* ==========================================================================
-   Mobile Sidebar Overlay
-   ========================================================================== */
-.sidebar-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--mds-scrim);
-  z-index: 45;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-.sidebar-overlay.open {
-  opacity: 1;
-  visibility: visible;
-}
-
-.sidebar-mobile {
-  transform: translateX(-100%);
-  transition: transform 0.3s ease;
-  /* Fallback for browsers that don't support dvh */
-  height: 100vh;
-  height: 100dvh;
-}
-
-.sidebar-mobile.open {
-  transform: translateX(0);
+  .has-sidebar:has([data-sidebar-collapsed]) main {
+    margin-left: var(--sidebar-collapsed-width);
+  }
 }
 
 /* ==========================================================================

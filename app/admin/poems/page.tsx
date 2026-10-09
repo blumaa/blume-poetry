@@ -1,23 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge, Button, ButtonLink, Chip, ChipGroup, ConfirmDialog, DataTable, Input, useToast } from '@/components/mds';
-import type { PoemRow } from '@/lib/supabase/types';
 import { SkeletonList } from '@/components/Skeleton';
 import { formatDate } from '@/lib/date';
 import { takeFlashToast } from '@/lib/flashToast';
-import { queryKeys } from '@/lib/queryKeys';
-import { deletePoem, fetchAdminPoems, revalidatePoems, setPoemPinned } from '@/features/poems';
+import { invalidateKeys, queryKeys, staleAfterWrite } from '@/lib/queryKeys';
+import { deletePoem, fetchAdminPoems, revalidatePoems, setPoemPinned, type AdminPoem } from '@/features/poems';
 import { Icon } from '@/components/icons';
 import styles from './page.module.css';
 
 export default function AdminPoemsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [deleteTarget, setDeleteTarget] = useState<PoemRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminPoem | null>(null);
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get('status');
   const router = useRouter();
@@ -28,14 +27,13 @@ export default function AdminPoemsPage() {
     queryFn: () => fetchAdminPoems(statusFilter),
   });
 
-  const invalidatePoems = () =>
-    queryClient.invalidateQueries({ queryKey: queryKeys.admin.all() });
+  const invalidatePoems = () => invalidateKeys(queryClient, staleAfterWrite.poems());
 
   /* Deterministic: pin state moves only after the refetch confirms the write. */
   const pinMutation = useMutation({
-    mutationFn: async (poem: PoemRow) => {
+    mutationFn: async (poem: AdminPoem) => {
       await setPoemPinned(poem.id, !poem.pinned);
-      await revalidatePoems([]);
+      await revalidatePoems();
     },
     onSuccess: (_data, poem) =>
       toast({
@@ -47,11 +45,12 @@ export default function AdminPoemsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (target: PoemRow) => {
+    mutationFn: async (target: AdminPoem) => {
       await deletePoem(target.id);
-      await revalidatePoems([`/poem/${target.slug}`]);
+      await revalidatePoems();
     },
     onSuccess: (_data, target) => toast({ title: `"${target.title}" deleted`, tone: 'success' }),
+    onError: (error) => toast({ title: error.message, tone: 'danger' }),
     onSettled: invalidatePoems,
   });
 
@@ -66,13 +65,17 @@ export default function AdminPoemsPage() {
       return 0;
     });
 
-  // Show a toast handed over by the editor after save.
-  useEffect(() => {
+  // Show a toast handed over by the editor after save, once on arrival.
+  const showFlashToast = useEffectEvent(() => {
     const flash = takeFlashToast();
     if (flash) toast(flash);
-  }, [toast]);
+  });
 
-  const handleDeleteClick = (poem: PoemRow) => {
+  useEffect(() => {
+    showFlashToast();
+  }, []);
+
+  const handleDeleteClick = (poem: AdminPoem) => {
     setDeleteTarget(poem);
   };
 
@@ -137,7 +140,7 @@ export default function AdminPoemsPage() {
             {
               key: 'title',
               header: 'Title',
-              cell: (poem: PoemRow) => (
+              cell: (poem: AdminPoem) => (
                 <span className={styles.titleCell}>
                   {poem.pinned && (
                     <Icon name="pin" size="sm" label="Pinned" className={styles.pinIcon} />
@@ -155,7 +158,7 @@ export default function AdminPoemsPage() {
             {
               key: 'status',
               header: 'Status',
-              cell: (poem: PoemRow) => (
+              cell: (poem: AdminPoem) => (
                 <Badge tone={poem.status === 'published' ? 'success' : 'warning'}>
                   {poem.status}
                 </Badge>
@@ -164,7 +167,7 @@ export default function AdminPoemsPage() {
             {
               key: 'published',
               header: 'Published',
-              cell: (poem: PoemRow) => formatDate(poem.published_at),
+              cell: (poem: AdminPoem) => formatDate(poem.published_at),
             },
           ]}
           rows={filteredPoems}

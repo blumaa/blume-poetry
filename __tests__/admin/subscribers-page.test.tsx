@@ -24,7 +24,6 @@ const subscriber = (id: string, email: string): SubscriberRow => ({
   email,
   status: 'active',
   subscribed_at: '2026-01-01T00:00:00.000Z',
-  verified: true,
   notify_new_poems: true,
 } as SubscriberRow);
 

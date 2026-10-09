@@ -1,11 +1,9 @@
+import type { InvalidateQueryFilters, QueryClient, QueryKey } from '@tanstack/react-query';
+
 /* Every React Query key, declared once. Readers and invalidators import from
    here; an inline key array is a second declaration of the same fact. */
 export const queryKeys = {
   admin: {
-    /** Every admin read. Admin writes invalidate this: views overlap (the
-        dashboard counts what the lists show), so marking all stale is the
-        one rule that cannot miss a view. Only mounted queries refetch. */
-    all: () => ['admin'] as const,
     activity: () => ['admin', 'activity'] as const,
     comments: () => ['admin', 'comments'] as const,
     /** No status: the prefix, which invalidates every filtered list. */
@@ -20,9 +18,6 @@ export const queryKeys = {
     sendData: () => ['admin', 'send-data'] as const,
     stats: () => ['admin', 'stats'] as const,
   },
-  auth: {
-    isAdmin: (userId: string | undefined) => ['auth', 'is-admin', userId] as const,
-  },
   poem: {
     like: (slug: string) => ['poems', slug, 'like'] as const,
     comments: (slug: string) => ['poems', slug, 'comments'] as const,
@@ -36,3 +31,35 @@ export const queryKeys = {
     subscription: () => ['push', 'subscription'] as const,
   },
 } as const;
+
+/* The admin reads each kind of write makes stale, declared once. Views
+   overlap (the dashboard counts what the lists show), so a new view that
+   shows poems, subscribers or comments is added here, not at each call site. */
+export const staleAfterWrite = {
+  poems: () => [
+    queryKeys.admin.poems(),
+    queryKeys.admin.stats(),
+    queryKeys.admin.sendData(),
+    // The inbox shows poem titles.
+    queryKeys.admin.activity(),
+  ],
+  subscribers: () => [
+    queryKeys.admin.subscribers(),
+    queryKeys.admin.stats(),
+    queryKeys.admin.sendData(),
+  ],
+  comments: () => [
+    queryKeys.admin.comments(),
+    queryKeys.admin.stats(),
+    queryKeys.admin.activity(),
+  ],
+};
+
+/** Marks every key stale; mounted queries refetch unless `refetchType` says otherwise. */
+export function invalidateKeys(
+  queryClient: QueryClient,
+  keys: readonly QueryKey[],
+  filters: Omit<InvalidateQueryFilters, 'queryKey'> = {}
+) {
+  return Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ ...filters, queryKey })));
+}

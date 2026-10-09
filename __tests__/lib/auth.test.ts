@@ -1,7 +1,8 @@
 /**
  * @jest-environment node
  */
-let currentUser: { email: string } | null = null;
+type TestUser = { email: string; app_metadata: { role?: string } };
+let currentUser: TestUser | null = null;
 
 jest.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
@@ -9,12 +10,17 @@ jest.mock('@/lib/supabase/server', () => ({
   }),
 }));
 
-jest.mock('@/lib/config', () => ({
-  isAdminEmail: (email: string | undefined) => email === 'admin@site.test',
-}));
-
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
+
+const admin: TestUser = { email: 'admin@site.test', app_metadata: { role: 'admin' } };
+
+function request(method: string, origin?: string) {
+  return new Request('http://localhost:3000/api/admin/x', {
+    method,
+    headers: origin ? { origin } : {},
+  });
+}
 
 describe('requireAdmin', () => {
   beforeEach(() => {
@@ -22,22 +28,32 @@ describe('requireAdmin', () => {
   });
 
   it('returns a 401 NextResponse when there is no authenticated user', async () => {
-    const result = await requireAdmin();
+    const result = await requireAdmin(request('GET'));
     expect(result).toBeInstanceOf(NextResponse);
     expect((result as NextResponse).status).toBe(401);
   });
 
-  it('returns a 403 NextResponse when the authenticated user is not the admin', async () => {
-    currentUser = { email: 'notadmin@example.com' };
-    const result = await requireAdmin();
-    expect(result).toBeInstanceOf(NextResponse);
+  it('returns a 403 NextResponse when the user lacks the admin role', async () => {
+    currentUser = { email: 'admin@site.test', app_metadata: {} };
+    const result = await requireAdmin(request('GET'));
     expect((result as NextResponse).status).toBe(403);
   });
 
-  it('returns { user } when the authenticated user is the admin', async () => {
-    currentUser = { email: 'admin@site.test' };
-    const result = await requireAdmin();
-    expect(result).not.toBeInstanceOf(NextResponse);
-    expect(result).toEqual({ user: { email: 'admin@site.test' } });
+  it('returns { user } for a user with the admin role', async () => {
+    currentUser = admin;
+    const result = await requireAdmin(request('GET'));
+    expect(result).toEqual({ user: admin });
+  });
+
+  it('rejects a write from a foreign origin before reading the session', async () => {
+    currentUser = admin;
+    const result = await requireAdmin(request('POST', 'https://evil.test'));
+    expect((result as Response).status).toBe(403);
+  });
+
+  it('accepts a write from the site origin', async () => {
+    currentUser = admin;
+    const result = await requireAdmin(request('DELETE', 'http://localhost:3000'));
+    expect(result).toEqual({ user: admin });
   });
 });

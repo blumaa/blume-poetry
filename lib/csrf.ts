@@ -18,40 +18,32 @@ function hostnameOf(url: string): string | null {
   }
 }
 
-/**
- * Verify the request origin matches the expected site URL.
- * Returns null if valid, or a Response with 403 if invalid.
- *
- * Matching is by hostname (not string prefix) and ignores a leading `www.`,
- * so both the apex and www forms of the configured site are accepted.
- */
-export function verifyOrigin(request: Request): Response | null {
-  const origin = request.headers.get('origin');
-  const referer = request.headers.get('referer');
+function allowedHosts(): string[] {
+  const urls = [getSiteUrl()];
+  // The deployment's own URL, so preview deployments can post to themselves.
+  if (process.env.VERCEL_URL) urls.push(`https://${process.env.VERCEL_URL}`);
+  if (process.env.NODE_ENV !== 'production') urls.push('http://localhost:3000', 'http://localhost:3001');
 
-  // Allow requests with no origin (same-origin, server-side, curl, etc.)
-  if (!origin && !referer) return null;
-
-  const forbidden = Response.json(
-    { error: 'Forbidden: invalid origin' },
-    { status: 403 }
-  );
-
-  const requestHost = hostnameOf(origin || referer!);
-  if (!requestHost) return forbidden;
-
-  const allowedHosts = [
-    getSiteUrl(),
-    'http://localhost:3000',
-    'http://localhost:3001',
-  ]
+  return urls
     .map(hostnameOf)
     .filter((h): h is string => h !== null)
     .map(normalizeHost);
+}
 
-  if (allowedHosts.includes(normalizeHost(requestHost))) {
-    return null;
-  }
+/**
+ * Cross-site request check for routes that change state. Returns null when
+ * the request comes from the site, or a 403 response.
+ *
+ * Browsers send Origin on every POST, PUT, PATCH and DELETE, same-origin
+ * included, so a missing Origin means the request did not come from the
+ * site's pages. Matching is by hostname (not string prefix) and ignores a
+ * leading `www.`.
+ */
+export function verifyOrigin(request: Request): Response | null {
+  const origin = request.headers.get('origin');
+  const host = origin ? hostnameOf(origin) : null;
 
-  return forbidden;
+  if (host && allowedHosts().includes(normalizeHost(host))) return null;
+
+  return Response.json({ error: 'Forbidden: invalid origin' }, { status: 403 });
 }
