@@ -18,7 +18,8 @@ type AdminClient = ReturnType<typeof createAdminClient>;
  * Email the poem to every subscriber who opted into new-poem notifications.
  *
  * Sending is claimed before any mail goes out: the UPDATE only matches a
- * published poem whose `notified_at` is still null, so a double-click, a retry,
+ * published main-collection poem whose `notified_at` is still null (a kinky
+ * poem is never announced: the email would reveal its URL), so a double-click, a retry,
  * or a second publish of the same poem finds nothing to claim and sends
  * nothing. Mail cannot be recalled, so "at most once" beats "at least once"
  * here: the claim is released only while nothing has gone out.
@@ -38,13 +39,14 @@ export async function POST(request: Request) {
       .update({ notified_at: new Date().toISOString() })
       .eq('id', poemId)
       .eq('status', 'published')
+      .eq('collection', 'main')
       .is('notified_at', null)
       .select('id, title, slug, content, plain_text')
       .throwOnError();
 
     const poem = claimed[0];
     if (!poem) {
-      // Already notified, still a draft, or no such poem: all no-ops.
+      // Already notified, still a draft, kinky, or no such poem: all no-ops.
       return NextResponse.json({ sent: 0, alreadyNotified: true });
     }
 

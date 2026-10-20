@@ -4,7 +4,8 @@ import { getSiteUrl } from '@/lib/config';
 
 interface LikeNotification {
   poemTitle: string;
-  slug: string;
+  /** Site-relative link to the poem. */
+  url: string;
 }
 
 // Passed with each send rather than set with webpush.setVapidDetails, which
@@ -23,7 +24,7 @@ function getVapidDetails(): webpush.VapidKeys & { subject: string } | null {
  * browser revoked or user cleared site data) are pruned so dead endpoints
  * don't accumulate.
  */
-export async function sendLikeNotification({ poemTitle, slug }: LikeNotification): Promise<void> {
+export async function sendLikeNotification({ poemTitle, url }: LikeNotification): Promise<void> {
   const vapidDetails = getVapidDetails();
   if (!vapidDetails) return;
 
@@ -38,7 +39,7 @@ export async function sendLikeNotification({ poemTitle, slug }: LikeNotification
   const payload = JSON.stringify({
     title: `Someone liked “${poemTitle}”`,
     body: 'Tap to see the poem.',
-    url: `/poem/${slug}`,
+    url,
   });
 
   await Promise.all(

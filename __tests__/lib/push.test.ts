@@ -46,7 +46,7 @@ describe('sendLikeNotification', () => {
   });
 
   it('sends a notification to every stored subscription', async () => {
-    await sendLikeNotification({ poemTitle: 'Autumn Rain', slug: 'autumn-rain' });
+    await sendLikeNotification({ poemTitle: 'Autumn Rain', url: '/poem/autumn-rain' });
 
     expect(fromMock).toHaveBeenCalledWith('push_subscriptions');
     expect(selectMock).toHaveBeenCalledWith('id, endpoint, p256dh, auth');
@@ -78,7 +78,7 @@ describe('sendLikeNotification', () => {
       .mockRejectedValueOnce(Object.assign(new Error('gone'), { statusCode: 410 }))
       .mockResolvedValueOnce({ statusCode: 201 });
 
-    await sendLikeNotification({ poemTitle: 'Autumn Rain', slug: 'autumn-rain' });
+    await sendLikeNotification({ poemTitle: 'Autumn Rain', url: '/poem/autumn-rain' });
 
     expect(deleteEq).toHaveBeenCalledWith('id', 'sub-1');
     expect(deleteEq).toHaveBeenCalledTimes(1);
@@ -92,7 +92,7 @@ describe('sendLikeNotification', () => {
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     await expect(
-      sendLikeNotification({ poemTitle: 'Autumn Rain', slug: 'autumn-rain' })
+      sendLikeNotification({ poemTitle: 'Autumn Rain', url: '/poem/autumn-rain' })
     ).resolves.toBeUndefined();
     expect(consoleError).toHaveBeenCalledWith('Failed to delete gone push subscription:', {
       message: 'connection lost',
@@ -104,7 +104,7 @@ describe('sendLikeNotification', () => {
     sendNotification.mockRejectedValue(new Error('network down'));
 
     await expect(
-      sendLikeNotification({ poemTitle: 'Autumn Rain', slug: 'autumn-rain' })
+      sendLikeNotification({ poemTitle: 'Autumn Rain', url: '/poem/autumn-rain' })
     ).resolves.toBeUndefined();
   });
 
@@ -112,7 +112,7 @@ describe('sendLikeNotification', () => {
     delete process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     delete process.env.VAPID_PRIVATE_KEY;
 
-    await sendLikeNotification({ poemTitle: 'Autumn Rain', slug: 'autumn-rain' });
+    await sendLikeNotification({ poemTitle: 'Autumn Rain', url: '/poem/autumn-rain' });
 
     expect(sendNotification).not.toHaveBeenCalled();
     expect(fromMock).not.toHaveBeenCalled();

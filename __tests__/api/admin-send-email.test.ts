@@ -56,6 +56,20 @@ describe('attached poem', () => {
     expect(sendToSubscribers).not.toHaveBeenCalled();
   });
 
+  // A kinky poem in a newsletter would reveal its URL, so it reads as missing.
+  it('looks the poem up in the main collection only', async () => {
+    const lookup = queryMock({ data: null });
+    adminClient = clientMock({ poems: [lookup] });
+
+    const res = await post({ poemId: POEM_ID });
+
+    expect(res.status).toBe(404);
+    expect(lookup.argsOf('eq')).toEqual([
+      ['id', POEM_ID],
+      ['collection', 'main'],
+    ]);
+  });
+
   it('answers 500 when the poem cannot be read, rather than calling it missing', async () => {
     adminClient = clientMock({ poems: [queryMock({ error: { message: 'connection lost' } })] });
     jest.spyOn(console, 'error').mockImplementation(() => {});

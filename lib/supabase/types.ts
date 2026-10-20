@@ -9,6 +9,7 @@ export type { Database, Json } from './database.types';
 export type PoemRow = Database['public']['Tables']['poems']['Row'];
 export type PoemInsert = Database['public']['Tables']['poems']['Insert'];
 export type PoemStatus = Database['public']['Enums']['poem_status'];
+export type PoemCollection = Database['public']['Enums']['poem_collection'];
 export type SubscriberRow = Database['public']['Tables']['subscribers']['Row'];
 export type CommentRow = Database['public']['Tables']['comments']['Row'];
 export type PushSubscriptionRow = Database['public']['Tables']['push_subscriptions']['Row'];

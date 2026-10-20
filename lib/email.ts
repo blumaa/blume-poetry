@@ -9,6 +9,7 @@ import {
   truncatePoemForEmail,
 } from './poemHtml';
 import { getSiteUrl } from './config';
+import { poemHref } from './collections';
 import { createUnsubscribeToken } from './unsubscribeToken';
 import { createEmailToken } from './emailToken';
 
@@ -303,7 +304,7 @@ Unsubscribe from all emails: ${unsubscribeUrl}
 
 export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, customMessage }: PoemEmailData): string {
   const siteUrl = getSiteUrl();
-  const poemUrl = `${siteUrl}/poem/${slug}`;
+  const poemUrl = `${siteUrl}${poemHref('main', slug)}`;
   const unsubscribeUrl = buildUnsubscribeUrl(unsubscribeEmail);
 
   // Escape HTML entities to prevent injection
@@ -343,7 +344,7 @@ export function generatePoemEmailHtml({ title, content, slug, unsubscribeEmail, 
 
 export function generatePoemEmailText({ title, content, slug, unsubscribeEmail, customMessage }: PoemEmailData): string {
   const siteUrl = getSiteUrl();
-  const poemUrl = `${siteUrl}/poem/${slug}`;
+  const poemUrl = `${siteUrl}${poemHref('main', slug)}`;
   const unsubscribeUrl = buildUnsubscribeUrl(unsubscribeEmail);
 
   const messageSection = customMessage ? `${customMessage}\n\n---\n\n` : '';
@@ -382,7 +383,7 @@ export function generateNewsletterHtml({ subject, bodyHtml, poem, unsubscribeEma
         </h2>
         ${excerpt.html}
         <div style="margin-top: 24px;">
-          <a href="${siteUrl}/poem/${poem.slug}" style="color: #2563eb; text-decoration: none;">
+          <a href="${siteUrl}${poemHref('main', poem.slug)}" style="color: #2563eb; text-decoration: none;">
             ${excerpt.linkLabel} &rarr;
           </a>
         </div>
@@ -417,7 +418,7 @@ ${poem.title}
 
 ${excerpt.text}
 
-${excerpt.linkLabel}: ${siteUrl}/poem/${poem.slug}
+${excerpt.linkLabel}: ${siteUrl}${poemHref('main', poem.slug)}
 ` : '';
 
   const body = `${bodyText}

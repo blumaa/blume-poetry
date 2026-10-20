@@ -1,13 +1,11 @@
 import { createClient } from '@/lib/supabase/client';
+import type { PoemRow } from '@/lib/supabase/types';
 
 export interface Notification {
   id: string;
   type: 'comment' | 'like';
   created_at: string;
-  poem: {
-    slug: string;
-    title: string;
-  };
+  poem: Pick<PoemRow, 'slug' | 'title' | 'collection'>;
   // Comment-specific
   author_name?: string;
   content?: string;
@@ -30,12 +28,12 @@ export async function fetchActivity(): Promise<Notification[]> {
   const [commentsResult, likesResult] = await Promise.all([
     supabase
       .from('comments')
-      .select('id, author_name, content, created_at, poem:poems(slug, title)')
+      .select('id, author_name, content, created_at, poem:poems(slug, title, collection)')
       .order('created_at', { ascending: false })
       .limit(LIMIT),
     supabase
       .from('likes')
-      .select('id, created_at, poem:poems(slug, title)')
+      .select('id, created_at, poem:poems(slug, title, collection)')
       .order('created_at', { ascending: false })
       .limit(LIMIT),
   ]);

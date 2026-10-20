@@ -1,0 +1,5 @@
+.hint {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--mds-text-muted);
+}

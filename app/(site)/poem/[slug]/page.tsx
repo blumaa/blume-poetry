@@ -1,9 +1,5 @@
-import { SITE_NAME } from '@/lib/brand';
-import { notFound } from 'next/navigation';
-import { PoemDisplay } from '@/components/PoemDisplay';
-import { getPoemBySlug, getAllPoemSlugs, getAdjacentPoems } from '@/lib/poems';
-import { getSiteUrl } from '@/lib/config';
-import { buildPoemJsonLd } from '@/lib/jsonLd';
+import { PoemRoute, poemMetadata } from '@/components/PoemRoute';
+import { getAllPoemSlugs } from '@/lib/poems';
 
 export const revalidate = 3600;
 
@@ -12,61 +8,16 @@ interface PoemPageProps {
 }
 
 export async function generateStaticParams() {
-  const slugs = await getAllPoemSlugs();
+  const slugs = await getAllPoemSlugs('main');
   return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: PoemPageProps) {
   const { slug } = await params;
-  const poem = await getPoemBySlug(slug);
-
-  if (!poem) {
-    return { title: 'Poem Not Found' };
-  }
-
-  const description = poem.plainText.slice(0, 160) || poem.content.slice(0, 160);
-
-  return {
-    title: poem.title,
-    description,
-    alternates: {
-      canonical: `/poem/${slug}`,
-    },
-    openGraph: {
-      title: poem.title,
-      description,
-      url: `/poem/${slug}`,
-      type: 'article',
-      siteName: SITE_NAME,
-    },
-    twitter: {
-      card: 'summary',
-      title: poem.title,
-      description,
-    },
-  };
+  return poemMetadata({ collection: 'main', slug });
 }
 
 export default async function PoemPage({ params }: PoemPageProps) {
   const { slug } = await params;
-  const [poem, { prev, next }] = await Promise.all([
-    getPoemBySlug(slug),
-    getAdjacentPoems(slug),
-  ]);
-
-  if (!poem) {
-    notFound();
-  }
-
-  const jsonLd = buildPoemJsonLd(poem, getSiteUrl());
-
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <PoemDisplay poem={poem} prevPoem={prev} nextPoem={next} />
-    </>
-  );
+  return <PoemRoute collection="main" slug={slug} />;
 }

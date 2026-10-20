@@ -8,6 +8,8 @@ interface SidebarNavProps {
   tree: TreeNode[];
   searchResults: PoemSearchHit[] | null;
   activeSlug?: string;
+  /** A poem's link, in the sidebar's collection. */
+  hrefFor: (slug: string) => string;
   expandedNodes: Set<string>;
   toggleNode: (id: string) => void;
   /** Called when any poem link is clicked. */
@@ -18,6 +20,7 @@ export function SidebarNav({
   tree,
   searchResults,
   activeSlug,
+  hrefFor,
   expandedNodes,
   toggleNode,
   onNavigate,
@@ -33,7 +36,7 @@ export function SidebarNav({
             <SideNavItem
               key={poem.id}
               as={Link}
-              href={`/poem/${poem.slug}`}
+              href={hrefFor(poem.slug)}
               label={poem.title}
               active={poem.slug === activeSlug}
               onClick={onNavigate}
@@ -46,6 +49,7 @@ export function SidebarNav({
             key={node.id}
             node={node}
             activeSlug={activeSlug}
+            hrefFor={hrefFor}
             expandedNodes={expandedNodes}
             toggleNode={toggleNode}
             onNavigate={onNavigate}

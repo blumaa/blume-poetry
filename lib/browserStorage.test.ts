@@ -48,12 +48,12 @@ describe('browserStorage', () => {
     const a = jest.fn();
     const b = jest.fn();
     const other = jest.fn();
-    subscribeStored('notificationsCleared', a);
-    subscribeStored('notificationsCleared', b);
+    subscribeStored('sidebarCollapsed', a);
+    subscribeStored('sidebarCollapsed', b);
     subscribeStored('theme', other);
 
-    writeStored('notificationsCleared', 'x');
-    clearStored('notificationsCleared');
+    writeStored('sidebarCollapsed', 'x');
+    clearStored('sidebarCollapsed');
 
     expect(a).toHaveBeenCalledTimes(2);
     expect(b).toHaveBeenCalledTimes(2);

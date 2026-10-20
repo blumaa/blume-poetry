@@ -11,6 +11,8 @@ import styles from './SidebarHeader.module.css';
 
 interface SidebarHeaderProps {
   variant: 'mobile' | 'desktop';
+  /** Where the logo goes: the collection's home. */
+  homeHref: string;
   isCollapsed?: boolean;
   onClose?: () => void;
   onToggleCollapse?: () => void;
@@ -18,6 +20,7 @@ interface SidebarHeaderProps {
 
 export function SidebarHeader({
   variant,
+  homeHref,
   isCollapsed = false,
   onClose,
   onToggleCollapse,
@@ -26,7 +29,7 @@ export function SidebarHeader({
     return (
       <div className={styles.headerMobile}>
         <Link
-          href="/"
+          href={homeHref}
           onClick={onClose}
           className={styles.brandLinkMobile}
           aria-label={SITE_NAME}
@@ -56,7 +59,7 @@ export function SidebarHeader({
     <div className={`${styles.headerDesktop} ${isCollapsed ? styles.headerDesktopCollapsed : ''}`}>
       {!isCollapsed && (
         <Link
-          href="/"
+          href={homeHref}
           className={styles.brandLinkDesktop}
           aria-label={SITE_NAME}
         >

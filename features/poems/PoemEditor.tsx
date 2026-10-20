@@ -6,11 +6,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { RichTextEditorRef } from '@/components/admin/RichTextEditor';
 import { RichTextEditor } from '@/components/admin/LazyRichTextEditor';
 import { PoemContent } from '@/components/PoemContent';
-import { Button, Checkbox, ConfirmDialog, Field, Input, Radio, Tab, TabList, Tabs } from '@/components/mds';
+import { Button, ConfirmDialog, Field, Input, Tab, TabList, Tabs } from '@/components/mds';
+import { COLLECTION_CHOICES } from '@/lib/collections';
 import { formatDate } from '@/lib/date';
-import type { PoemRow, PoemStatus } from '@/lib/supabase/types';
+import type { PoemCollection, PoemRow, PoemStatus } from '@/lib/supabase/types';
 import { invalidateKeys, queryKeys, staleAfterWrite } from '@/lib/queryKeys';
 import { savePoemFlow } from './savePoemFlow';
+import { ChoiceFieldset } from './ChoiceFieldset';
+import { NotifySwitch, notifyAvailability } from './NotifySwitch';
 import styles from './PoemEditor.module.css';
 import { setFlashToast } from '@/lib/flashToast';
 
@@ -39,6 +42,12 @@ function PoemPreview({ title, subtitle, html }: { title: string; subtitle: strin
   );
 }
 
+const STATUS_CHOICES = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'published', label: 'Published' },
+] as const;
+
+// Kinky poems live at /kinky, reachable only by its URL.
 interface PoemEditorProps {
   /** Absent for a new poem. */
   poem?: PoemRow;
@@ -64,6 +73,7 @@ export function PoemEditor({ poem }: PoemEditorProps) {
   const [title, setTitle] = useState(poem?.title || '');
   const [subtitle, setSubtitle] = useState(poem?.subtitle || '');
   const [status, setStatus] = useState<PoemStatus>(poem?.status ?? 'draft');
+  const [collection, setCollection] = useState<PoemCollection>(poem?.collection ?? 'main');
   const [publishedAt, setPublishedAt] = useState(formatDateForInput(poem?.published_at));
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,11 +84,13 @@ export function PoemEditor({ poem }: PoemEditorProps) {
   const queryClient = useQueryClient();
   const editorRef = useRef<RichTextEditorRef>(null);
 
-  // A poem is only ever announced once — the server stamps `notified_at` when
-  // it sends. So the offer is available while that stamp is missing, but it
-  // only defaults to on for the save that actually publishes the poem.
+  // The email defaults to on only for the save that actually publishes the poem.
   const isPublishTransition = status === 'published' && poem?.status !== 'published';
-  const canNotify = status === 'published' && !poem?.notified_at;
+  const { canNotify, hint: notifyHint } = notifyAvailability({
+    status,
+    collection,
+    notifiedAt: poem?.notified_at,
+  });
   // Null means "admin hasn't said" — follow the transition. Once they touch
   // the box their answer sticks, even if they toggle the status around.
   const [notifyOverride, setNotifyOverride] = useState<boolean | null>(null);
@@ -135,6 +147,7 @@ export function PoemEditor({ poem }: PoemEditorProps) {
           content: contentHtml,
           plain_text: contentText,
           status,
+          collection,
           published_at: finalPublishedAt,
         },
         notify: willNotify,
@@ -177,24 +190,20 @@ export function PoemEditor({ poem }: PoemEditorProps) {
 
       {/* Status and Date Row */}
       <div className={styles.statusDateRow}>
-        {/* Status */}
-        <fieldset>
-          <legend className={styles.statusLegend}>Status</legend>
-          <div className={styles.radioRow}>
-            <Radio
-              name="status"
-              label="Draft"
-              checked={status === 'draft'}
-              onChange={() => setStatus('draft')}
-            />
-            <Radio
-              name="status"
-              label="Published"
-              checked={status === 'published'}
-              onChange={() => setStatus('published')}
-            />
-          </div>
-        </fieldset>
+        <ChoiceFieldset
+          legend="Status"
+          name="status"
+          choices={STATUS_CHOICES}
+          value={status}
+          onChange={setStatus}
+        />
+        <ChoiceFieldset
+          legend="Collection"
+          name="collection"
+          choices={COLLECTION_CHOICES}
+          value={collection}
+          onChange={setCollection}
+        />
 
         {/* Published Date */}
         <div className={styles.dateField}>
@@ -209,20 +218,12 @@ export function PoemEditor({ poem }: PoemEditorProps) {
       </div>
 
       {/* Notify subscribers */}
-      {canNotify && (
-        <Checkbox
-          checked={notifySubscribers}
-          onChange={(e) => setNotifyOverride(e.target.checked)}
-          label={
-            <>
-              Email subscribers about this poem
-              <span className={styles.notifyHint}>
-                Goes to everyone with new-poem emails turned on. Only ever sent once per poem.
-              </span>
-            </>
-          }
-        />
-      )}
+      <NotifySwitch
+        canNotify={canNotify}
+        hint={notifyHint}
+        checked={notifySubscribers}
+        onChange={setNotifyOverride}
+      />
 
       {/* Editor / Preview toggle. No TabPanel: both views share the one
           container below, which renders conditionally. */}

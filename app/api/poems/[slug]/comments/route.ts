@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAnonClient } from '@/lib/supabase/anon';
 import { createAdminClient } from '@/lib/supabase/server';
-import { getPoemIdBySlug } from '@/lib/poems';
+import { getPoemRefBySlug } from '@/lib/poems';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { verifyOrigin } from '@/lib/csrf';
 
@@ -30,15 +30,15 @@ export async function GET(
 ) {
   const { slug } = await params;
 
-  const poemId = await getPoemIdBySlug(slug);
-  if (!poemId) {
+  const poem = await getPoemRefBySlug(slug);
+  if (!poem) {
     return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
   }
 
   const { data: comments } = await getAnonClient()
     .from('comments')
     .select(COMMENT_COLUMNS)
-    .eq('poem_id', poemId)
+    .eq('poem_id', poem.id)
     .order('created_at', { ascending: false })
     .throwOnError();
 
@@ -81,15 +81,15 @@ export async function POST(
   }
   const { visitorId, authorName, content } = parsed.data;
 
-  const poemId = await getPoemIdBySlug(slug);
-  if (!poemId) {
+  const poem = await getPoemRefBySlug(slug);
+  if (!poem) {
     return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
   }
 
   const { data: comment } = await createAdminClient()
     .from('comments')
     .insert({
-      poem_id: poemId,
+      poem_id: poem.id,
       visitor_id: visitorId,
       author_name: authorName,
       content,

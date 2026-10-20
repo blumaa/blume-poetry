@@ -63,6 +63,16 @@ describe('fetchSendData', () => {
     expect(queries[0].argsOf('select')).toEqual([['id, title, content, plain_text']]);
   });
 
+  /* A kinky poem in a newsletter would reveal its URL. */
+  it('offers only published main-collection poems', async () => {
+    pending.push({ data: [] }, { count: 0 });
+    await fetchSendData();
+    expect(queries[0].argsOf('eq')).toEqual([
+      ['status', 'published'],
+      ['collection', 'main'],
+    ]);
+  });
+
   /* A failed count must not read as "0 subscribers". */
   it('throws when the count fails', async () => {
     pending.push({ data: [] }, { error: dbError });

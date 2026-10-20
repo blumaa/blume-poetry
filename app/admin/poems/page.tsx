@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { useEffect, useEffectEvent, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Badge, Button, ButtonLink, Chip, ChipGroup, ConfirmDialog, DataTable, Input, useToast } from '@/components/mds';
+import { Badge, Button, ButtonLink, Chip, ChipGroup, ConfirmDialog, DataTable, Input, SegmentedControl, useToast } from '@/components/mds';
 import { SkeletonList } from '@/components/Skeleton';
+import { COLLECTION_CHOICES, isPoemCollection, poemHref, type PoemCollection } from '@/lib/collections';
 import { formatDate } from '@/lib/date';
 import { takeFlashToast } from '@/lib/flashToast';
 import { invalidateKeys, queryKeys, staleAfterWrite } from '@/lib/queryKeys';
@@ -13,18 +14,36 @@ import { deletePoem, fetchAdminPoems, revalidatePoems, setPoemPinned, type Admin
 import { Icon } from '@/components/icons';
 import styles from './page.module.css';
 
+const STATUS_FILTERS = [
+  { status: null, label: 'All' },
+  { status: 'published', label: 'Published' },
+  { status: 'draft', label: 'Drafts' },
+] as const;
+
+/** The list's URL; main and every status are the defaults, so they stay out of it. */
+function listHref(collection: PoemCollection, status: string | null): string {
+  const params = new URLSearchParams();
+  if (collection !== 'main') params.set('collection', collection);
+  if (status) params.set('status', status);
+  const query = params.toString();
+  return query ? `/admin/poems?${query}` : '/admin/poems';
+}
+
 export default function AdminPoemsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<AdminPoem | null>(null);
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get('status');
+  const collectionParam = searchParams.get('collection');
+  const collection: PoemCollection =
+    collectionParam && isPoemCollection(collectionParam) ? collectionParam : 'main';
   const router = useRouter();
   const { toast } = useToast();
 
   const { data: poems = [], isPending, isError } = useQuery({
-    queryKey: queryKeys.admin.poems(statusFilter),
-    queryFn: () => fetchAdminPoems(statusFilter),
+    queryKey: queryKeys.admin.poems({ collection, status: statusFilter }),
+    queryFn: () => fetchAdminPoems({ collection, status: statusFilter }),
   });
 
   const invalidatePoems = () => invalidateKeys(queryClient, staleAfterWrite.poems());
@@ -90,22 +109,24 @@ export default function AdminPoemsPage() {
           </ButtonLink>
         </div>
         <div className={styles.filters}>
+          <SegmentedControl
+            label="Collection"
+            options={COLLECTION_CHOICES}
+            value={collection}
+            onChange={(next) => router.push(listHref(next, statusFilter))}
+            size="sm"
+            className={styles.collectionControl}
+          />
           <ChipGroup>
-            <Chip selected={!statusFilter} onClick={() => router.push('/admin/poems')}>
-              All
-            </Chip>
-            <Chip
-              selected={statusFilter === 'published'}
-              onClick={() => router.push('/admin/poems?status=published')}
-            >
-              Published
-            </Chip>
-            <Chip
-              selected={statusFilter === 'draft'}
-              onClick={() => router.push('/admin/poems?status=draft')}
-            >
-              Drafts
-            </Chip>
+            {STATUS_FILTERS.map(({ status, label }) => (
+              <Chip
+                key={label}
+                selected={(statusFilter ?? null) === status}
+                onClick={() => router.push(listHref(collection, status))}
+              >
+                {label}
+              </Chip>
+            ))}
           </ChipGroup>
           <Input
             type="search"
@@ -146,7 +167,7 @@ export default function AdminPoemsPage() {
                     <Icon name="pin" size="sm" label="Pinned" className={styles.pinIcon} />
                   )}
                   <Link
-                    href={`/poem/${poem.slug}`}
+                    href={poemHref(poem.collection, poem.slug)}
                     className={styles.poemLink}
                     target="_blank"
                   >

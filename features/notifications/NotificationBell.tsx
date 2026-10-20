@@ -22,7 +22,7 @@ export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const anchorRef = useRef<HTMLButtonElement>(null);
   const isMobile = useIsMobile();
-  const { visible, unreadCount, isPending, isError, markSeen, clear } = useInbox();
+  const { visible, unreadCount, isPending, isError, isClearing, markSeen, clear } = useInbox();
 
   const handleToggle = () => {
     if (!isOpen && unreadCount > 0) markSeen();
@@ -42,7 +42,7 @@ export function NotificationBell() {
 
   const clearButton =
     visible.length > 0 ? (
-      <Button variant="ghost" size="sm" onClick={clear}>
+      <Button variant="ghost" size="sm" onClick={clear} loading={isClearing}>
         Clear notifications
       </Button>
     ) : null;
