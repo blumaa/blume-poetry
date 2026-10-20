@@ -1,31 +1,56 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { writeStored } from '@/lib/browserStorage';
-import { useStored } from '@/lib/useStored';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/components/mds';
 import { queryKeys } from '@/lib/queryKeys';
 import { fetchActivity } from './api/activity';
-import { toInbox } from './inbox';
+import { advanceInboxMarks, fetchInboxMarks } from './api/inboxMarks';
+import { NO_MARKS, toInbox } from './inbox';
 
-/* The inbox has one source per fact: the activity query for items, storage
-   for the cleared/seen marks. Every mounted reader derives the same inbox. */
+/* The bell sits on every admin page; a minute keeps navigation from
+   refetching on each mount. A focus after that minute still refetches, so
+   returning to the tab shows new likes and marks saved on another device. */
+const STALE_TIME = 60_000;
+
+/* The inbox has one source per fact: the activity query for items, the
+   admin_inbox row for the cleared/seen marks, shared by every device. */
 export function useInbox() {
-  const { data = [], isPending, isError } = useQuery({
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const activity = useQuery({
     queryKey: queryKeys.admin.activity(),
     queryFn: fetchActivity,
-    /* The bell sits on every admin page; a minute keeps navigation from
-       refetching on each mount. A focus after that minute still refetches,
-       so returning to the tab shows new likes. */
-    staleTime: 60_000,
+    staleTime: STALE_TIME,
   });
-  const clearedAt = useStored('notificationsCleared');
-  const lastSeen = useStored('notificationsLastSeen');
+  const marks = useQuery({
+    queryKey: queryKeys.admin.inboxMarks(),
+    queryFn: fetchInboxMarks,
+    staleTime: STALE_TIME,
+  });
+  // Deterministic: the inbox changes once the server answers with the saved marks.
+  const advance = useMutation({
+    mutationFn: advanceInboxMarks,
+    onSuccess: (saved) => queryClient.setQueryData(queryKeys.admin.inboxMarks(), saved),
+    onError: (error) => toast({ title: error.message, tone: 'danger' }),
+  });
+
+  const isPending = activity.isPending || marks.isPending;
+  // Until both load, nothing counts: unknown marks would show every item as new.
+  const { visible, unreadCount, newestAt } = isPending
+    ? { visible: [], unreadCount: 0, newestAt: null }
+    : toInbox(activity.data ?? [], marks.data ?? NO_MARKS);
 
   return {
-    ...toInbox(data, { clearedAt, lastSeen }),
+    visible,
+    unreadCount,
     isPending,
-    isError,
-    markSeen: () => writeStored('notificationsLastSeen', new Date().toISOString()),
-    clear: () => writeStored('notificationsCleared', new Date().toISOString()),
+    isError: activity.isError || marks.isError,
+    isClearing: advance.isPending && advance.variables?.clearedAt !== undefined,
+    markSeen: () => {
+      if (newestAt) advance.mutate({ lastSeen: newestAt });
+    },
+    clear: () => {
+      if (newestAt) advance.mutate({ lastSeen: newestAt, clearedAt: newestAt });
+    },
   };
 }

@@ -4,8 +4,9 @@ import { renderWithProviders } from '@/__tests__/test-utils';
 import { Sidebar } from '@/components/Sidebar';
 import type { TreeNode } from '@/lib/poems';
 
+let mockPathname = '/poem/poem-b';
 jest.mock('next/navigation', () => ({
-  usePathname: () => '/poem/poem-b',
+  usePathname: () => mockPathname,
 }));
 
 const tree: TreeNode[] = [
@@ -28,7 +29,16 @@ const tree: TreeNode[] = [
 ];
 
 function renderSidebar(props: Partial<React.ComponentProps<typeof Sidebar>> = {}) {
-  return renderWithProviders(<Sidebar tree={tree} {...props} />);
+  return renderWithProviders(<Sidebar tree={tree} collection="main" {...props} />);
+}
+
+function mockSearchHit() {
+  const fetchMock = jest.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({ poems: [{ id: 'poem-x', slug: 'poem-x', title: 'Found Poem' }] }),
+  });
+  global.fetch = fetchMock as unknown as typeof fetch;
+  return fetchMock;
 }
 
 describe('Sidebar', () => {
@@ -71,24 +81,7 @@ describe('Sidebar', () => {
   });
 
   it('shows debounced search results from the server', async () => {
-    const fetchMock = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        poems: [
-          {
-            id: 'poem-x',
-            slug: 'poem-x',
-            title: 'Found Poem',
-            subtitle: null,
-            content: '',
-            plainText: '',
-            publishedAt: '2026-01-01',
-            url: '/poem/poem-x',
-          },
-        ],
-      }),
-    });
-    global.fetch = fetchMock as unknown as typeof fetch;
+    const fetchMock = mockSearchHit();
 
     renderSidebar({ isMobile: false });
     const user = userEvent.setup();
@@ -96,8 +89,8 @@ describe('Sidebar', () => {
     const input = screen.getByRole('searchbox', { name: 'Search poems' });
     await user.type(input, 'found');
 
-    expect(await screen.findByRole('link', { name: 'Found Poem' })).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith('/api/poems/search?q=found', expect.anything());
+    expect(await screen.findByRole('link', { name: 'Found Poem' })).toHaveAttribute('href', '/poem/poem-x');
+    expect(fetchMock).toHaveBeenCalledWith('/api/poems/search?q=found&collection=main', expect.anything());
     // Debounce: one request for the whole word, not one per keystroke.
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -105,7 +98,7 @@ describe('Sidebar', () => {
   it('takes a closed mobile drawer out of focus order and the accessibility tree', () => {
     const { container, rerender } = renderSidebar({ isMobile: true, isOpen: false });
     expect(container.querySelector('aside')).toHaveAttribute('inert');
-    rerender(<Sidebar tree={tree} isMobile isOpen />);
+    rerender(<Sidebar tree={tree} collection="main" isMobile isOpen />);
     expect(container.querySelector('aside')).not.toHaveAttribute('inert');
   });
 
@@ -145,5 +138,35 @@ describe('Sidebar', () => {
     await userEvent.click(folder);
     const group = container.querySelector(`#${folder.getAttribute('aria-controls')}`);
     expect(group).toHaveAttribute('hidden');
+  });
+
+  describe('in the kinky collection', () => {
+    beforeEach(() => {
+      mockPathname = '/kinky/poem-b';
+    });
+    afterEach(() => {
+      mockPathname = '/poem/poem-b';
+    });
+
+    it('links poems under /kinky and highlights the active one', () => {
+      renderSidebar({ collection: 'kinky' });
+      expect(screen.getByRole('link', { name: 'Poem C' })).toHaveAttribute('href', '/kinky/poem-c');
+      expect(screen.getByRole('link', { name: 'Poem B' })).toHaveAttribute('aria-current', 'page');
+    });
+
+    it('searches only kinky poems and links the hits under /kinky', async () => {
+      const fetchMock = mockSearchHit();
+      renderSidebar({ collection: 'kinky' });
+
+      await userEvent.setup().type(screen.getByRole('searchbox', { name: 'Search poems' }), 'found');
+
+      expect(await screen.findByRole('link', { name: 'Found Poem' })).toHaveAttribute('href', '/kinky/poem-x');
+      expect(fetchMock).toHaveBeenCalledWith('/api/poems/search?q=found&collection=kinky', expect.anything());
+    });
+
+    it('takes the logo home to /kinky', () => {
+      renderSidebar({ collection: 'kinky', isMobile: false });
+      expect(screen.getByRole('link', { name: /Blumenous Poetry/i })).toHaveAttribute('href', '/kinky');
+    });
   });
 });

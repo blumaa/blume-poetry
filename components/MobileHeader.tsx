@@ -10,10 +10,12 @@ import { LoginButton } from './LoginButton';
 import styles from './MobileHeader.module.css';
 
 interface MobileHeaderProps {
+  /** Where the logo goes: the collection's home. */
+  homeHref: string;
   onMenuClick: () => void;
 }
 
-export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
+export function MobileHeader({ homeHref, onMenuClick }: MobileHeaderProps) {
   return (
     <AppBar
       className={styles.appBar}
@@ -31,7 +33,7 @@ export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
             <Icon name="menu" size="lg" />
           </Button>
           <Link
-            href="/"
+            href={homeHref}
             className={styles.brandLink}
             aria-label={SITE_NAME}
           >

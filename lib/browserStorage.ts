@@ -11,8 +11,6 @@ export const STORAGE_KEYS = {
   sidebarCollapsed: { name: 'sidebar_collapsed', area: 'local' },
   commentName: { name: 'comment_name', area: 'local' },
   visitorId: { name: 'visitor_id', area: 'local' },
-  notificationsLastSeen: { name: 'admin_notifications_last_seen', area: 'local' },
-  notificationsCleared: { name: 'admin_notifications_cleared', area: 'local' },
   flashToast: { name: 'toast', area: 'session' },
 } as const satisfies Record<string, { name: string; area: Area }>;
 

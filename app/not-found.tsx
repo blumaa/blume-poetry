@@ -4,7 +4,7 @@ import styles from './not-found.module.css';
 
 export default function NotFound() {
   return (
-    <PageShell>
+    <PageShell collection="main">
       <div className={styles.content}>
         <div className={styles.inner}>
           <h1 className={styles.title}>

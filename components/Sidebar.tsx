@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { usePathname } from 'next/navigation';
 import type { TreeNode } from '@/lib/poems';
+import { collectionHome, poemHref, slugFromPath, type PoemCollection } from '@/lib/collections';
 import { searchPoems } from '@/features/poems';
 import { queryKeys } from '@/lib/queryKeys';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
@@ -29,6 +30,8 @@ function findPoemPath(nodes: TreeNode[], slug: string, path: string[] = []): str
 
 interface SidebarProps {
   tree: TreeNode[];
+  /** Whose poems: picks the search scope and every link's path. */
+  collection: PoemCollection;
   isOpen?: boolean;
   onClose?: () => void;
   isMobile?: boolean;
@@ -38,6 +41,7 @@ interface SidebarProps {
 
 export function Sidebar({
   tree,
+  collection,
   isOpen = true,
   onClose,
   isMobile = false,
@@ -51,16 +55,16 @@ export function Sidebar({
   /* keepPreviousData: old results stay visible while the next query loads,
      so the list does not flash empty between keystrokes. */
   const { data: searchData } = useQuery({
-    queryKey: queryKeys.poem.search(debouncedQuery),
-    queryFn: () => searchPoems(debouncedQuery),
+    queryKey: queryKeys.poem.search(collection, debouncedQuery),
+    queryFn: () => searchPoems(collection, debouncedQuery),
     enabled: !!debouncedQuery,
     placeholderData: keepPreviousData,
   });
   const searchResults = debouncedQuery ? searchData ?? null : null;
 
-  const activeSlug = pathname.startsWith('/poem/')
-    ? pathname.replace('/poem/', '')
-    : undefined;
+  const activeSlug = slugFromPath(collection, pathname);
+  const hrefFor = (slug: string) => poemHref(collection, slug);
+  const homeHref = collectionHome(collection);
 
   /* Folders on the active poem's path open by default. A reader's click is an
      override that wins over the default, in either direction. */
@@ -96,10 +100,11 @@ export function Sidebar({
       data-sidebar-collapsed={!isMobile && isCollapsed ? '' : undefined}
     >
       {isMobile ? (
-        <SidebarHeader variant="mobile" onClose={onClose} />
+        <SidebarHeader variant="mobile" homeHref={homeHref} onClose={onClose} />
       ) : (
         <SidebarHeader
           variant="desktop"
+          homeHref={homeHref}
           isCollapsed={isCollapsed}
           onToggleCollapse={onToggleCollapse}
         />
@@ -113,6 +118,7 @@ export function Sidebar({
             tree={tree}
             searchResults={searchResults}
             activeSlug={activeSlug}
+            hrefFor={hrefFor}
             expandedNodes={expandedNodes}
             toggleNode={toggleNode}
             onNavigate={onClose}

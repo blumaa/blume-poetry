@@ -36,14 +36,14 @@ function mockViewport(mobile: boolean) {
 describe('SidebarWrapper', () => {
   it('mounts one sidebar on mobile', () => {
     mockViewport(true);
-    renderWithProviders(<SidebarWrapper tree={tree} />);
+    renderWithProviders(<SidebarWrapper tree={tree} collection="main" />);
     expect(screen.getAllByRole('complementary')).toHaveLength(1);
     expect(screen.getAllByRole('searchbox', { name: 'Search poems' })).toHaveLength(1);
   });
 
   it('keeps sidebar state across a mobile/desktop switch', async () => {
     const resize = mockViewport(false);
-    renderWithProviders(<SidebarWrapper tree={tree} />);
+    renderWithProviders(<SidebarWrapper tree={tree} collection="main" />);
     await userEvent.type(screen.getByRole('searchbox', { name: 'Search poems' }), 'moon');
 
     act(() => resize(true));

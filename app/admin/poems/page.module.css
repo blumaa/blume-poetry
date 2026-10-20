@@ -35,6 +35,10 @@
   gap: 0.75rem;
 }
 
+.collectionControl {
+  align-self: flex-start;
+}
+
 @media (min-width: 768px) {
   .searchInput {
     max-width: 20rem;

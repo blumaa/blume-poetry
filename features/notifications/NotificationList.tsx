@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { formatRelative } from '@/lib/date';
+import { poemHref } from '@/lib/collections';
 import { Icon } from '@/components/icons';
 import type { Notification } from './api/activity';
 import styles from './NotificationList.module.css';
@@ -13,7 +14,7 @@ function NotificationItem({
 }) {
   return (
     <Link
-      href={`/poem/${notification.poem.slug}`}
+      href={poemHref(notification.poem.collection, notification.poem.slug)}
       className={styles.itemLink}
       onClick={onItemClick}
     >

@@ -11,7 +11,7 @@ beforeEach(() => push.mockClear());
 /* Right goes back in time (older), left forward (newer), matching the links. */
 describe('PoemGestures', () => {
   it('moves to the older poem on ArrowRight and the newer on ArrowLeft', () => {
-    render(<PoemGestures prevSlug="older" nextSlug="newer" />);
+    render(<PoemGestures prevHref="/poem/older" nextHref="/poem/newer" />);
 
     fireEvent.keyDown(window, { key: 'ArrowRight' });
     fireEvent.keyDown(window, { key: 'ArrowLeft' });
@@ -23,7 +23,7 @@ describe('PoemGestures', () => {
     const { container } = render(
       <>
         <input />
-        <PoemGestures prevSlug="older" nextSlug="newer" />
+        <PoemGestures prevHref="/poem/older" nextHref="/poem/newer" />
       </>
     );
 
@@ -33,7 +33,7 @@ describe('PoemGestures', () => {
   });
 
   it('does nothing at the end of the list', () => {
-    render(<PoemGestures nextSlug="newer" />);
+    render(<PoemGestures nextHref="/poem/newer" />);
 
     fireEvent.keyDown(window, { key: 'ArrowRight' });
 
@@ -41,7 +41,7 @@ describe('PoemGestures', () => {
   });
 
   it('swipes left to the older poem', () => {
-    render(<PoemGestures prevSlug="older" nextSlug="newer" />);
+    render(<PoemGestures prevHref="/poem/older" nextHref="/poem/newer" />);
 
     fireEvent.touchStart(window, { touches: [{ clientX: 200, clientY: 100 }] });
     fireEvent.touchEnd(window, { changedTouches: [{ clientX: 100, clientY: 110 }] });
@@ -50,7 +50,7 @@ describe('PoemGestures', () => {
   });
 
   it('ignores a mostly vertical swipe', () => {
-    render(<PoemGestures prevSlug="older" nextSlug="newer" />);
+    render(<PoemGestures prevHref="/poem/older" nextHref="/poem/newer" />);
 
     fireEvent.touchStart(window, { touches: [{ clientX: 200, clientY: 100 }] });
     fireEvent.touchEnd(window, { changedTouches: [{ clientX: 140, clientY: 300 }] });
@@ -59,8 +59,8 @@ describe('PoemGestures', () => {
   });
 
   it('uses the latest slugs after navigating, without re-subscribing', () => {
-    const { rerender } = render(<PoemGestures prevSlug="older" />);
-    rerender(<PoemGestures prevSlug="oldest" />);
+    const { rerender } = render(<PoemGestures prevHref="/poem/older" />);
+    rerender(<PoemGestures prevHref="/poem/oldest" />);
 
     fireEvent.keyDown(window, { key: 'ArrowRight' });
 

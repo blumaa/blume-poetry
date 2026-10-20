@@ -1,0 +1,12 @@
+.legend {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--mds-text-primary);
+}
+
+.radioRow {
+  display: flex;
+  gap: 1rem;
+}

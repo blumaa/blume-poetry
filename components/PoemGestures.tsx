@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 
 interface PoemGesturesProps {
   /** Older poem: ArrowRight or swipe left. */
-  prevSlug?: string;
+  prevHref?: string;
   /** Newer poem: ArrowLeft or swipe right. */
-  nextSlug?: string;
+  nextHref?: string;
 }
 
 const MIN_SWIPE_PX = 50;
@@ -16,21 +16,21 @@ const MIN_SWIPE_PX = 50;
  * Keyboard and swipe navigation between poems. Renders nothing; the visible
  * links stay in the server-rendered PoemDisplay.
  */
-export function PoemGestures({ prevSlug, nextSlug }: PoemGesturesProps) {
+export function PoemGestures({ prevHref, nextHref }: PoemGesturesProps) {
   const router = useRouter();
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
-  const go = (slug: string | undefined) => {
-    if (!slug) return false;
-    router.push(`/poem/${slug}`);
+  const go = (href: string | undefined) => {
+    if (!href) return false;
+    router.push(href);
     return true;
   };
 
-  // Effect events read the latest slugs, so the listeners attach once.
+  // Effect events read the latest hrefs, so the listeners attach once.
   const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-    const slug = e.key === 'ArrowRight' ? prevSlug : e.key === 'ArrowLeft' ? nextSlug : undefined;
-    if (go(slug)) e.preventDefault();
+    const href = e.key === 'ArrowRight' ? prevHref : e.key === 'ArrowLeft' ? nextHref : undefined;
+    if (go(href)) e.preventDefault();
   });
 
   const onTouchStart = useEffectEvent((e: TouchEvent) => {
@@ -45,7 +45,7 @@ export function PoemGestures({ prevSlug, nextSlug }: PoemGesturesProps) {
     const deltaX = e.changedTouches[0].clientX - start.x;
     const deltaY = e.changedTouches[0].clientY - start.y;
     if (Math.abs(deltaX) <= Math.abs(deltaY) || Math.abs(deltaX) <= MIN_SWIPE_PX) return;
-    go(deltaX > 0 ? nextSlug : prevSlug);
+    go(deltaX > 0 ? nextHref : prevHref);
   });
 
   useEffect(() => {

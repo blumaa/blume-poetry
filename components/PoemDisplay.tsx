@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Poem, PoemMeta } from '@/lib/poems';
 import { formatDate } from '@/lib/date';
+import { poemHref } from '@/lib/collections';
 import { PoemContent } from './PoemContent';
 import { PoemActions } from './PoemActions';
 import { PoemGestures } from './PoemGestures';
@@ -15,21 +16,25 @@ interface PoemDisplayProps {
 /* Server component: the poem renders and sanitizes on the server, and only
    the gestures and the like/comment controls ship as client code. */
 export function PoemDisplay({ poem, prevPoem, nextPoem }: PoemDisplayProps) {
+  // Neighbours come from the poem's own collection.
+  const prevHref = prevPoem ? poemHref(poem.collection, prevPoem.slug) : undefined;
+  const nextHref = nextPoem ? poemHref(poem.collection, nextPoem.slug) : undefined;
+
   return (
     <article className={`page-content ${styles.article}`}>
-      <PoemGestures prevSlug={prevPoem?.slug} nextSlug={nextPoem?.slug} />
+      <PoemGestures prevHref={prevHref} nextHref={nextHref} />
 
       <nav className={styles.nav}>
-        {nextPoem ? (
-          <Link href={`/poem/${nextPoem.slug}`} className={styles.navLink}>
+        {nextHref ? (
+          <Link href={nextHref} className={styles.navLink}>
             <span className={styles.navArrowLeft}>←</span>
             <span>next poem</span>
           </Link>
         ) : (
           <span />
         )}
-        {prevPoem ? (
-          <Link href={`/poem/${prevPoem.slug}`} className={styles.navLinkRight}>
+        {prevHref ? (
+          <Link href={prevHref} className={styles.navLinkRight}>
             <span>previous poem</span>
             <span className={styles.navArrowRight}>→</span>
           </Link>

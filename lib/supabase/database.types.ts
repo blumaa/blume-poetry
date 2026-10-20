@@ -10,10 +10,28 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
+      admin_inbox: {
+        Row: {
+          cleared_at: string | null
+          last_seen_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cleared_at?: string | null
+          last_seen_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cleared_at?: string | null
+          last_seen_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           author_name: string
@@ -115,6 +133,7 @@ export type Database = {
       }
       poems: {
         Row: {
+          collection: Database["public"]["Enums"]["poem_collection"]
           content: string
           id: string
           notified_at: string | null
@@ -129,6 +148,7 @@ export type Database = {
           url: string | null
         }
         Insert: {
+          collection?: Database["public"]["Enums"]["poem_collection"]
           content: string
           id?: string
           notified_at?: string | null
@@ -143,6 +163,7 @@ export type Database = {
           url?: string | null
         }
         Update: {
+          collection?: Database["public"]["Enums"]["poem_collection"]
           content?: string
           id?: string
           notified_at?: string | null
@@ -229,13 +250,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      advance_inbox_marks: {
+        Args: { p_cleared?: string; p_last_seen: string }
+        Returns: {
+          cleared_at: string | null
+          last_seen_at: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "admin_inbox"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       check_rate_limit: {
         Args: { p_key: string; p_limit: number; p_window_seconds: number }
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
       search_poems: {
-        Args: { p_query: string }
+        Args: {
+          p_collection?: Database["public"]["Enums"]["poem_collection"]
+          p_query: string
+        }
         Returns: {
           id: string
           slug: string
@@ -259,6 +297,7 @@ export type Database = {
     }
     Enums: {
       email_log_status: "sending" | "sent" | "partial" | "failed"
+      poem_collection: "main" | "kinky"
       poem_status: "draft" | "published"
       subscriber_status: "active" | "unsubscribed"
     }
@@ -389,6 +428,7 @@ export const Constants = {
   public: {
     Enums: {
       email_log_status: ["sending", "sent", "partial", "failed"],
+      poem_collection: ["main", "kinky"],
       poem_status: ["draft", "published"],
       subscriber_status: ["active", "unsubscribed"],
     },

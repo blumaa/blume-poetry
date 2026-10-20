@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, ConfirmDialog, DataTable, useToast } from '@/components/mds';
 import { deleteComment, fetchAdminComments, type AdminComment } from '@/features/comments';
+import { poemHref } from '@/lib/collections';
 import { formatDate } from '@/lib/date';
 import { invalidateKeys, queryKeys, staleAfterWrite } from '@/lib/queryKeys';
 import styles from './page.module.css';
@@ -74,7 +75,7 @@ export default function AdminCommentsPage() {
                 cell: (comment: AdminComment) =>
                   comment.poems ? (
                     <Link
-                      href={`/poem/${comment.poems.slug}`}
+                      href={poemHref(comment.poems.collection, comment.poems.slug)}
                       className={styles.poemLink}
                     >
                       {comment.poems.title}

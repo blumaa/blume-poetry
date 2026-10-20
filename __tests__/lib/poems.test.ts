@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import {
-  getPoemIdBySlug,
+  getPoemRefBySlug,
   getPoemBySlug,
   getAdjacentPoems,
   getAllPoemsMeta,
@@ -10,80 +10,132 @@ import {
   type PoemMeta,
 } from '@/lib/poems';
 
-// Each query resolves with whatever mockResult returns at the time.
+// Each query resolves with whatever mockResult returns at the time, and is
+// recorded with the name of the client that ran it.
 const mockResult = jest.fn();
 const mockRpc = jest.fn();
-const mockQueries: Array<{ argsOf(method: string): unknown[][] }> = [];
+const mockQueries: Array<{ client: string; argsOf(method: string): unknown[][] }> = [];
 
 jest.mock('@/lib/supabase/anon', () => {
   const { queryMock } = jest.requireActual('@/__tests__/supabaseMock');
+  const client = (name: string) => () => ({
+    from: () => {
+      const query = queryMock(mockResult());
+      mockQueries.push({ client: name, argsOf: query.argsOf });
+      return query;
+    },
+    rpc: (...args: unknown[]) => {
+      mockRpc(name, ...args);
+      return queryMock(mockResult());
+    },
+  });
   return {
-    getCachedPoemClient: () => ({
-      from: () => {
-        const query = queryMock(mockResult());
-        mockQueries.push(query);
-        return query;
-      },
-    }),
-    getAnonClient: () => ({
-      rpc: (...args: unknown[]) => {
-        mockRpc(...args);
-        return queryMock(mockResult());
-      },
-    }),
+    getCachedPoemClient: client('cached-anon'),
+    getCachedServiceClient: client('cached-service'),
+    getAnonClient: client('anon'),
     POEMS_CACHE_TAG: 'poems',
   };
 });
+
+jest.mock('@/lib/supabase/server', () => ({
+  createAdminClient: () => ({
+    rpc: (...args: unknown[]) => {
+      mockRpc('service', ...args);
+      const { queryMock } = jest.requireActual('@/__tests__/supabaseMock');
+      return queryMock(mockResult());
+    },
+  }),
+}));
 
 const dbError = { message: 'connection refused' };
 
 beforeEach(() => {
   mockResult.mockReset();
+  mockRpc.mockReset();
   mockQueries.length = 0;
 });
 
-describe('getPoemIdBySlug', () => {
+describe('getPoemRefBySlug', () => {
   it('finds only published poems, so drafts take no likes or comments', async () => {
     mockResult.mockReturnValue({ data: null, error: null });
-    await getPoemIdBySlug('draft-slug');
+    await getPoemRefBySlug('draft-slug');
     expect(mockQueries[0].argsOf('eq')).toContainEqual(['status', 'published']);
   });
 
-  it('returns the id on a hit', async () => {
-    mockResult.mockReturnValue({ data: { id: 'poem-123' }, error: null });
-    await expect(getPoemIdBySlug('some-slug')).resolves.toBe('poem-123');
+  /* Likes and comments work in every collection. The anon key cannot see
+     kinky poems, so the lookup runs as the service role. */
+  it('looks in every collection, with the service role', async () => {
+    mockResult.mockReturnValue({ data: null, error: null });
+    await getPoemRefBySlug('some-slug');
+    expect(mockQueries[0].client).toBe('cached-service');
+    expect(mockQueries[0].argsOf('eq').map(([column]) => column)).not.toContain('collection');
+  });
+
+  it('returns the id, title and collection on a hit', async () => {
+    const ref = { id: 'poem-123', title: 'Rain', collection: 'kinky' };
+    mockResult.mockReturnValue({ data: ref, error: null });
+    await expect(getPoemRefBySlug('some-slug')).resolves.toEqual(ref);
   });
 
   it('returns null when no poem has the slug', async () => {
     mockResult.mockReturnValue({ data: null, error: null });
-    await expect(getPoemIdBySlug('missing-slug')).resolves.toBeNull();
+    await expect(getPoemRefBySlug('missing-slug')).resolves.toBeNull();
   });
 
   it('throws on a database error instead of reporting "not found"', async () => {
     mockResult.mockReturnValue({ data: null, error: dbError });
-    await expect(getPoemIdBySlug('some-slug')).rejects.toThrow('connection refused');
+    await expect(getPoemRefBySlug('some-slug')).rejects.toThrow('connection refused');
   });
 });
 
 describe('getPoemBySlug', () => {
   it('returns undefined when no poem has the slug', async () => {
     mockResult.mockReturnValue({ data: null, error: null });
-    await expect(getPoemBySlug('missing')).resolves.toBeUndefined();
+    await expect(getPoemBySlug('main', 'missing')).resolves.toBeUndefined();
   });
 
   /* A thrown error keeps the last good ISR page; a swallowed one would cache
      a 404 for a poem that exists. */
   it('throws on a database error', async () => {
     mockResult.mockReturnValue({ data: null, error: dbError });
-    await expect(getPoemBySlug('some-slug')).rejects.toThrow('connection refused');
+    await expect(getPoemBySlug('main', 'some-slug')).rejects.toThrow('connection refused');
+  });
+});
+
+/* Main poems are read with the anon key, which RLS limits to main. Kinky
+   poems need the service role, and every query names its collection, so a
+   slug never shows up under the other one's URL. */
+describe('collection reads', () => {
+  it.each([
+    ['getAllPoemsMeta', (c: 'main' | 'kinky') => getAllPoemsMeta(c), []],
+    ['getRecentPoems', (c: 'main' | 'kinky') => getRecentPoems(c, 1), []],
+    ['getPoemBySlug', (c: 'main' | 'kinky') => getPoemBySlug(c, 'a-slug'), null],
+  ])('%s reads main as anon and kinky as the service role', async (_name, load, empty) => {
+    mockResult.mockReturnValue({ data: empty, error: null });
+
+    await load('main');
+    await load('kinky');
+
+    expect(mockQueries.map((q) => q.client)).toEqual(['cached-anon', 'cached-service']);
+    expect(mockQueries[0].argsOf('eq')).toContainEqual(['collection', 'main']);
+    expect(mockQueries[1].argsOf('eq')).toContainEqual(['collection', 'kinky']);
+  });
+
+  it('tags each poem with its collection', async () => {
+    const row = {
+      id: '1', slug: 'rain', title: 'Rain', subtitle: null, content: '<p>x</p>',
+      plain_text: 'x', published_at: '2026-01-01', url: null, collection: 'kinky',
+    };
+    mockResult.mockReturnValue({ data: row, error: null });
+    await expect(getPoemBySlug('kinky', 'rain')).resolves.toMatchObject({ collection: 'kinky' });
   });
 });
 
 describe('poem lists', () => {
   /* Returning [] on error would regenerate and cache an empty site. */
   it.each([
-    ['getAllPoemsMeta', () => getAllPoemsMeta()],
-    ['getRecentPoems', () => getRecentPoems(1)],
+    ['getAllPoemsMeta', () => getAllPoemsMeta('main')],
+    ['getRecentPoems', () => getRecentPoems('main', 1)],
   ])('%s throws on a database error', async (_name, load) => {
     mockResult.mockReturnValue({ data: null, error: dbError });
     await expect(load()).rejects.toThrow('connection refused');
@@ -91,17 +143,24 @@ describe('poem lists', () => {
 });
 
 describe('searchPoems', () => {
-  it('searches in the database, not over every poem in memory', async () => {
+  it('searches main in the database as anon', async () => {
     const hits = [{ id: '1', slug: 'rain', title: 'Rain' }];
     mockResult.mockReturnValue({ data: hits, error: null });
 
-    await expect(searchPoems('rain')).resolves.toEqual(hits);
-    expect(mockRpc).toHaveBeenCalledWith('search_poems', { p_query: 'rain' });
+    await expect(searchPoems('main', 'rain')).resolves.toEqual(hits);
+    expect(mockRpc).toHaveBeenCalledWith('anon', 'search_poems', { p_query: 'rain', p_collection: 'main' });
+  });
+
+  it('searches kinky as the service role', async () => {
+    mockResult.mockReturnValue({ data: [], error: null });
+
+    await searchPoems('kinky', 'rain');
+    expect(mockRpc).toHaveBeenCalledWith('service', 'search_poems', { p_query: 'rain', p_collection: 'kinky' });
   });
 
   it('throws on a database error', async () => {
     mockResult.mockReturnValue({ data: null, error: dbError });
-    await expect(searchPoems('rain')).rejects.toThrow('connection refused');
+    await expect(searchPoems('main', 'rain')).rejects.toThrow('connection refused');
   });
 });
 
@@ -118,28 +177,28 @@ describe('getAdjacentPoems', () => {
   });
 
   it('points prev back in time and next forward in time', async () => {
-    const { prev, next } = await getAdjacentPoems('middle');
+    const { prev, next } = await getAdjacentPoems('main', 'middle');
 
     expect(prev?.slug).toBe('oldest');
     expect(next?.slug).toBe('newest');
   });
 
   it('has no next on the newest poem', async () => {
-    const { prev, next } = await getAdjacentPoems('newest');
+    const { prev, next } = await getAdjacentPoems('main', 'newest');
 
     expect(prev?.slug).toBe('middle');
     expect(next).toBeNull();
   });
 
   it('has no prev on the oldest poem', async () => {
-    const { prev, next } = await getAdjacentPoems('oldest');
+    const { prev, next } = await getAdjacentPoems('main', 'oldest');
 
     expect(prev).toBeNull();
     expect(next?.slug).toBe('middle');
   });
 
   it('returns nulls for an unknown slug', async () => {
-    const { prev, next } = await getAdjacentPoems('nope');
+    const { prev, next } = await getAdjacentPoems('main', 'nope');
 
     expect(prev).toBeNull();
     expect(next).toBeNull();

@@ -76,4 +76,11 @@ describe('sitemap', () => {
     expect(urls.some((url) => url.includes('/unsubscribe'))).toBe(false);
     expect(urls.some((url) => url.includes('/offline'))).toBe(false);
   });
+
+  /* /kinky is reachable only by its URL: the sitemap must never name it. */
+  it('lists only main poems', async () => {
+    const entries = await sitemap();
+    expect(getAllPoemsMeta).toHaveBeenCalledWith('main');
+    expect(entries.some((entry) => entry.url.includes('/kinky'))).toBe(false);
+  });
 });

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { getAnonClient } from '@/lib/supabase/anon';
 import { createAdminClient } from '@/lib/supabase/server';
-import { getPoemIdBySlug, getPoemBySlug } from '@/lib/poems';
+import { getPoemRefBySlug } from '@/lib/poems';
+import { poemHref } from '@/lib/collections';
 import { sendLikeNotification } from '@/lib/push';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { verifyOrigin } from '@/lib/csrf';
@@ -20,9 +21,9 @@ export async function GET(
 
   const supabase = getAnonClient();
 
-  const poemId = await getPoemIdBySlug(slug);
+  const poem = await getPoemRefBySlug(slug);
 
-  if (!poemId) {
+  if (!poem) {
     return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
   }
 
@@ -31,13 +32,13 @@ export async function GET(
     supabase
       .from('likes')
       .select('*', { count: 'exact', head: true })
-      .eq('poem_id', poemId)
+      .eq('poem_id', poem.id)
       .throwOnError(),
     visitorId
       ? supabase
           .from('likes')
           .select('id')
-          .eq('poem_id', poemId)
+          .eq('poem_id', poem.id)
           .eq('visitor_id', visitorId)
           .maybeSingle()
           .throwOnError()
@@ -68,25 +69,24 @@ export async function POST(
     return NextResponse.json({ error: 'Visitor ID required' }, { status: 400 });
   }
 
-  const poemId = await getPoemIdBySlug(slug);
+  const poem = await getPoemRefBySlug(slug);
 
-  if (!poemId) {
+  if (!poem) {
     return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
   }
 
   // One atomic call: toggles and counts (supabase/migrations/20261009_add_toggle_like.sql).
   const { data } = await createAdminClient()
-    .rpc('toggle_like', { p_poem_id: poemId, p_visitor_id: visitorId })
+    .rpc('toggle_like', { p_poem_id: poem.id, p_visitor_id: visitorId })
     .single()
     .throwOnError();
 
   if (data.liked) {
     // Push goes to Apple/Google servers: send it after the response so the
     // like never waits on it. sendLikeNotification never throws.
-    after(async () => {
-      const poem = await getPoemBySlug(slug);
-      if (poem) await sendLikeNotification({ poemTitle: poem.title, slug });
-    });
+    after(() =>
+      sendLikeNotification({ poemTitle: poem.title, url: poemHref(poem.collection, slug) })
+    );
   }
 
   const state: LikeState = { count: data.like_count, hasLiked: data.liked };

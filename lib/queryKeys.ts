@@ -1,3 +1,4 @@
+import type { PoemCollection } from './supabase/types';
 import type { InvalidateQueryFilters, QueryClient, QueryKey } from '@tanstack/react-query';
 
 /* Every React Query key, declared once. Readers and invalidators import from
@@ -5,10 +6,13 @@ import type { InvalidateQueryFilters, QueryClient, QueryKey } from '@tanstack/re
 export const queryKeys = {
   admin: {
     activity: () => ['admin', 'activity'] as const,
+    inboxMarks: () => ['admin', 'inbox-marks'] as const,
     comments: () => ['admin', 'comments'] as const,
-    /** No status: the prefix, which invalidates every filtered list. */
-    poems: (status?: string | null) =>
-      status === undefined ? (['admin', 'poems'] as const) : (['admin', 'poems', status] as const),
+    /** No filter: the prefix, which invalidates every filtered list. */
+    poems: (filter?: { collection: PoemCollection; status: string | null }) =>
+      filter === undefined
+        ? (['admin', 'poems'] as const)
+        : (['admin', 'poems', filter.collection, filter.status] as const),
     poem: (id: string) => ['admin', 'poems', 'byId', id] as const,
     /** No filter: the prefix, which invalidates every filtered list. */
     subscribers: (filter?: string) =>
@@ -21,7 +25,7 @@ export const queryKeys = {
   poem: {
     like: (slug: string) => ['poems', slug, 'like'] as const,
     comments: (slug: string) => ['poems', slug, 'comments'] as const,
-    search: (query: string) => ['poems', 'search', query] as const,
+    search: (collection: PoemCollection, query: string) => ['poems', 'search', collection, query] as const,
   },
   subscriber: {
     /** Keyed by the emailed token: it is the only identity the page has. */

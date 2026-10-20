@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-import { PoemDisplay } from '@/components/PoemDisplay';
-import { getRecentPoems, getAdjacentPoems } from '@/lib/poems';
+import { LatestPoemRoute } from '@/components/PoemRoute';
 
 export const revalidate = 3600;
 
@@ -10,12 +9,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function Home() {
-  const recentPoems = await getRecentPoems(1);
-  const latestPoem = recentPoems[0];
-
-  // Get adjacent poems for navigation — "prev" is older, "next" is newer
-  const { prev, next } = latestPoem ? await getAdjacentPoems(latestPoem.slug) : { prev: null, next: null };
-
-  return latestPoem ? <PoemDisplay poem={latestPoem} prevPoem={prev} nextPoem={next} /> : null;
+export default function Home() {
+  return <LatestPoemRoute collection="main" />;
 }

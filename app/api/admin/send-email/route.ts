@@ -37,6 +37,8 @@ export async function POST(request: Request) {
         .from('poems')
         .select('title, slug, content, plain_text')
         .eq('id', poemId)
+        // A kinky poem in a newsletter would reveal its URL.
+        .eq('collection', 'main')
         .maybeSingle()
         .throwOnError();
 

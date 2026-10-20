@@ -27,9 +27,9 @@ jest.mock('@/lib/supabase/anon', () => ({
   getAnonClient: () => anonClient,
 }));
 
+let poemCollection = 'main';
 jest.mock('@/lib/poems', () => ({
-  getPoemIdBySlug: async () => POEM_ID,
-  getPoemBySlug: async () => ({ id: POEM_ID, title: 'Autumn Rain', slug: 'autumn-rain' }),
+  getPoemRefBySlug: async () => ({ id: POEM_ID, title: 'Autumn Rain', collection: poemCollection }),
 }));
 
 const sendLikeNotification: jest.Mock = jest.fn(async () => undefined);
@@ -138,7 +138,23 @@ describe('POST', () => {
     await runAfter();
     expect(sendLikeNotification).toHaveBeenCalledWith({
       poemTitle: 'Autumn Rain',
-      slug: 'autumn-rain',
+      url: '/poem/autumn-rain',
+    });
+  });
+
+  it("links a kinky poem's notification to its /kinky page", async () => {
+    poemCollection = 'kinky';
+    adminClient = clientMock({
+      toggle_like: [queryMock({ data: { liked: true, like_count: 1 } })],
+    });
+
+    await post();
+    await runAfter();
+    poemCollection = 'main';
+
+    expect(sendLikeNotification).toHaveBeenCalledWith({
+      poemTitle: 'Autumn Rain',
+      url: '/kinky/autumn-rain',
     });
   });
 

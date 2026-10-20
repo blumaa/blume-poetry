@@ -72,6 +72,8 @@ export async function fetchSendData(): Promise<SendData> {
       .from('poems')
       .select('id, title, content, plain_text')
       .eq('status', 'published')
+      // A kinky poem in a newsletter would reveal its URL.
+      .eq('collection', 'main')
       .order('published_at', { ascending: false })
       .limit(20)
       .throwOnError(),

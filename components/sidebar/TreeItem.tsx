@@ -8,6 +8,7 @@ interface TreeItemProps {
   node: TreeNode;
   depth?: number;
   activeSlug?: string;
+  hrefFor: (slug: string) => string;
   expandedNodes: Set<string>;
   toggleNode: (id: string) => void;
   onNavigate?: () => void;
@@ -17,6 +18,7 @@ export function TreeItem({
   node,
   depth = 0,
   activeSlug,
+  hrefFor,
   expandedNodes,
   toggleNode,
   onNavigate,
@@ -28,7 +30,7 @@ export function TreeItem({
     return (
       <SideNavItem
         as={Link}
-        href={`/poem/${node.slug}`}
+        href={hrefFor(node.slug!)}
         label={node.label}
         active={node.slug === activeSlug}
         onClick={onNavigate}
@@ -70,6 +72,7 @@ export function TreeItem({
               node={child}
               depth={depth + 1}
               activeSlug={activeSlug}
+              hrefFor={hrefFor}
               expandedNodes={expandedNodes}
               toggleNode={toggleNode}
               onNavigate={onNavigate}

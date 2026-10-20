@@ -1,7 +1,7 @@
 import { apiFetch } from '@/lib/apiFetch';
 import { createClient } from '@/lib/supabase/client';
 import type { PoemSearchHit } from '@/lib/poems';
-import type { PoemInsert, PoemRow } from '@/lib/supabase/types';
+import type { PoemCollection, PoemInsert, PoemRow } from '@/lib/supabase/types';
 
 export interface NotifyResult {
   sent: number;
@@ -11,14 +11,21 @@ export interface NotifyResult {
 /** A row of the admin list: no body, plain_text only for search. */
 export type AdminPoem = Pick<
   PoemRow,
-  'id' | 'slug' | 'title' | 'status' | 'pinned' | 'published_at' | 'plain_text'
+  'id' | 'slug' | 'title' | 'status' | 'pinned' | 'published_at' | 'plain_text' | 'collection'
 >;
 
 /** Admin list, newest first. An unknown status means all poems. */
-export async function fetchAdminPoems(status: string | null): Promise<AdminPoem[]> {
+export interface AdminPoemsFilter {
+  collection: PoemCollection;
+  /** null, or anything but draft/published, lists every status. */
+  status: string | null;
+}
+
+export async function fetchAdminPoems({ collection, status }: AdminPoemsFilter): Promise<AdminPoem[]> {
   let query = createClient()
     .from('poems')
-    .select('id, slug, title, status, pinned, published_at, plain_text')
+    .select('id, slug, title, status, pinned, published_at, plain_text, collection')
+    .eq('collection', collection)
     .order('published_at', { ascending: false });
 
   if (status === 'draft' || status === 'published') {
@@ -66,9 +73,9 @@ export async function notifyPoem(poemId: string): Promise<NotifyResult> {
   return apiFetch<NotifyResult>('/api/admin/notify-poem', { method: 'POST', json: { poemId } });
 }
 
-export async function searchPoems(query: string): Promise<PoemSearchHit[]> {
+export async function searchPoems(collection: PoemCollection, query: string): Promise<PoemSearchHit[]> {
   const { poems } = await apiFetch<{ poems: PoemSearchHit[] }>(
-    `/api/poems/search?q=${encodeURIComponent(query)}`
+    `/api/poems/search?q=${encodeURIComponent(query)}&collection=${collection}`
   );
   return poems;
 }

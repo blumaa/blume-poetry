@@ -1,11 +1,11 @@
 import { apiFetch } from '@/lib/apiFetch';
 import { createClient } from '@/lib/supabase/client';
-import type { CommentRow } from '@/lib/supabase/types';
+import type { CommentRow, PoemRow } from '@/lib/supabase/types';
 
 export type Comment = Pick<CommentRow, 'id' | 'author_name' | 'content' | 'created_at'>;
 
 export type AdminComment = CommentRow & {
-  poems: { title: string; slug: string } | null;
+  poems: Pick<PoemRow, 'title' | 'slug' | 'collection'> | null;
 };
 
 export interface PostCommentInput {
@@ -39,7 +39,7 @@ export async function deleteComment(id: string): Promise<void> {
 export async function fetchAdminComments(): Promise<AdminComment[]> {
   const { data } = await createClient()
     .from('comments')
-    .select('*, poems(title, slug)')
+    .select('*, poems(title, slug, collection)')
     .order('created_at', { ascending: false })
     .throwOnError();
   return data as AdminComment[];

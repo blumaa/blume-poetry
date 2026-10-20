@@ -1,5 +1,8 @@
+import { poemHref, type PoemCollection } from './collections';
+
 /** Minimal poem shape needed to build JSON-LD structured data */
 export interface PoemForJsonLd {
+  collection: PoemCollection;
   slug: string;
   title: string;
   publishedAt: string | null;
@@ -16,7 +19,7 @@ export function buildPoemJsonLd(poem: PoemForJsonLd, siteUrl: string): Record<st
     name: poem.title,
     headline: poem.title,
     author: { '@type': 'Person', name: 'Desmond Blume' },
-    url: `${siteUrl}/poem/${poem.slug}`,
+    url: `${siteUrl}${poemHref(poem.collection, poem.slug)}`,
     inLanguage: 'en',
   };
 

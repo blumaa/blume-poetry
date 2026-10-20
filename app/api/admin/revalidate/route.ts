@@ -3,8 +3,9 @@ import { revalidateTag } from 'next/cache';
 import { requireAdmin } from '@/lib/auth';
 import { POEMS_CACHE_TAG } from '@/lib/supabase/anon';
 
-// Every public poem read goes through the tagged client
-// (lib/supabase/anon getCachedPoemClient), so the tag reaches every page that
+// Every public poem read goes through a tagged client (lib/supabase/anon:
+// getCachedPoemClient for main, getCachedServiceClient for kinky), so the tag
+// reaches every page that
 // shows a poem, the sidebar, and the sitemap. `{ expire: 0 }`: the admin's
 // next visit sees the change, not one stale render.
 export async function POST(request: Request) {

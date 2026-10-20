@@ -5,7 +5,7 @@ import { writeStored } from './browserStorage';
 beforeEach(() => localStorage.clear());
 
 function Reader({ label }: { label: string }) {
-  const value = useStored('notificationsCleared');
+  const value = useStored('sidebarCollapsed');
   return <p>{`${label}:${value ?? 'none'}`}</p>;
 }
 
@@ -19,9 +19,9 @@ describe('useStored', () => {
     );
     expect(screen.getByText('desktop:none')).toBeInTheDocument();
 
-    act(() => writeStored('notificationsCleared', '2026-01-01'));
+    act(() => writeStored('sidebarCollapsed', 'true'));
 
-    expect(screen.getByText('desktop:2026-01-01')).toBeInTheDocument();
-    expect(screen.getByText('mobile:2026-01-01')).toBeInTheDocument();
+    expect(screen.getByText('desktop:true')).toBeInTheDocument();
+    expect(screen.getByText('mobile:true')).toBeInTheDocument();
   });
 });

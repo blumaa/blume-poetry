@@ -29,7 +29,7 @@ jest.mock('@/lib/supabase/anon', () => ({
 }));
 
 jest.mock('@/lib/poems', () => ({
-  getPoemIdBySlug: async () => FIXED_POEM_ID,
+  getPoemRefBySlug: async () => ({ id: FIXED_POEM_ID, title: 'A poem', collection: 'main' }),
 }));
 
 jest.mock('@/lib/csrf', () => ({

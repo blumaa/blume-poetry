@@ -36,30 +36,33 @@ beforeEach(() => {
 const dbError = { message: 'connection lost' };
 
 describe('fetchAdminPoems', () => {
-  it('filters by a known status', async () => {
+  it('filters by collection and a known status', async () => {
     pending.push({ data: [] });
-    await fetchAdminPoems('draft');
-    expect(queries[0].argsOf('eq')).toEqual([['status', 'draft']]);
+    await fetchAdminPoems({ collection: 'kinky', status: 'draft' });
+    expect(queries[0].argsOf('eq')).toEqual([
+      ['collection', 'kinky'],
+      ['status', 'draft'],
+    ]);
   });
 
   /* The list never shows a poem's body; it searches plain_text. */
   it('selects the list columns only, not the poem bodies', async () => {
     pending.push({ data: [] });
-    await fetchAdminPoems(null);
+    await fetchAdminPoems({ collection: 'main', status: null });
     expect(queries[0].argsOf('select')).toEqual([[
-      'id, slug, title, status, pinned, published_at, plain_text',
+      'id, slug, title, status, pinned, published_at, plain_text, collection',
     ]]);
   });
 
   it('ignores an unknown status', async () => {
     pending.push({ data: [] });
-    await fetchAdminPoems('bogus');
-    expect(queries[0].argsOf('eq')).toEqual([]);
+    await fetchAdminPoems({ collection: 'main', status: 'bogus' });
+    expect(queries[0].argsOf('eq')).toEqual([['collection', 'main']]);
   });
 
   it('throws on a database error', async () => {
     pending.push({ error: dbError });
-    await expect(fetchAdminPoems(null)).rejects.toThrow('connection lost');
+    await expect(fetchAdminPoems({ collection: 'main', status: null })).rejects.toThrow('connection lost');
   });
 });
 

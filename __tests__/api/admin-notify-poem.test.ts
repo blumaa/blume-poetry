@@ -112,6 +112,21 @@ describe('POST /api/admin/notify-poem', () => {
     expect(released()).toBe(false);
   });
 
+  it('claims only a published, unnotified poem in the main collection', async () => {
+    const claim = queryMock({ data: [POEM] });
+    adminClient = happyClient({ poems: [claim, queryMock()] });
+
+    await post({ poemId: POEM.id });
+
+    // A kinky poem is never announced: the email would reveal its URL.
+    expect(claim.argsOf('eq')).toEqual([
+      ['id', POEM.id],
+      ['status', 'published'],
+      ['collection', 'main'],
+    ]);
+    expect(claim.argsOf('is')).toEqual([['notified_at', null]]);
+  });
+
   it('sends nothing when the claim finds no unnotified row', async () => {
     adminClient = clientMock({ poems: [queryMock({ data: [] })] });
 

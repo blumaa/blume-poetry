@@ -1,6 +1,7 @@
 import { cache } from 'react';
-import type { Database } from './supabase/types';
-import { getAnonClient, getCachedPoemClient } from './supabase/anon';
+import type { Database, PoemCollection } from './supabase/types';
+import { getAnonClient, getCachedPoemClient, getCachedServiceClient } from './supabase/anon';
+import { createAdminClient } from './supabase/server';
 
 export interface Poem {
   id: string;
@@ -11,6 +12,14 @@ export interface Poem {
   plainText: string;
   publishedAt: string;
   url: string;
+  collection: PoemCollection;
+}
+
+/** What the like and comment routes need: any published poem, any collection. */
+export interface PoemRef {
+  id: string;
+  title: string;
+  collection: PoemCollection;
 }
 
 /** Lightweight poem metadata for tree/navigation (no content) */
@@ -45,8 +54,10 @@ export interface TreeNode {
 // Row shape shared by every query that selects the full poem column set
 type PoemColumns = Pick<
   Database['public']['Tables']['poems']['Row'],
-  'id' | 'slug' | 'title' | 'subtitle' | 'content' | 'plain_text' | 'published_at' | 'url'
+  'id' | 'slug' | 'title' | 'subtitle' | 'content' | 'plain_text' | 'published_at' | 'url' | 'collection'
 >;
+
+const POEM_COLUMNS = 'id, slug, title, subtitle, content, plain_text, published_at, url, collection';
 
 function mapPoemRow(row: PoemColumns): Poem {
   return {
@@ -58,7 +69,14 @@ function mapPoemRow(row: PoemColumns): Poem {
     plainText: row.plain_text || '',
     publishedAt: row.published_at,
     url: row.url || '',
+    collection: row.collection,
   };
+}
+
+/* The anon key reads main: RLS allows it nothing else. Kinky needs the service
+   role, so its reads say their collection in the query too. */
+function readerFor(collection: PoemCollection) {
+  return collection === 'main' ? getCachedPoemClient() : getCachedServiceClient();
 }
 
 /* Every read throws on a database error (throwOnError). During ISR a thrown
@@ -66,11 +84,12 @@ function mapPoemRow(row: PoemColumns): Poem {
    regenerate and cache an empty site or a 404 for a poem that exists. */
 
 // Lightweight query for tree/navigation — only fetches metadata fields
-export const getAllPoemsMeta = cache(async (): Promise<PoemMeta[]> => {
-  const { data } = await getCachedPoemClient()
+export const getAllPoemsMeta = cache(async (collection: PoemCollection): Promise<PoemMeta[]> => {
+  const { data } = await readerFor(collection)
     .from('poems')
     .select('id, slug, title, subtitle, published_at, updated_at, url, pinned')
     .eq('status', 'published')
+    .eq('collection', collection)
     .order('published_at', { ascending: false })
     .throwOnError();
 
@@ -87,51 +106,59 @@ export const getAllPoemsMeta = cache(async (): Promise<PoemMeta[]> => {
 });
 
 // Get a single poem by slug — cached: fetched twice per page (metadata + body)
-export const getPoemBySlug = cache(async (slug: string): Promise<Poem | undefined> => {
-  const { data } = await getCachedPoemClient()
+export const getPoemBySlug = cache(
+  async (collection: PoemCollection, slug: string): Promise<Poem | undefined> => {
+  const { data } = await readerFor(collection)
     .from('poems')
-    .select('id, slug, title, subtitle, content, plain_text, published_at, url')
+    .select(POEM_COLUMNS)
     .eq('slug', slug)
     .eq('status', 'published')
+    .eq('collection', collection)
     .maybeSingle()
     .throwOnError();
 
   return data ? mapPoemRow(data) : undefined;
-});
+  }
+);
 
 // Get recent poems — queries directly with a DB-level limit
-export const getRecentPoems = cache(async (count: number = 10): Promise<Poem[]> => {
-  const { data } = await getCachedPoemClient()
+export const getRecentPoems = cache(
+  async (collection: PoemCollection, count: number = 10): Promise<Poem[]> => {
+  const { data } = await readerFor(collection)
     .from('poems')
-    .select('id, slug, title, subtitle, content, plain_text, published_at, url')
+    .select(POEM_COLUMNS)
     .eq('status', 'published')
+    .eq('collection', collection)
     .order('published_at', { ascending: false })
     .limit(count)
     .throwOnError();
 
   return data.map(mapPoemRow);
-});
+  }
+);
 
-// Shared, cached slug→id lookup for the like and comment routes. Published
-// only: a draft's slug must not take likes or comments.
-export const getPoemIdBySlug = cache(async (slug: string): Promise<string | null> => {
-  const { data } = await getCachedPoemClient()
+// Shared, cached slug lookup for the like and comment routes. Published only:
+// a draft's slug must not take likes or comments. Any collection, so the
+// service role reads it.
+export const getPoemRefBySlug = cache(async (slug: string): Promise<PoemRef | null> => {
+  const { data } = await getCachedServiceClient()
     .from('poems')
-    .select('id')
+    .select('id, title, collection')
     .eq('slug', slug)
     .eq('status', 'published')
     .maybeSingle()
     .throwOnError();
 
-  return data?.id ?? null;
+  return data;
 });
 
-// Published poems whose title or text contains the query, newest first, at
-// most 50. Matched in Postgres on trigram indexes
+// Published poems in the collection whose title or text contains the query,
+// newest first, at most 50. Matched in Postgres on trigram indexes
 // (supabase/migrations/20261009000400_add_search_poems.sql).
-export async function searchPoems(query: string): Promise<PoemSearchHit[]> {
-  const { data } = await getAnonClient()
-    .rpc('search_poems', { p_query: query })
+export async function searchPoems(collection: PoemCollection, query: string): Promise<PoemSearchHit[]> {
+  const client = collection === 'main' ? getAnonClient() : createAdminClient();
+  const { data } = await client
+    .rpc('search_poems', { p_query: query, p_collection: collection })
     .throwOnError();
   return data;
 }
@@ -295,16 +322,19 @@ export function buildPoemTree(poems: PoemMeta[]): TreeNode[] {
 }
 
 // Get all poem slugs (for static generation) — uses lightweight metadata query
-export async function getAllPoemSlugs(): Promise<string[]> {
-  const poems = await getAllPoemsMeta();
+export async function getAllPoemSlugs(collection: PoemCollection): Promise<string[]> {
+  const poems = await getAllPoemsMeta(collection);
   return poems.map((p) => p.slug);
 }
 
 // Get adjacent poems for navigation — uses lightweight metadata query
 // Poems are sorted newest-first, so "prev" (older, back in time) is the next
 // index and "next" (newer, forward in time) is the previous index.
-export async function getAdjacentPoems(slug: string): Promise<{ prev: PoemMeta | null; next: PoemMeta | null }> {
-  const poems = await getAllPoemsMeta();
+export async function getAdjacentPoems(
+  collection: PoemCollection,
+  slug: string
+): Promise<{ prev: PoemMeta | null; next: PoemMeta | null }> {
+  const poems = await getAllPoemsMeta(collection);
   const index = poems.findIndex((p) => p.slug === slug);
   if (index === -1) return { prev: null, next: null };
 
