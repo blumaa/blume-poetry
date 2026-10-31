@@ -21,7 +21,7 @@ export function SidebarPublications({ active, onNavigate }: SidebarPublicationsP
         aria-current={active ? 'page' : undefined}
         onClick={onNavigate}
       >
-        Publications
+        Published writings
       </ButtonLink>
     </div>
   );

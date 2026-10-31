@@ -142,20 +142,20 @@ describe('Sidebar', () => {
 
   it('leads the tree with a highlighted link to the publications page', () => {
     renderSidebar();
-    expect(screen.getByRole('link', { name: 'Publications' })).toHaveAttribute('href', '/publications');
+    expect(screen.getByRole('link', { name: 'Published writings' })).toHaveAttribute('href', '/publications');
   });
 
   it('marks the publications link current on that page', () => {
     mockPathname = '/publications';
     renderSidebar();
-    expect(screen.getByRole('link', { name: 'Publications' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Published writings' })).toHaveAttribute('aria-current', 'page');
     mockPathname = '/poem/poem-b';
   });
 
   it('closes the drawer when the publications link is clicked', async () => {
     const onClose = jest.fn();
     renderSidebar({ isMobile: true, isOpen: true, onClose });
-    await userEvent.click(screen.getByRole('link', { name: 'Publications' }));
+    await userEvent.click(screen.getByRole('link', { name: 'Published writings' }));
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -186,7 +186,7 @@ describe('Sidebar', () => {
     /* Publications lists main credits; the kinky sidebar stays its own world. */
     it('has no publications link', () => {
       renderSidebar({ collection: 'kinky' });
-      expect(screen.queryByRole('link', { name: 'Publications' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Published writings' })).not.toBeInTheDocument();
     });
 
     it('takes the logo home to /kinky', () => {
