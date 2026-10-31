@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, Checkbox, Input, useToast } from '@/components/mds';
+import { Icon } from '@/components/icons';
 import { subscribe } from './api/subscribers';
 import { useSubscribeForm } from './useSubscribeForm';
 import styles from './SubscribeForm.module.css';
@@ -43,8 +44,8 @@ export function SubscribeForm({ compact = false }: SubscribeFormProps) {
           disabled={mutation.isPending}
           className={styles.compactInput}
         />
-        <Button type="submit" size="sm" loading={mutation.isPending}>
-          Go
+        <Button type="submit" size="sm" iconOnly aria-label="Subscribe" loading={mutation.isPending}>
+          <Icon name="arrow-right" />
         </Button>
       </form>
     );

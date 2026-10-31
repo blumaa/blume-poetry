@@ -1,10 +1,9 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { CACHE_TAGS } from '../cacheTags';
 import type { Database } from './types';
 
 const url = () => process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const key = () => process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-export const POEMS_CACHE_TAG = 'poems';
 
 let anon: SupabaseClient<Database> | undefined;
 /** Shared anon client for request-fresh reads/writes (likes, comments). No caching. */
@@ -13,11 +12,15 @@ export function getAnonClient(): SupabaseClient<Database> {
   return anon;
 }
 
-// Reads through Next's Data Cache, tagged POEMS_CACHE_TAG: identical poem and
-// tree queries are fetched once and shared across statically generated pages.
-// revalidateTag('poems') busts them on poem edits.
-const cachedFetch: typeof fetch = (input, init) =>
-  fetch(input, { ...init, next: { revalidate: 3600, tags: [POEMS_CACHE_TAG] } });
+// Reads through Next's Data Cache, tagged: identical queries are fetched once
+// and shared across statically generated pages. revalidateTag busts a tag on
+// admin writes (/api/admin/revalidate).
+const taggedFetch =
+  (tags: string[]): typeof fetch =>
+  (input, init) =>
+    fetch(input, { ...init, next: { revalidate: 3600, tags } });
+
+const cachedFetch = taggedFetch([CACHE_TAGS.poems]);
 
 let cachedPoem: SupabaseClient<Database> | undefined;
 /** Cached anon client: RLS limits it to published main poems. */
@@ -42,4 +45,19 @@ export function getCachedServiceClient(): SupabaseClient<Database> {
     });
   }
   return cachedService;
+}
+
+let cachedPublication: SupabaseClient<Database> | undefined;
+/**
+ * Cached anon client for the publications page. Tagged poems too: the page
+ * links each credit's poem, so a poem edit (a new slug, unpublishing) must
+ * reach it.
+ */
+export function getCachedPublicationClient(): SupabaseClient<Database> {
+  if (!cachedPublication) {
+    cachedPublication = createClient<Database>(url(), key(), {
+      global: { fetch: taggedFetch([CACHE_TAGS.publications, CACHE_TAGS.poems]) },
+    });
+  }
+  return cachedPublication;
 }

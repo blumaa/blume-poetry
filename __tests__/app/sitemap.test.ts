@@ -59,11 +59,12 @@ describe('sitemap', () => {
     expect(poemTwo?.lastModified).toEqual(new Date('2024-02-01T00:00:00.000Z'));
   });
 
-  it('includes static entries for /about and /privacy', async () => {
+  it('includes static entries for /about, /publications and /privacy', async () => {
     const result = await sitemap();
     const urls = result.map((entry) => entry.url);
 
     expect(urls).toContain(`${BASE_URL}/about`);
+    expect(urls).toContain(`${BASE_URL}/publications`);
     expect(urls).toContain(`${BASE_URL}/privacy`);
   });
 

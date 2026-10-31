@@ -2,9 +2,11 @@
    Loads AFTER @mond-design-system/tokens/styles.css, so every re-point wins.
 
    Palette is the site's existing newsprint theme (globals.css): white page,
-   zinc neutrals, eggplant accent. Light block re-declares every semantic
-   token — a missing alias silently falls through to the mond default. Dark
-   block re-points only what flips.
+   zinc neutrals. Light accent is terracotta: the moonflower logo's #c26a4e,
+   deepened to #a5543a so white text on it passes WCAG AA. Dark accent is
+   plum.
+   Light block re-declares every semantic token — a missing alias silently
+   falls through to the mond default. Dark block re-points only what flips.
 
    Status colors deviate from the raw feedback colors in globals.css where
    those fail WCAG AA as fills under white text (amber/green were 2–3:1);
@@ -32,7 +34,7 @@
   --mds-surface-sunken: #f0f0f1;
   --mds-surface-inverse: #09090b;
   --mds-surface-media: #141414;
-  --mds-surface-selected: #ece2e8;
+  --mds-surface-selected: var(--mds-accent-soft);
 
   /* borders + controls */
   --mds-border-subtle: #e4e4e7;
@@ -42,19 +44,19 @@
   --mds-button-secondary-fg: var(--mds-text-primary);
   --mds-control-knob: #ffffff;
 
-  /* action — primary fill is the eggplant accent, as the site's buttons are */
-  --mds-action-bg: #614051;
+  /* action — primary fill is the accent */
+  --mds-action-bg: var(--mds-accent);
   --mds-action-fg: #ffffff;
-  --mds-action-bg-hover: #4a3040;
-  --mds-action-bg-active: #3a2632;
+  --mds-action-bg-hover: var(--mds-accent-hover);
+  --mds-action-bg-active: #6e3726;
   --mds-action-disabled-bg: #d9d9d6;
   --mds-action-disabled-fg: #6e6e73;
 
-  /* accent — eggplant */
-  --mds-accent: #614051;
+  /* accent — terracotta */
+  --mds-accent: #a5543a;
   --mds-accent-contrast: #ffffff;
-  --mds-accent-hover: #4a3040;
-  --mds-accent-soft: #ece2e8;
+  --mds-accent-hover: #8a4530;
+  --mds-accent-soft: #f9ece7;
 
   /* highlight — one-accent brand, aliases stay */
   --mds-highlight: var(--mds-accent);
@@ -81,7 +83,7 @@
   --mds-status-success-soft: #ddefe2;
 
   /* focus */
-  --mds-focus-ring-color: #614051;
+  --mds-focus-ring-color: var(--mds-accent);
 
   /* overlays — fixed backdrops, most do not flip with theme */
   --mds-scrim: rgb(0 0 0 / 0.5);
@@ -138,7 +140,7 @@
   --mds-surface-raised: #262626;
   --mds-surface-sunken: #0e0e0e;
   --mds-surface-inverse: #e4e4e7;
-  --mds-surface-selected: #3a2d35;
+  --mds-surface-selected: var(--mds-accent-soft);
 
   --mds-border-subtle: #3f3f46;
   --mds-border-strong: #52525b;
@@ -146,18 +148,24 @@
   --mds-button-border: var(--mds-control-border);
   --mds-button-secondary-fg: var(--mds-text-primary);
 
-  --mds-action-bg: #8b5a6b;
+  /* plum fill under white text; the link color is too light to fill */
+  --mds-action-bg: #6b3a5c;
   --mds-action-fg: #ffffff;
-  --mds-action-bg-hover: #9c6b7c;
-  --mds-action-bg-active: #7a4d5c;
+  --mds-action-bg-hover: #7a4569;
+  --mds-action-bg-active: #5a2f4d;
   --mds-action-disabled-bg: #3a3a3a;
   --mds-action-disabled-fg: #969692;
 
-  /* accent lifts on dark surfaces so contrast holds */
-  --mds-accent: #b58fa2;
-  --mds-accent-contrast: #2e1e27;
-  --mds-accent-hover: #c6a5b5;
-  --mds-accent-soft: #3a2d35;
+  /* plum: light enough for links on every dark surface (5.9:1 on raised) */
+  --mds-accent: #c792b6;
+  --mds-accent-contrast: #1f1219;
+  --mds-accent-hover: #d4a8c5;
+  --mds-accent-soft: #35232f;
+
+  /* highlighted buttons fill like primary ones, not with the link color */
+  --mds-highlight: var(--mds-action-bg);
+  --mds-highlight-contrast: var(--mds-action-fg);
+  --mds-highlight-hover: var(--mds-action-bg-hover);
 
   --mds-avatar-tone-1: #263226;
   --mds-avatar-tone-2: #26334d;
@@ -175,7 +183,7 @@
   --mds-status-success-contrast: #0b3a1e;
   --mds-status-success-soft: #223b2b;
 
-  --mds-focus-ring-color: #b58fa2;
+  --mds-focus-ring-color: var(--mds-accent);
 
   --mds-scrim: rgb(0 0 0 / 0.6);
   --mds-overlay: rgb(0 0 0 / 0.55);

@@ -8,7 +8,7 @@ function wrapper({ children }: { children: ReactNode }) {
   return <QueryClientProvider client={createTestQueryClient()}>{children}</QueryClientProvider>;
 }
 
-const submitEvent = { preventDefault: jest.fn() } as unknown as React.FormEvent;
+const submitEvent = { preventDefault: jest.fn() } as unknown as React.SubmitEvent;
 
 describe('useSubscribeForm', () => {
   it('submits the current email and preference, then clears the email', async () => {

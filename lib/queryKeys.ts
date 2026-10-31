@@ -14,6 +14,7 @@ export const queryKeys = {
         ? (['admin', 'poems'] as const)
         : (['admin', 'poems', filter.collection, filter.status] as const),
     poem: (id: string) => ['admin', 'poems', 'byId', id] as const,
+    publications: () => ['admin', 'publications'] as const,
     /** No filter: the prefix, which invalidates every filtered list. */
     subscribers: (filter?: string) =>
       filter === undefined
@@ -52,6 +53,7 @@ export const staleAfterWrite = {
     queryKeys.admin.stats(),
     queryKeys.admin.sendData(),
   ],
+  publications: () => [queryKeys.admin.publications()],
   comments: () => [
     queryKeys.admin.comments(),
     queryKeys.admin.stats(),

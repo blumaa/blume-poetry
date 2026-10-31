@@ -140,6 +140,25 @@ describe('Sidebar', () => {
     expect(group).toHaveAttribute('hidden');
   });
 
+  it('leads the tree with a highlighted link to the publications page', () => {
+    renderSidebar();
+    expect(screen.getByRole('link', { name: 'Publications' })).toHaveAttribute('href', '/publications');
+  });
+
+  it('marks the publications link current on that page', () => {
+    mockPathname = '/publications';
+    renderSidebar();
+    expect(screen.getByRole('link', { name: 'Publications' })).toHaveAttribute('aria-current', 'page');
+    mockPathname = '/poem/poem-b';
+  });
+
+  it('closes the drawer when the publications link is clicked', async () => {
+    const onClose = jest.fn();
+    renderSidebar({ isMobile: true, isOpen: true, onClose });
+    await userEvent.click(screen.getByRole('link', { name: 'Publications' }));
+    expect(onClose).toHaveBeenCalled();
+  });
+
   describe('in the kinky collection', () => {
     beforeEach(() => {
       mockPathname = '/kinky/poem-b';
@@ -162,6 +181,12 @@ describe('Sidebar', () => {
 
       expect(await screen.findByRole('link', { name: 'Found Poem' })).toHaveAttribute('href', '/kinky/poem-x');
       expect(fetchMock).toHaveBeenCalledWith('/api/poems/search?q=found&collection=kinky', expect.anything());
+    });
+
+    /* Publications lists main credits; the kinky sidebar stays its own world. */
+    it('has no publications link', () => {
+      renderSidebar({ collection: 'kinky' });
+      expect(screen.queryByRole('link', { name: 'Publications' })).not.toBeInTheDocument();
     });
 
     it('takes the logo home to /kinky', () => {

@@ -33,7 +33,6 @@ jest.mock('@/lib/supabase/anon', () => {
     getCachedPoemClient: client('cached-anon'),
     getCachedServiceClient: client('cached-service'),
     getAnonClient: client('anon'),
-    POEMS_CACHE_TAG: 'poems',
   };
 });
 

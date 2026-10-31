@@ -24,6 +24,11 @@ const destinations: NavDestination[] = [
     icon: <Icon name="edit" />,
   },
   {
+    href: '/admin/publications',
+    label: 'Publications',
+    icon: <Icon name="book" />,
+  },
+  {
     href: '/admin/subscribers',
     label: 'Subscribers',
     icon: <Icon name="users" />,

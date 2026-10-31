@@ -116,12 +116,12 @@ describe('revalidatePoems', () => {
     await expect(revalidatePoems()).rejects.toThrow('Failed to revalidate');
   });
 
-  it('posts to the revalidate route', async () => {
+  it('posts the poems scope to the revalidate route', async () => {
     fetchMock.mockResolvedValue(respond(200, { revalidated: true }));
     await revalidatePoems();
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/admin/revalidate',
-      expect.objectContaining({ method: 'POST' })
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ scope: 'poems' }) })
     );
   });
 });
