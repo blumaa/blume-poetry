@@ -24,7 +24,7 @@ export function useSubscribeForm({ submit, onSuccess, onError }: UseSubscribeFor
     onError,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SubmitEvent) => {
     e.preventDefault();
     mutation.mutate({ email, notifyNewPoems });
   };

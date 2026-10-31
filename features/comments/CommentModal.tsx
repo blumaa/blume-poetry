@@ -58,7 +58,7 @@ export function CommentModal({ onClose, slug }: CommentModalProps) {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SubmitEvent) => {
     e.preventDefault();
 
     if (!name.trim() || !content.trim()) {
