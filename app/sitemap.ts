@@ -21,6 +21,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/about`,
     },
     {
+      url: `${baseUrl}/publications`,
+    },
+    {
       url: `${baseUrl}/privacy`,
     },
     ...poemEntries,

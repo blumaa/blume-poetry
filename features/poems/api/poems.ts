@@ -1,4 +1,5 @@
 import { apiFetch } from '@/lib/apiFetch';
+import { revalidateCache } from '@/lib/revalidate';
 import { createClient } from '@/lib/supabase/client';
 import type { PoemSearchHit } from '@/lib/poems';
 import type { PoemCollection, PoemInsert, PoemRow } from '@/lib/supabase/types';
@@ -64,8 +65,8 @@ export async function deletePoem(id: string): Promise<void> {
 }
 
 /** Busts the cached poem reads so the public site shows the change. */
-export async function revalidatePoems(): Promise<void> {
-  await apiFetch('/api/admin/revalidate', { method: 'POST' });
+export function revalidatePoems(): Promise<void> {
+  return revalidateCache('poems');
 }
 
 /** Emails subscribers about a poem. The server skips poems already sent. */

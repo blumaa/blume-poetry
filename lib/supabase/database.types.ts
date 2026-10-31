@@ -179,6 +179,44 @@ export type Database = {
         }
         Relationships: []
       }
+      publications: {
+        Row: {
+          created_at: string
+          id: string
+          journal: string
+          poem_id: string | null
+          poem_title: string
+          published_on: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          journal: string
+          poem_id?: string | null
+          poem_title: string
+          published_on: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          journal?: string
+          poem_id?: string | null
+          poem_title?: string
+          published_on?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "publications_poem_id_fkey"
+            columns: ["poem_id"]
+            isOneToOne: false
+            referencedRelation: "poems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           auth: string

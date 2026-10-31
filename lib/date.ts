@@ -25,6 +25,16 @@ export function formatDateTime(input: string | number | Date): string {
   });
 }
 
+/** "December 2024", for a date column (YYYY-MM-DD). The date has no time zone,
+    so it is read and printed in UTC: the month is the one written. */
+export function formatMonthYear(date: string): string {
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString(DATE_LOCALE, {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;

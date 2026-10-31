@@ -2,7 +2,8 @@
    eq, insert, maybeSingle, ...) returns the same chain and is recorded in
    `calls`; awaiting the chain runs the "query" and resolves with `result`.
    After throwOnError() a result carrying an error rejects instead, as
-   supabase-js does. */
+   supabase-js does. `result` may be a function of the recorded calls, for a
+   table whose list reads and single-row writes need different shapes. */
 
 export interface QueryResult {
   data?: unknown;
@@ -16,7 +17,9 @@ export type QueryMock = PromiseLike<Required<QueryResult>> & {
   argsOf(method: string): unknown[][];
 } & Record<string, (...args: unknown[]) => QueryMock>;
 
-export function queryMock(result: QueryResult = {}): QueryMock {
+export function queryMock(
+  result: QueryResult | ((calls: QueryMock['calls']) => QueryResult) = {}
+): QueryMock {
   const calls: QueryMock['calls'] = [];
   let throwing = false;
 
@@ -27,7 +30,8 @@ export function queryMock(result: QueryResult = {}): QueryMock {
         return (method: string) => calls.filter(([m]) => m === method).map(([, args]) => args);
       }
       if (prop === 'then') {
-        const settled = { data: null, error: null, count: null, ...result };
+        const resolved = typeof result === 'function' ? result(calls) : result;
+        const settled = { data: null, error: null, count: null, ...resolved };
         const outcome =
           throwing && settled.error
             ? Promise.reject(Object.assign(new Error(settled.error.message), settled.error))

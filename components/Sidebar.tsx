@@ -11,6 +11,7 @@ import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { SidebarHeader } from './sidebar/SidebarHeader';
 import { SidebarSearch } from './sidebar/SidebarSearch';
 import { SidebarNav } from './sidebar/SidebarNav';
+import { PUBLICATIONS_HREF, SidebarPublications } from './sidebar/SidebarPublications';
 import { SidebarFooter } from './sidebar/SidebarFooter';
 import styles from './Sidebar.module.css';
 
@@ -113,6 +114,11 @@ export function Sidebar({
       {showBody && (
         <>
           <SidebarSearch id="search-poems" value={search} onChange={setSearch} />
+
+          {/* Credits are for the main collection only. */}
+          {collection === 'main' && (
+            <SidebarPublications active={pathname === PUBLICATIONS_HREF} onNavigate={onClose} />
+          )}
 
           <SidebarNav
             tree={tree}

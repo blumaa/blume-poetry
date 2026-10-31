@@ -15,7 +15,7 @@ describe('SubscribeForm', () => {
     renderWithProviders(<SubscribeForm compact />);
 
     await user.type(screen.getByLabelText('Email address'), 'a@x.com');
-    await user.click(screen.getByRole('button', { name: 'Go' }));
+    await user.click(screen.getByRole('button', { name: 'Subscribe' }));
 
     expect(await screen.findAllByText('Thank you for subscribing!')).not.toHaveLength(0);
     expect(subscribe).toHaveBeenCalledWith({ email: 'a@x.com', notifyNewPoems: true });
