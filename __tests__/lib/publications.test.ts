@@ -105,23 +105,12 @@ describe('groupPublications', () => {
     ]);
   });
 
-  it('keeps each poem’s own link when the pieces differ', () => {
-    const [group] = groupPublications([credit('a', {}), credit('b', {})]);
-    expect(group.url).toBeNull();
-    expect(group.poems.map((p) => p.url)).toEqual(['https://iexile.com/a', 'https://iexile.com/b']);
-  });
-
-  /* An issue PDF holds every poem: link the journal once, not each title. */
-  it('moves a link every poem shares to the group', () => {
+  /* Every title links, even when the poems share one piece (an issue PDF),
+     so every entry reads the same way. */
+  it('keeps each poem’s own link, shared or not', () => {
     const issue = 'https://journal.example/issue.pdf';
     const [group] = groupPublications([credit('a', { url: issue }), credit('b', { url: issue })]);
-    expect(group.url).toBe(issue);
-    expect(group.poems.map((p) => p.url)).toEqual([null, null]);
-  });
-
-  it('leaves a lone poem’s link on the poem', () => {
-    const [group] = groupPublications([credit('a', {})]);
-    expect(group.url).toBeNull();
-    expect(group.poems[0].url).toBe('https://iexile.com/a');
+    expect(group).not.toHaveProperty('url');
+    expect(group.poems.map((p) => p.url)).toEqual([issue, issue]);
   });
 });

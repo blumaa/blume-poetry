@@ -16,17 +16,15 @@ export const metadata: Metadata = {
   },
 };
 
-function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <a href={href} className={styles.link} target="_blank" rel="noopener noreferrer">
-      {children}
-    </a>
-  );
-}
-
 /* The published piece when it is online, else the poem's page on this site. */
 function PoemTitle({ poem }: { poem: Publication }) {
-  if (poem.url) return <ExternalLink href={poem.url}>{poem.poemTitle}</ExternalLink>;
+  if (poem.url) {
+    return (
+      <a href={poem.url} className={styles.link} target="_blank" rel="noopener noreferrer">
+        {poem.poemTitle}
+      </a>
+    );
+  }
   if (poem.poemSlug) {
     return (
       <Link href={poemHref('main', poem.poemSlug)} className={styles.link}>
@@ -53,9 +51,7 @@ export default async function PublicationsPage() {
           {groups.map((group) => (
             <li key={`${group.journal}-${group.publishedOn}`} className={styles.item}>
               <div className={styles.meta}>
-                <span className={styles.journal}>
-                  {group.url ? <ExternalLink href={group.url}>{group.journal}</ExternalLink> : group.journal}
-                </span>
+                <span className={styles.journal}>{group.journal}</span>
                 <time dateTime={group.publishedOn.slice(0, 7)} className={styles.date}>
                   {formatMonthYear(group.publishedOn)}
                 </time>

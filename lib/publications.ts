@@ -40,14 +40,10 @@ export const getPublications = cache(async (): Promise<Publication[]> => {
 export interface PublicationGroup {
   journal: string;
   publishedOn: string;
-  /** The piece every poem shares (an issue PDF); null when each has its own. */
-  url: string | null;
-  /** The poems, each with its url cleared when the group holds it. */
   poems: Publication[];
 }
 
-/* Groups credits by journal and month, in the order given. When two or more
-   poems share one url, it moves to the group so the journal links once. */
+/* Groups credits by journal and month, in the order given. */
 export function groupPublications(publications: Publication[]): PublicationGroup[] {
   const groups = new Map<string, Publication[]>();
   for (const publication of publications) {
@@ -55,14 +51,9 @@ export function groupPublications(publications: Publication[]): PublicationGroup
     groups.set(key, [...(groups.get(key) ?? []), publication]);
   }
 
-  return [...groups.values()].map((poems) => {
-    const [first] = poems;
-    const shared = poems.length > 1 && first.url !== null && poems.every((p) => p.url === first.url);
-    return {
-      journal: first.journal,
-      publishedOn: first.publishedOn,
-      url: shared ? first.url : null,
-      poems: shared ? poems.map((p) => ({ ...p, url: null })) : poems,
-    };
-  });
+  return [...groups.values()].map((poems) => ({
+    journal: poems[0].journal,
+    publishedOn: poems[0].publishedOn,
+    poems,
+  }));
 }

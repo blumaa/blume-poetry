@@ -92,13 +92,12 @@ describe('PublicationsPage', () => {
     expect(within(iexile).queryByRole('link', { name: 'iExile' })).not.toBeInTheDocument();
   });
 
-  it('links the journal once when every poem shares one piece', async () => {
+  it('links each title even when the poems share one piece, and never the journal', async () => {
     await renderPage();
     const streetcake = entries()[2] as HTMLElement;
     const links = within(streetcake).getAllByRole('link');
-    expect(links).toHaveLength(1);
-    expect(links[0]).toHaveAccessibleName('Streetcake Magazine');
-    expect(links[0]).toHaveAttribute('href', issue);
+    expect(links.map((link) => link.textContent)).toEqual(['Super Beaver Moon', 'Winter Song']);
+    links.forEach((link) => expect(link).toHaveAttribute('href', issue));
   });
 
   it('falls back to the poem’s page on this site when the piece is not online', async () => {
