@@ -52,15 +52,16 @@ const mockFrom = jest.fn((table: string) =>
           }),
         }),
       }
-    : {
-        select: jest.fn(() => ({
+    : (() => {
+        const ordered = {
           order: jest.fn(() => ({
             limit: jest.fn(() =>
               Promise.resolve({ data: table === 'comments' ? commentsData : likesData })
             ),
           })),
-        })),
-      }
+        };
+        return { select: jest.fn(() => ({ ...ordered, is: jest.fn(() => ordered) })) };
+      })()
 );
 
 jest.mock('@/lib/supabase/client', () => ({

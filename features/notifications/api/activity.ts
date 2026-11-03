@@ -29,6 +29,7 @@ export async function fetchActivity(): Promise<Notification[]> {
     supabase
       .from('comments')
       .select('id, author_name, content, created_at, poem:poems(slug, title, collection)')
+      .is('removed_at', null)
       .order('created_at', { ascending: false })
       .limit(LIMIT),
     supabase

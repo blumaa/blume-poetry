@@ -1,0 +1,65 @@
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mds-stack-item);
+}
+
+.list,
+.replies {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mds-stack-item);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list > .comment + .comment {
+  padding-top: var(--mds-stack-item);
+  border-top: var(--mds-border-width) solid var(--mds-border-subtle);
+}
+
+.comment {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mds-gap-hairline);
+  min-width: 0;
+}
+
+/* Picture and words read as one line; the words give way before the row does. */
+.author {
+  display: flex;
+  align-items: center;
+  gap: var(--mds-gap-tight);
+  min-width: 0;
+}
+
+.authorText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tombstone {
+  font-style: italic;
+}
+
+/* A reply steps in from what it answers, with a rule tying the run of them
+   back to it. */
+.replies {
+  margin-block-start: var(--mds-stack-item);
+  margin-inline-start: var(--mds-indent-thread);
+  padding-inline-start: var(--mds-indent-thread);
+  border-inline-start: var(--mds-border-width) solid var(--mds-border-subtle);
+}
+
+/* Deep enough that another step would leave no room for the words: the rule
+   stays, the indent stops. */
+.flat {
+  margin-inline-start: 0;
+}

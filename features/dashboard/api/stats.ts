@@ -16,7 +16,7 @@ export async function fetchStats(): Promise<DashboardStats> {
     supabase.from('poems').select('*', head).throwOnError(),
     supabase.from('subscribers').select('*', head).eq('status', 'active').throwOnError(),
     supabase.from('poems').select('*', head).eq('status', 'draft').throwOnError(),
-    supabase.from('comments').select('*', head).throwOnError(),
+    supabase.from('comments').select('*', head).is('removed_at', null).throwOnError(),
   ]);
 
   return {

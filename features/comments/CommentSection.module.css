@@ -1,0 +1,9 @@
+.section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: var(--mds-border-width) solid var(--mds-border-subtle);
+}
+
+.errorText {
+  color: var(--mds-status-danger);
+}

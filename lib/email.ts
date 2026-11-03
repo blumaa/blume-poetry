@@ -138,7 +138,7 @@ export async function sendEmail({ to, subject, html, text, headers }: SendEmailO
  * bulk mail and show their own unsubscribe button. The mail client POSTs to
  * the URL, so /api/unsubscribe must unsubscribe on POST.
  */
-function unsubscribeHeaders(email: string): Record<string, string> {
+export function unsubscribeHeaders(email: string): Record<string, string> {
   return {
     'List-Unsubscribe': `<${buildUnsubscribeUrl(email)}>`,
     'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
@@ -232,7 +232,8 @@ function renderEmailShell({
   bodyContent: string;
   width?: number;
   unsubscribeUrl: string;
-  notifications: { url: string; label: string };
+  /** The new-poem setting; left out of mail sent to non-subscribers. */
+  notifications?: { url: string; label: string };
 }): string {
   const fontStack = POEM_FONT_STACK;
 
@@ -262,11 +263,11 @@ function renderEmailShell({
       <p style="margin: 0 0 8px 0;">
         ${SITE_NAME}
       </p>
-      <p style="margin: 0 0 8px 0;">
+      ${notifications ? `<p style="margin: 0 0 8px 0;">
         <a href="${notifications.url}" style="color: #52525b; text-decoration: underline;">
           ${notifications.label}
         </a>
-      </p>
+      </p>` : ''}
       <p style="margin: 0;">
         <a href="${unsubscribeUrl}" style="color: #52525b; text-decoration: underline;">
           Unsubscribe from all emails
@@ -288,17 +289,16 @@ function renderEmailTextShell(
   heading: string,
   body: string,
   unsubscribeUrl: string,
-  notifications: { url: string; label: string }
+  notifications?: { url: string; label: string }
 ): string {
+  const setting = notifications ? `${notifications.label}: ${notifications.url}\n\n` : '';
   return `
 ${heading}
 
 ${body}
 ---
 
-${notifications.label}: ${notifications.url}
-
-Unsubscribe from all emails: ${unsubscribeUrl}
+${setting}Unsubscribe from all emails: ${unsubscribeUrl}
   `.trim();
 }
 
@@ -430,4 +430,61 @@ ${poemSection}`;
     unsubscribeUrl,
     notificationsFooter(unsubscribeEmail, 'general')
   );
+}
+
+interface CommentReplyEmailData {
+  poemTitle: string;
+  poemUrl: string;
+  originalContent: string;
+  replyAuthor: string;
+  replyContent: string;
+  unsubscribeEmail: string;
+}
+
+/** Visitor-written words, escaped, line breaks kept. */
+function quotedHtml(words: string): string {
+  return `<p style="white-space: pre-wrap; margin: 0;">${escapeHtml(words)}</p>`;
+}
+
+/**
+ * Tells a commenter someone answered them. The commenter left an email only
+ * for this, so the footer offers the way out and no new-poem setting.
+ */
+export function generateCommentReplyEmail({
+  poemTitle,
+  poemUrl,
+  originalContent,
+  replyAuthor,
+  replyContent,
+  unsubscribeEmail,
+}: CommentReplyEmailData): { subject: string; html: string; text: string } {
+  const subject = `${replyAuthor} replied to your comment on “${poemTitle}”`;
+  const unsubscribeUrl = buildUnsubscribeUrl(unsubscribeEmail);
+
+  const bodyContent = `<div style="color: #52525b; font-size: 14px; line-height: 1.6; margin-bottom: 24px; padding-left: 16px; border-left: 2px solid #e4e4e7;">
+        ${quotedHtml(originalContent)}
+      </div>
+
+      <p style="color: #09090b; font-size: 14px; font-weight: 600; margin: 0 0 8px 0;">${escapeHtml(replyAuthor)}</p>
+      <div style="color: #09090b; font-size: 16px; line-height: 1.6;">
+        ${quotedHtml(replyContent)}
+      </div>
+
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e4e4e7;">
+        <a href="${poemUrl}" style="color: #2563eb; text-decoration: none;">
+          Read the conversation &rarr;
+        </a>
+      </div>`;
+
+  const text = renderEmailTextShell(
+    subject,
+    `Your comment:\n${originalContent}\n\n${replyAuthor} replied:\n${replyContent}\n\nRead the conversation: ${poemUrl}\n`,
+    unsubscribeUrl
+  );
+
+  return {
+    subject,
+    html: renderEmailShell({ headTitle: escapeHtml(subject), bodyContent, unsubscribeUrl }),
+    text,
+  };
 }

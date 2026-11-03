@@ -1,12 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
 import { getAnonClient } from '@/lib/supabase/anon';
 import { createAdminClient } from '@/lib/supabase/server';
 import { getPoemRefBySlug } from '@/lib/poems';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { verifyOrigin } from '@/lib/csrf';
+import { notifyCommentReply } from '@/lib/commentReplies';
 
-const COMMENT_COLUMNS = 'id, author_name, content, created_at';
+const COMMENT_COLUMNS = 'id, parent_id, author_name, content, created_at, removed_at';
 
 /* Bot checks run before validation, so a bot never learns which fields failed. */
 const required = 'Name and comment are required';
@@ -14,6 +15,16 @@ const commentSchema = z.object({
   visitorId: z.string(required).min(1, required),
   authorName: z.string(required).trim().min(1, required).max(100, 'Name is too long'),
   content: z.string(required).trim().min(1, required).max(2000, 'Comment is too long'),
+  parentId: z.uuid('Invalid reply').nullable().default(null),
+  // Optional, private: only for telling the commenter about replies.
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .transform((email) => (email === '' ? null : email))
+    .pipe(z.email('Invalid email').max(254, 'Invalid email').nullable())
+    .nullable()
+    .default(null),
 });
 
 const botFields = z.object({
@@ -23,7 +34,7 @@ const botFields = z.object({
 
 // Database errors throw (.throwOnError) and Next answers 500.
 
-// GET - Get comments for a poem
+// GET - A poem's comments in written order; removed ones come back scrubbed
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -39,7 +50,8 @@ export async function GET(
     .from('comments')
     .select(COMMENT_COLUMNS)
     .eq('poem_id', poem.id)
-    .order('created_at', { ascending: false })
+    // Written order: a reply never precedes what it answers.
+    .order('created_at', { ascending: true })
     .throwOnError();
 
   return NextResponse.json({ comments });
@@ -79,24 +91,62 @@ export async function POST(
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
-  const { visitorId, authorName, content } = parsed.data;
+  const { visitorId, authorName, content, parentId, email } = parsed.data;
 
   const poem = await getPoemRefBySlug(slug);
   if (!poem) {
     return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
   }
 
-  const { data: comment } = await createAdminClient()
-    .from('comments')
-    .insert({
-      poem_id: poem.id,
-      visitor_id: visitorId,
-      author_name: authorName,
-      content,
+  const admin = createAdminClient();
+
+  // A reply answers a live comment on this poem. The database also refuses
+  // another poem's comment; checking here answers 400, not 500.
+  if (parentId !== null) {
+    const { data: parent } = await admin
+      .from('comments')
+      .select('id')
+      .eq('id', parentId)
+      .eq('poem_id', poem.id)
+      .is('removed_at', null)
+      .maybeSingle()
+      .throwOnError();
+    if (!parent) {
+      return NextResponse.json(
+        { error: 'That comment can no longer be replied to' },
+        { status: 400 }
+      );
+    }
+  }
+
+  // One call saves the comment and its email together (add_comment).
+  const { data: comment } = await admin
+    .rpc('add_comment', {
+      p_poem_id: poem.id,
+      p_visitor_id: visitorId,
+      p_author_name: authorName,
+      p_content: content,
+      // Left out when absent; the function defaults them to null.
+      p_parent_id: parentId ?? undefined,
+      p_email: email ?? undefined,
     })
     .select(COMMENT_COLUMNS)
     .single()
     .throwOnError();
+
+  if (parentId !== null) {
+    // Mail goes through Gmail: send it after the response so the reply never
+    // waits on it. notifyCommentReply never throws.
+    after(() =>
+      notifyCommentReply({
+        parentId,
+        authorName,
+        content,
+        replierEmail: email,
+        poem: { title: poem.title, slug, collection: poem.collection },
+      })
+    );
+  }
 
   return NextResponse.json({ comment });
 }

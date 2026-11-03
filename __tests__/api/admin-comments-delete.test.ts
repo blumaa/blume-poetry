@@ -53,7 +53,7 @@ describe('DELETE /api/admin/comments/[id]', () => {
     expect(adminClient.from).not.toHaveBeenCalled();
   });
 
-  it('deletes via the service-role client when the caller is the admin', async () => {
+  it('removes via the service-role client when the caller is the admin', async () => {
     currentUser = { email: 'admin@site.test', app_metadata: { role: 'admin' } };
     const query = queryMock({ data: [{ id: 'comment-1' }] });
     adminClient = clientMock({ comments: [query] });
@@ -65,7 +65,23 @@ describe('DELETE /api/admin/comments/[id]', () => {
     expect(query.argsOf('eq')).toEqual([['id', 'comment-1']]);
   });
 
-  it('answers 404 when no comment had that id', async () => {
+  it('keeps the row as a scrubbed tombstone so replies keep their place', async () => {
+    currentUser = { email: 'admin@site.test', app_metadata: { role: 'admin' } };
+    const query = queryMock({ data: [{ id: 'comment-1' }] });
+    adminClient = clientMock({ comments: [query] });
+
+    await del('comment-1');
+
+    expect(query.argsOf('delete')).toEqual([]);
+    expect(query.argsOf('update')[0][0]).toEqual({
+      author_name: '',
+      content: '',
+      removed_at: expect.any(String),
+    });
+    expect(query.argsOf('is')).toEqual([['removed_at', null]]);
+  });
+
+  it('answers 404 when no live comment had that id', async () => {
     currentUser = { email: 'admin@site.test', app_metadata: { role: 'admin' } };
     adminClient = clientMock({ comments: [queryMock({ data: [] })] });
 

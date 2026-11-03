@@ -43,6 +43,11 @@ export default function PrivacyPage() {
             Comments and likes are stored to display on the site. Comments include the
             name you provide and your message. No account is required.
           </p>
+          <p>
+            If you add an email to a comment, it is kept private and used only to tell you
+            when someone replies to that comment. It is never shown on the site. Every
+            reply email has an unsubscribe link, and removing a comment deletes its email.
+          </p>
 
           <h2 className={styles.heading}>Contact</h2>
           <p>
