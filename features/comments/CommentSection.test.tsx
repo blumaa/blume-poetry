@@ -45,7 +45,7 @@ describe('CommentSection', () => {
     expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();
   });
 
-  it('shows the thread from the server, replies under what they answer, with a count', async () => {
+  it('shows the thread from the server, replies under what they answer, with no count of its own', async () => {
     mockFetchSequence([
       { ok: true, body: { comments: [comment(PARENT_ID, 'first'), comment('2', 'answer', PARENT_ID)] } },
     ]);
@@ -53,7 +53,8 @@ describe('CommentSection', () => {
 
     const first = await screen.findByText('first');
     expect(within(first.closest('li')!).getByText('answer')).toBeInTheDocument();
-    expect(screen.getByText('2 comments')).toBeInTheDocument();
+    // The footer toggle carries the count.
+    expect(screen.queryByText('2 comments')).not.toBeInTheDocument();
   });
 
   it('posts a top-level comment and shows it from the server answer, without a refetch', async () => {

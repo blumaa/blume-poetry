@@ -9,8 +9,6 @@ import styles from './CommentThread.module.css';
 
 export interface CommentThreadProps {
   comments: readonly ThreadComment[];
-  /** Every live comment on the poem, replies included. */
-  count?: number;
   onReply?: (id: string) => void;
   /** The field for the poem, above the comments. */
   composer?: ReactNode;
@@ -27,7 +25,6 @@ const plural = (count: number, one: string, many: string) =>
 /** A poem's comments, each answer under what it answers. */
 export function CommentThread({
   comments,
-  count,
   onReply,
   composer,
   replyingTo = null,
@@ -38,8 +35,6 @@ export function CommentThread({
 
   return (
     <section aria-label="Comments" className={styles.thread}>
-      {count !== undefined && <Text variant="eyebrow">{plural(count, 'comment', 'comments')}</Text>}
-
       {composer}
 
       {comments.length > 0 ? (

@@ -9,7 +9,7 @@ import { getVisitorId } from '@/lib/visitorId';
 import { postComment, type Comment, type PostCommentInput } from './api/comments';
 import { CommentComposer, type CommentDraft } from './CommentComposer';
 import { CommentThread } from './CommentThread';
-import { buildThread, liveCount } from './thread';
+import { buildThread } from './thread';
 import { useComments } from './useComments';
 import styles from './CommentSection.module.css';
 
@@ -75,7 +75,6 @@ export function CommentSection({ slug, className }: CommentSectionProps) {
     <div className={className}>
       <CommentThread
         comments={buildThread(comments)}
-        count={liveCount(comments)}
         onReply={setReplyTo}
         composer={
           <CommentComposer onSend={send(null)} sending={post.isPending} />

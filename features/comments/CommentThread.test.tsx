@@ -37,15 +37,6 @@ describe('CommentThread', () => {
     expect(screen.getByText('12/03/2026')).toBeInTheDocument();
   });
 
-  it.each([
-    [1, '1 comment'],
-    [2, '2 comments'],
-  ])('counts the comments (%i)', (count, text) => {
-    render(<CommentThread comments={[HERS, HIS]} count={count} />);
-
-    expect(screen.getByText(text)).toBeInTheDocument();
-  });
-
   it('says so when nobody has written anything', () => {
     render(<CommentThread comments={[]} />);
 
