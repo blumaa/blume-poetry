@@ -19,25 +19,41 @@
   border-top: var(--mds-border-width) solid var(--mds-border-subtle);
 }
 
+/* Two columns: the picture, then everything said. The words, actions and
+   reply field line up under the name, not under the picture; replies span
+   both and step in on their own. */
 .comment {
-  display: flex;
-  flex-direction: column;
-  gap: var(--mds-gap-hairline);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--mds-gap-tight);
+  row-gap: var(--mds-gap-hairline);
+  align-items: center;
   min-width: 0;
 }
 
-/* Picture and words read as one line; the words give way before the row does. */
+.comment > * {
+  grid-column: 2;
+}
+
+.comment > .replyFold {
+  grid-column: 1 / -1;
+}
+
+/* The picture and the name fill the first row: picture left, name right. */
 .author {
-  display: flex;
-  align-items: center;
-  gap: var(--mds-gap-tight);
-  min-width: 0;
+  display: contents;
 }
 
 .authorText {
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+/* Ghost buttons pad their words; the row steps back by that padding so
+   "Reply" lines up with the comment's words. The hit area is untouched. */
+.actions {
+  margin-inline-start: calc(-1 * var(--mds-pad-button-sm));
 }
 
 .body {

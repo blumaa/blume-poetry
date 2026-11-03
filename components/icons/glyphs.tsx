@@ -27,6 +27,7 @@ const GLYPHS = {
     ),
   },
   check: { body: <path d="M5 13l4 4L19 7" /> },
+  'chevron-down': { body: <path d="m6 9 6 6 6-6" /> },
   'chevron-right': { body: <path d="m9 18 6-6-6-6" /> },
   'chevrons-left': {
     body: (

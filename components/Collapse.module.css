@@ -23,6 +23,10 @@
   transition: transform var(--mds-transition-control);
 }
 
-.chevron[data-open] {
+.chevron[data-from='down'][data-open] {
+  transform: rotate(180deg);
+}
+
+.chevron[data-from='right'][data-open] {
   transform: rotate(90deg);
 }

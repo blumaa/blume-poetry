@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type SubmitEvent, type RefObject } from 'react';
+import { useEffect, useRef, useState, type SubmitEvent } from 'react';
 import { Button, Field, Inline, Input, Stack, Text, Textarea, VisuallyHidden } from '@/components/mds';
 import { Icon } from '@/components/icons';
 import { clearStored, writeStored } from '@/lib/browserStorage';
@@ -16,10 +16,9 @@ export interface CommentComposerProps {
   sending: boolean;
   /** Present when answering a comment: the field opens under it, cursor in. */
   reply?: { name: string; onCancel: () => void };
-  fieldRef?: RefObject<HTMLTextAreaElement | null>;
 }
 
-export function CommentComposer({ onSend, sending, reply, fieldRef }: CommentComposerProps) {
+export function CommentComposer({ onSend, sending, reply }: CommentComposerProps) {
   const storedName = useStored('commentName');
   const storedEmail = useStored('commentEmail');
   const [nameDraft, setNameDraft] = useState<string | null>(null);
@@ -29,8 +28,7 @@ export function CommentComposer({ onSend, sending, reply, fieldRef }: CommentCom
   const [focused, setFocused] = useState(false);
   // Spam check: the server rejects a send too soon after the field appeared.
   const shownAt = useRef(0);
-  const own = useRef<HTMLTextAreaElement>(null);
-  const field = fieldRef ?? own;
+  const field = useRef<HTMLTextAreaElement>(null);
   const replying = reply !== undefined;
 
   useEffect(() => {

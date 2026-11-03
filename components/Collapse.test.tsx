@@ -31,4 +31,16 @@ describe('Collapse', () => {
     rerender(both(false));
     expect(container.querySelectorAll('[data-open]')).toHaveLength(0);
   });
+
+  it('points the chevron down by default, or right when asked, for its turn to start from', () => {
+    const { container } = render(
+      <IconRegistry>
+        <CollapseChevron open={false} />
+        <CollapseChevron open={false} from="right" />
+      </IconRegistry>,
+    );
+
+    const froms = [...container.querySelectorAll('[data-from]')].map((el) => el.getAttribute('data-from'));
+    expect(froms).toEqual(['down', 'right']);
+  });
 });

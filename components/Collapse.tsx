@@ -27,11 +27,11 @@ export function Collapse({ open, children, className }: CollapseProps) {
   );
 }
 
-/** Points right when folded and turns down when open. */
-export function CollapseChevron({ open }: { open: boolean }) {
+/** Points down (or right) when folded and turns over when open. */
+export function CollapseChevron({ open, from = 'down' }: { open: boolean; from?: 'down' | 'right' }) {
   return (
-    <span className={styles.chevron} data-open={open || undefined}>
-      <Icon name="chevron-right" />
+    <span className={styles.chevron} data-from={from} data-open={open || undefined}>
+      <Icon name={from === 'down' ? 'chevron-down' : 'chevron-right'} />
     </span>
   );
 }

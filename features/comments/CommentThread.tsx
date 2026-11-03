@@ -77,7 +77,7 @@ function CommentItem({
     <Button
       variant="ghost"
       size="sm"
-      iconLeft={<CollapseChevron open={open} />}
+      iconLeft={<CollapseChevron open={open} from="right" />}
       aria-expanded={open}
       onClick={() => setOpen((was) => !was)}
     >
@@ -86,7 +86,7 @@ function CommentItem({
   );
 
   const subtree = hasReplies && (
-    <Collapse open={open}>
+    <Collapse open={open} className={styles.replyFold}>
       <ul className={[styles.replies, depth + 1 > thread.maxIndent && styles.flat].filter(Boolean).join(' ')}>
         {replies.map((reply) => (
           <CommentItem key={reply.id} comment={reply} depth={depth + 1} thread={thread} />
@@ -101,7 +101,7 @@ function CommentItem({
         <Text variant="meta" className={styles.tombstone}>
           Comment removed
         </Text>
-        {fold}
+        {fold && <div className={styles.actions}>{fold}</div>}
         {subtree}
       </li>
     );
@@ -125,7 +125,7 @@ function CommentItem({
 
       <Text className={styles.body}>{comment.body}</Text>
 
-      <Inline gap="tight" wrap>
+      <Inline gap="tight" wrap className={styles.actions}>
         {onReply !== undefined && (
           <Button variant="ghost" size="sm" onClick={() => onReply(id)}>
             Reply

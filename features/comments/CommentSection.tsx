@@ -1,33 +1,30 @@
 'use client';
 
-import { useState, type RefObject } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/mds';
 import { SkeletonComment } from '@/components/Skeleton';
 import { queryKeys } from '@/lib/queryKeys';
 import { getVisitorId } from '@/lib/visitorId';
-import { fetchComments, postComment, type Comment, type PostCommentInput } from './api/comments';
+import { postComment, type Comment, type PostCommentInput } from './api/comments';
 import { CommentComposer, type CommentDraft } from './CommentComposer';
 import { CommentThread } from './CommentThread';
 import { buildThread, liveCount } from './thread';
+import { useComments } from './useComments';
 import styles from './CommentSection.module.css';
 
 interface CommentSectionProps {
   slug: string;
-  /** The poem's comment field, for a button elsewhere to focus. */
-  fieldRef?: RefObject<HTMLTextAreaElement | null>;
+  className?: string;
 }
 
 /* A poem's thread and its composers. Moderation lives in /admin/comments. */
-export function CommentSection({ slug, fieldRef }: CommentSectionProps) {
+export function CommentSection({ slug, className }: CommentSectionProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [replyTo, setReplyTo] = useState<string | null>(null);
 
-  const { data: comments, isPending, isError } = useQuery({
-    queryKey: queryKeys.poem.comments(slug),
-    queryFn: () => fetchComments(slug),
-  });
+  const { data: comments, isPending, isError } = useComments(slug);
 
   /* Deterministic: a comment appears only once the server has saved it,
      taken from the server's answer (no refetch). Written order, so it goes last. */
@@ -58,7 +55,7 @@ export function CommentSection({ slug, fieldRef }: CommentSectionProps) {
 
   if (isPending) {
     return (
-      <div className={styles.section}>
+      <div className={className}>
         <SkeletonComment />
       </div>
     );
@@ -66,7 +63,7 @@ export function CommentSection({ slug, fieldRef }: CommentSectionProps) {
 
   if (isError) {
     return (
-      <div className={styles.section}>
+      <div className={className}>
         <p className={styles.errorText}>Failed to load comments</p>
       </div>
     );
@@ -75,17 +72,13 @@ export function CommentSection({ slug, fieldRef }: CommentSectionProps) {
   const replyToName = comments.find(({ id }) => id === replyTo)?.author_name;
 
   return (
-    <div className={styles.section}>
+    <div className={className}>
       <CommentThread
         comments={buildThread(comments)}
         count={liveCount(comments)}
         onReply={setReplyTo}
         composer={
-          <CommentComposer
-            onSend={send(null)}
-            sending={post.isPending}
-            {...(fieldRef === undefined ? {} : { fieldRef })}
-          />
+          <CommentComposer onSend={send(null)} sending={post.isPending} />
         }
         replyingTo={replyTo}
         replyComposer={
