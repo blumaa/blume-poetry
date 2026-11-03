@@ -37,7 +37,7 @@ function form(token: string) {
 
 beforeEach(() => {
   process.env.UNSUBSCRIBE_SECRET = 'test-secret-value';
-  adminClient = clientMock({ subscribers: [queryMock()] });
+  adminClient = clientMock({ subscribers: [queryMock()], comment_emails: [queryMock()] });
 });
 
 describe('UnsubscribePage', () => {
@@ -61,7 +61,7 @@ describe('UnsubscribePage', () => {
 describe('unsubscribe action', () => {
   it('unsubscribes the token holder and lands on done', async () => {
     const query = queryMock();
-    adminClient = clientMock({ subscribers: [query] });
+    adminClient = clientMock({ subscribers: [query], comment_emails: [queryMock()] });
 
     await expect(unsubscribe(form(createUnsubscribeToken('reader@example.com')))).rejects.toThrow(
       'NEXT_REDIRECT:/unsubscribe?done=1'

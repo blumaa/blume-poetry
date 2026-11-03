@@ -11,16 +11,18 @@ export async function DELETE(
   const auth = await requireAdmin(request);
   if (auth instanceof Response) return auth;
 
-  // requireAdmin is the authorization; the delete runs as the service role.
+  // requireAdmin is the authorization; the write runs as the service role.
+  // The row stays, scrubbed, so replies keep their place under a tombstone.
   // A database error throws and Next answers a generic 500.
-  const { data: deleted } = await createAdminClient()
+  const { data: removed } = await createAdminClient()
     .from('comments')
-    .delete()
+    .update({ author_name: '', content: '', removed_at: new Date().toISOString() })
     .eq('id', id)
+    .is('removed_at', null)
     .select('id')
     .throwOnError();
 
-  if (deleted.length === 0) {
+  if (removed.length === 0) {
     return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
   }
 

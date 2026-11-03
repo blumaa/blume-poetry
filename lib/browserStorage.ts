@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   theme: { name: 'theme', area: 'local' },
   sidebarCollapsed: { name: 'sidebar_collapsed', area: 'local' },
   commentName: { name: 'comment_name', area: 'local' },
+  commentEmail: { name: 'comment_email', area: 'local' },
   visitorId: { name: 'visitor_id', area: 'local' },
   flashToast: { name: 'toast', area: 'session' },
 } as const satisfies Record<string, { name: string; area: Area }>;

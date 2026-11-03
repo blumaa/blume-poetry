@@ -1,0 +1,32 @@
+/* A grid row, not a height: the contents keep their own height and still fold. */
+.collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--mds-transition-reveal),
+    opacity var(--mds-transition-reveal);
+}
+
+.collapse[data-open] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.chevron {
+  display: inline-flex;
+  transition: transform var(--mds-transition-control);
+}
+
+.chevron[data-from='down'][data-open] {
+  transform: rotate(180deg);
+}
+
+.chevron[data-from='right'][data-open] {
+  transform: rotate(90deg);
+}

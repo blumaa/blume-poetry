@@ -2,29 +2,41 @@
 
 import { useState } from 'react';
 import { LikeButton } from '@/features/likes';
-import { CommentSection } from '@/features/comments';
-import { Button } from '@/components/mds';
+import { CommentSection, useCommentCount } from '@/features/comments';
+import { CountButton } from '@/components/mds';
+import { Collapse, CollapseChevron } from '@/components/Collapse';
 import { Icon } from '@/components/icons';
 import styles from './PoemActions.module.css';
 
-/** The interactive part of a poem page: like, comment, and the comments. */
+const commentsLabel = (count: number) => `${count} ${count === 1 ? 'comment' : 'comments'}`;
+
+/** A poem's footer: the like, the comments toggle, and the thread it opens. */
 export function PoemActions({ slug }: { slug: string }) {
-  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const [open, setOpen] = useState(true);
+  const count = useCommentCount(slug);
 
   return (
-    <>
-      <div className={styles.row}>
+    <div className={styles.footer}>
+      <div role="group" aria-label="Poem actions" className={styles.row}>
         <LikeButton slug={slug} />
-        <Button iconLeft={<Icon name="comment" />} onClick={() => setIsCommentModalOpen(true)}>
-          add comment
-        </Button>
+        <div className={styles.trailing}>
+          <CountButton
+            icon={<Icon name="comment" />}
+            label={count === undefined ? 'Comments' : commentsLabel(count)}
+            aria-expanded={open}
+            onClick={() => setOpen((was) => !was)}
+          >
+            <span className={styles.tail}>
+              {count}
+              <CollapseChevron open={open} />
+            </span>
+          </CountButton>
+        </div>
       </div>
 
-      <CommentSection
-        slug={slug}
-        isModalOpen={isCommentModalOpen}
-        onModalClose={() => setIsCommentModalOpen(false)}
-      />
-    </>
+      <Collapse open={open}>
+        <CommentSection className={styles.thread} slug={slug} />
+      </Collapse>
+    </div>
   );
 }

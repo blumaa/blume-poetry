@@ -32,13 +32,41 @@ export type Database = {
         }
         Relationships: []
       }
+      comment_emails: {
+        Row: {
+          comment_id: string
+          created_at: string
+          email: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          email: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_emails_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: true
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           author_name: string
           content: string
           created_at: string
           id: string
+          parent_id: string | null
           poem_id: string
+          removed_at: string | null
           visitor_id: string
         }
         Insert: {
@@ -46,7 +74,9 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           poem_id: string
+          removed_at?: string | null
           visitor_id: string
         }
         Update: {
@@ -54,10 +84,19 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           poem_id?: string
+          removed_at?: string | null
           visitor_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "comments_parent_fkey"
+            columns: ["parent_id", "poem_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id", "poem_id"]
+          },
           {
             foreignKeyName: "comments_poem_id_fkey"
             columns: ["poem_id"]
@@ -288,6 +327,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_comment: {
+        Args: {
+          p_author_name: string
+          p_content: string
+          p_email?: string
+          p_parent_id?: string
+          p_poem_id: string
+          p_visitor_id: string
+        }
+        Returns: {
+          author_name: string
+          content: string
+          created_at: string
+          id: string
+          parent_id: string | null
+          poem_id: string
+          removed_at: string | null
+          visitor_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "comments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       advance_inbox_marks: {
         Args: { p_cleared?: string; p_last_seen: string }
         Returns: {

@@ -56,15 +56,18 @@ describe('unsubscribeByToken', () => {
     process.env.UNSUBSCRIBE_SECRET = 'test-secret-value';
   });
 
-  it('unsubscribes the address the token was issued for', async () => {
+  it('unsubscribes the address the token was issued for, reply emails included', async () => {
     const query = queryMock();
-    const client = clientMock({ subscribers: [query] }) as unknown as Client;
+    const replies = queryMock();
+    const client = clientMock({ subscribers: [query], comment_emails: [replies] }) as unknown as Client;
 
     const ok = await unsubscribeByToken(client, createUnsubscribeToken('reader@example.com'));
 
     expect(ok).toBe(true);
     expect(query.argsOf('update')).toEqual([[{ status: 'unsubscribed' }]]);
     expect(query.argsOf('eq')).toEqual([['email', 'reader@example.com']]);
+    expect(replies.argsOf('delete')).toEqual([[]]);
+    expect(replies.argsOf('eq')).toEqual([['email', 'reader@example.com']]);
   });
 
   it('touches nothing for a forged or missing token', async () => {
@@ -76,7 +79,10 @@ describe('unsubscribeByToken', () => {
   });
 
   it('throws on a database error instead of claiming success', async () => {
-    const client = clientMock({ subscribers: [queryMock({ error: { message: 'connection lost' } })] });
+    const client = clientMock({
+      subscribers: [queryMock({ error: { message: 'connection lost' } })],
+      comment_emails: [queryMock()],
+    });
 
     await expect(
       unsubscribeByToken(client as unknown as Client, createUnsubscribeToken('reader@example.com'))

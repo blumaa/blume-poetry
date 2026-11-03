@@ -29,7 +29,7 @@ function oneClick(url: string) {
 
 beforeEach(() => {
   process.env.UNSUBSCRIBE_SECRET = 'test-secret-value';
-  adminClient = clientMock({ subscribers: [queryMock()] });
+  adminClient = clientMock({ subscribers: [queryMock()], comment_emails: [queryMock()] });
 });
 
 describe('GET', () => {
@@ -47,7 +47,7 @@ describe('GET', () => {
 describe('POST (one-click)', () => {
   it('unsubscribes the token holder', async () => {
     const query = queryMock();
-    adminClient = clientMock({ subscribers: [query] });
+    adminClient = clientMock({ subscribers: [query], comment_emails: [queryMock()] });
     const token = createUnsubscribeToken('reader@example.com');
 
     const res = await oneClick(`https://site.test/api/unsubscribe?token=${token}`);

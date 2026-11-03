@@ -33,7 +33,8 @@ export async function upsertSubscriber(
 }
 
 /**
- * Unsubscribes the address a signed unsubscribe token was issued for. Returns
+ * Unsubscribes the address a signed unsubscribe token was issued for, from
+ * the newsletter and from comment reply notices. Returns
  * false, touching nothing, when the token is missing or forged. Shared by the
  * one-click POST and the confirm page. Database errors throw.
  */
@@ -49,5 +50,7 @@ export async function unsubscribeByToken(
     .update({ status: 'unsubscribed' })
     .eq('email', email)
     .throwOnError();
+  // "All emails" includes reply notices on comments.
+  await client.from('comment_emails').delete().eq('email', email).throwOnError();
   return true;
 }
