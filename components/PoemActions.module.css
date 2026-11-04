@@ -29,6 +29,4 @@
 
 .thread {
   margin-top: var(--mds-gap);
-  border-top: var(--mds-border-width) solid var(--mds-border-subtle);
-  padding-top: var(--mds-gap);
 }
