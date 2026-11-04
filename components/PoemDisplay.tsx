@@ -4,6 +4,7 @@ import { formatDate } from '@/lib/date';
 import { poemHref } from '@/lib/collections';
 import { PoemContent } from './PoemContent';
 import { PoemActions } from './PoemActions';
+import { CommentsBoundary } from './CommentsBoundary';
 import { PoemGestures } from './PoemGestures';
 import styles from './PoemDisplay.module.css';
 
@@ -53,8 +54,11 @@ export function PoemDisplay({ poem, prevPoem, nextPoem }: PoemDisplayProps) {
 
       <PoemContent html={poem.content} />
 
-      {/* Keyed: moving to another poem starts with the comment form closed. */}
-      <PoemActions key={poem.slug} slug={poem.slug} />
+      {/* Comments read on the server, so they paint with the poem.
+          Keyed: moving to another poem starts with the comment form closed. */}
+      <CommentsBoundary poemId={poem.id} slug={poem.slug}>
+        <PoemActions key={poem.slug} slug={poem.slug} />
+      </CommentsBoundary>
     </article>
   );
 }

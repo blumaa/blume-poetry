@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse, after } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { z } from 'zod';
-import { getAnonClient } from '@/lib/supabase/anon';
+import { CACHE_TAGS } from '@/lib/cacheTags';
+import { COMMENT_COLUMNS, getPoemComments } from '@/lib/comments';
 import { createAdminClient } from '@/lib/supabase/server';
 import { getPoemRefBySlug } from '@/lib/poems';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { verifyOrigin } from '@/lib/csrf';
 import { notifyCommentReply } from '@/lib/commentReplies';
-
-const COMMENT_COLUMNS = 'id, parent_id, author_name, content, created_at, removed_at';
 
 /* Bot checks run before validation, so a bot never learns which fields failed. */
 const required = 'Name and comment are required';
@@ -46,15 +46,7 @@ export async function GET(
     return NextResponse.json({ error: 'Poem not found' }, { status: 404 });
   }
 
-  const { data: comments } = await getAnonClient()
-    .from('comments')
-    .select(COMMENT_COLUMNS)
-    .eq('poem_id', poem.id)
-    // Written order: a reply never precedes what it answers.
-    .order('created_at', { ascending: true })
-    .throwOnError();
-
-  return NextResponse.json({ comments });
+  return NextResponse.json({ comments: await getPoemComments(poem.id) });
 }
 
 // POST - Add a comment; answers the saved comment
@@ -133,6 +125,10 @@ export async function POST(
     .select(COMMENT_COLUMNS)
     .single()
     .throwOnError();
+
+  // Poem pages are static and read comments through the cache: expire it now,
+  // so the next render (a reload included) shows this comment.
+  revalidateTag(CACHE_TAGS.comments, { expire: 0 });
 
   if (parentId !== null) {
     // Mail goes through Gmail: send it after the response so the reply never

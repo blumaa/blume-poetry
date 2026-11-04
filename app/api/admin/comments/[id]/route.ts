@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
+import { CACHE_TAGS } from '@/lib/cacheTags';
 import { createAdminClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/auth';
 
@@ -26,5 +28,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
   }
 
+  // Poem pages read comments through the cache; the removal shows at once.
+  revalidateTag(CACHE_TAGS.comments, { expire: 0 });
   return NextResponse.json({ success: true });
 }

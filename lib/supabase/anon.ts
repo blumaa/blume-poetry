@@ -6,7 +6,7 @@ const url = () => process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const key = () => process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 let anon: SupabaseClient<Database> | undefined;
-/** Shared anon client for request-fresh reads/writes (likes, comments). No caching. */
+/** Shared anon client for request-fresh reads/writes (likes, search). No caching. */
 export function getAnonClient(): SupabaseClient<Database> {
   if (!anon) anon = createClient<Database>(url(), key());
   return anon;
@@ -45,6 +45,20 @@ export function getCachedServiceClient(): SupabaseClient<Database> {
     });
   }
   return cachedService;
+}
+
+let cachedComment: SupabaseClient<Database> | undefined;
+/**
+ * Cached anon client for comment reads, so a static poem page renders with its
+ * comments. Every comment write expires the tag (the comment routes).
+ */
+export function getCachedCommentClient(): SupabaseClient<Database> {
+  if (!cachedComment) {
+    cachedComment = createClient<Database>(url(), key(), {
+      global: { fetch: taggedFetch([CACHE_TAGS.comments]) },
+    });
+  }
+  return cachedComment;
 }
 
 let cachedPublication: SupabaseClient<Database> | undefined;

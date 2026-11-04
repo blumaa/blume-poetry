@@ -23,6 +23,11 @@ jest.mock('@/lib/supabase/server', () => ({
   createAdminClient: () => adminClient,
 }));
 
+const mockRevalidateTag = jest.fn();
+jest.mock('next/cache', () => ({
+  revalidateTag: (...args: unknown[]) => mockRevalidateTag(...args),
+}));
+
 jest.mock('@/lib/config', () => ({
   getSiteUrl: () => 'https://site.test',
 }));
@@ -37,6 +42,7 @@ function del(id: string) {
 describe('DELETE /api/admin/comments/[id]', () => {
   beforeEach(() => {
     currentUser = null;
+    mockRevalidateTag.mockClear();
     adminClient = clientMock({ comments: [queryMock({ data: [{ id: 'comment-1' }] })] });
   });
 
@@ -63,6 +69,8 @@ describe('DELETE /api/admin/comments/[id]', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ success: true });
     expect(query.argsOf('eq')).toEqual([['id', 'comment-1']]);
+    // The poem page caches its comments; the removal must reach it at once.
+    expect(mockRevalidateTag).toHaveBeenCalledWith('comments', { expire: 0 });
   });
 
   it('keeps the row as a scrubbed tombstone so replies keep their place', async () => {
@@ -88,6 +96,7 @@ describe('DELETE /api/admin/comments/[id]', () => {
     const res = await del('missing');
 
     expect(res.status).toBe(404);
+    expect(mockRevalidateTag).not.toHaveBeenCalled();
   });
 
   it('throws on a database error instead of leaking its message', async () => {

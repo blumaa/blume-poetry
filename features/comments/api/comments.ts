@@ -1,12 +1,9 @@
 import { apiFetch } from '@/lib/apiFetch';
 import { createClient } from '@/lib/supabase/client';
+import type { Comment } from '@/lib/comments';
 import type { CommentRow, PoemRow } from '@/lib/supabase/types';
 
-/** A removed comment comes back with empty name and words and `removed_at` set. */
-export type Comment = Pick<
-  CommentRow,
-  'id' | 'parent_id' | 'author_name' | 'content' | 'created_at' | 'removed_at'
->;
+export type { Comment };
 
 export type AdminComment = CommentRow & {
   poems: Pick<PoemRow, 'title' | 'slug' | 'collection'> | null;

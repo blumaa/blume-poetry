@@ -29,6 +29,13 @@ jest.mock('@/lib/supabase/server', () => ({
 
 jest.mock('@/lib/supabase/anon', () => ({
   getAnonClient: () => anonClient,
+  getCachedCommentClient: () => anonClient,
+}));
+
+// A write expires the cached comment reads, so the static poem page shows it.
+const mockRevalidateTag = jest.fn();
+jest.mock('next/cache', () => ({
+  revalidateTag: (...args: unknown[]) => mockRevalidateTag(...args),
 }));
 
 jest.mock('@/lib/poems', () => ({
@@ -77,6 +84,7 @@ describe('POST /api/poems/[slug]/comments', () => {
     adminClient = clientMock({ add_comment: [insert] });
     mockNotify.mockClear();
     mockAfter.mockClear();
+    mockRevalidateTag.mockClear();
   });
 
   it('saves the trimmed comment in one call via the service-role client and answers it', async () => {
@@ -95,6 +103,17 @@ describe('POST /api/poems/[slug]/comments', () => {
       'id, parent_id, author_name, content, created_at, removed_at'
     );
     expect(anonClient.from).not.toHaveBeenCalled();
+  });
+
+  it('expires the cached comments at once, so the next page render shows the new one', async () => {
+    await post(valid);
+    expect(mockRevalidateTag).toHaveBeenCalledWith('comments', { expire: 0 });
+  });
+
+  it('expires nothing when nothing was saved', async () => {
+    await post({ ...valid, honeypot: 'filled-in' });
+    await post({ ...valid, authorName: '   ' });
+    expect(mockRevalidateTag).not.toHaveBeenCalled();
   });
 
   it('keeps an email given for reply notices, normalized, and never answers it back', async () => {
@@ -205,6 +224,7 @@ describe('GET /api/poems/[slug]/comments', () => {
     expect(list.argsOf('select')[0][0]).toBe(
       'id, parent_id, author_name, content, created_at, removed_at'
     );
+    expect(list.argsOf('eq')).toEqual([['poem_id', FIXED_POEM_ID]]);
     expect(list.argsOf('order')).toEqual([['created_at', { ascending: true }]]);
   });
 });
