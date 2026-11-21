@@ -6,7 +6,8 @@ import { formatMonthYear } from '@/lib/date';
 import { getPublications, groupPublications, type Publication } from '@/lib/publications';
 import styles from './page.module.css';
 
-export const revalidate = 3600;
+// Must equal CACHE_REVALIDATE_SECONDS (lib/cacheTags); segment config needs a literal.
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
   title: 'Publications',
