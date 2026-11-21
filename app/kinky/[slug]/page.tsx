@@ -1,7 +1,8 @@
 import { PoemRoute, poemMetadata } from '@/components/PoemRoute';
 import { getAllPoemSlugs } from '@/lib/poems';
 
-export const revalidate = 3600;
+// Must equal CACHE_REVALIDATE_SECONDS (lib/cacheTags); segment config needs a literal.
+export const revalidate = 86400;
 
 interface KinkyPoemPageProps {
   params: Promise<{ slug: string }>;

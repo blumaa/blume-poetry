@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { LatestPoemRoute } from '@/components/PoemRoute';
 
-export const revalidate = 3600;
+// Must equal CACHE_REVALIDATE_SECONDS (lib/cacheTags); segment config needs a literal.
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
   alternates: {

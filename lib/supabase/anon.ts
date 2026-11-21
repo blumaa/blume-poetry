@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { CACHE_TAGS } from '../cacheTags';
+import { CACHE_REVALIDATE_SECONDS, CACHE_TAGS } from '../cacheTags';
 import type { Database } from './types';
 
 const url = () => process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -15,10 +15,10 @@ export function getAnonClient(): SupabaseClient<Database> {
 // Reads through Next's Data Cache, tagged: identical queries are fetched once
 // and shared across statically generated pages. revalidateTag busts a tag on
 // admin writes (/api/admin/revalidate).
-const taggedFetch =
+export const taggedFetch =
   (tags: string[]): typeof fetch =>
   (input, init) =>
-    fetch(input, { ...init, next: { revalidate: 3600, tags } });
+    fetch(input, { ...init, next: { revalidate: CACHE_REVALIDATE_SECONDS, tags } });
 
 const cachedFetch = taggedFetch([CACHE_TAGS.poems]);
 
