@@ -1,8 +1,8 @@
 import { PoemRoute, poemMetadata } from '@/components/PoemRoute';
 import { getAllPoemSlugs } from '@/lib/poems';
 
-// Must equal CACHE_REVALIDATE_SECONDS (lib/cacheTags); segment config needs a literal.
-export const revalidate = 86400;
+// No timer: cache tags refresh this page when its data changes (lib/cacheTags).
+export const revalidate = false;
 
 interface PoemPageProps {
   params: Promise<{ slug: string }>;

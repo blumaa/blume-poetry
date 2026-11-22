@@ -1,5 +1,4 @@
 import { taggedFetch } from '@/lib/supabase/anon';
-import { CACHE_REVALIDATE_SECONDS } from '@/lib/cacheTags';
 
 describe('taggedFetch', () => {
   const realFetch = global.fetch;
@@ -7,7 +6,7 @@ describe('taggedFetch', () => {
     global.fetch = realFetch;
   });
 
-  it('reads through the data cache with the shared fallback and tags', async () => {
+  it('caches reads until a tag expires them, with no timer', async () => {
     const fetchMock = jest.fn().mockResolvedValue(new Response('{}'));
     global.fetch = fetchMock;
 
@@ -15,7 +14,7 @@ describe('taggedFetch', () => {
 
     expect(fetchMock).toHaveBeenCalledWith('https://example.test/rest', {
       method: 'GET',
-      next: { revalidate: CACHE_REVALIDATE_SECONDS, tags: ['poems'] },
+      next: { revalidate: false, tags: ['poems'] },
     });
   });
 });
