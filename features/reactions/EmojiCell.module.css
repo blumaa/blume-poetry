@@ -1,0 +1,37 @@
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--mds-tap-min);
+  aspect-ratio: 1;
+  padding: 0;
+  border: var(--mds-border-width) solid transparent;
+  border-radius: var(--mds-radius-control);
+  background: transparent;
+  /* The emoji is this cell's glyph, so it takes a glyph's size. */
+  font-size: var(--mds-icon-lg);
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color var(--mds-transition-control),
+    border-color var(--mds-transition-control);
+}
+
+.cell:hover:not(:disabled) {
+  background: var(--mds-surface-sunken);
+}
+
+.cell:disabled {
+  cursor: not-allowed;
+  background: var(--mds-action-disabled-bg);
+}
+
+.cell:focus-visible {
+  outline: var(--mds-focus-width) solid var(--mds-focus-ring-color);
+  outline-offset: var(--mds-focus-offset);
+}
+
+.selected {
+  border-color: var(--mds-action-bg);
+  background: var(--mds-surface-selected);
+}

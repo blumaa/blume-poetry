@@ -37,6 +37,7 @@ export async function checkRateLimit(request: Request, rule: RateLimit): Promise
 export const RATE_LIMITS = {
   comments: { name: 'comments', limit: 10, windowSeconds: 5 * 60 },
   likes: { name: 'likes', limit: 30, windowSeconds: 60 },
+  reactions: { name: 'reactions', limit: 30, windowSeconds: 60 },
   subscriptions: { name: 'subscriptions', limit: 5, windowSeconds: 60 },
   notifications: { name: 'notifications', limit: 5, windowSeconds: 60 },
   search: { name: 'search', limit: 60, windowSeconds: 60 },

@@ -6,6 +6,7 @@ import { useToast } from '@/components/mds';
 import { SkeletonComment } from '@/components/Skeleton';
 import { queryKeys } from '@/lib/queryKeys';
 import { getVisitorId } from '@/lib/visitorId';
+import { useCommentReactions } from '@/features/reactions';
 import { postComment, type Comment, type PostCommentInput } from './api/comments';
 import { CommentComposer, type CommentDraft } from './CommentComposer';
 import { CommentThread } from './CommentThread';
@@ -25,6 +26,7 @@ export function CommentSection({ slug, className }: CommentSectionProps) {
   const [replyTo, setReplyTo] = useState<string | null>(null);
 
   const { data: comments, isPending, isError } = useComments(slug);
+  const reactions = useCommentReactions(slug);
 
   /* Deterministic: a comment appears only once the server has saved it,
      taken from the server's answer (no refetch). Written order, so it goes last. */
@@ -76,6 +78,7 @@ export function CommentSection({ slug, className }: CommentSectionProps) {
       <CommentThread
         comments={buildThread(comments)}
         onReply={setReplyTo}
+        reactions={reactions.bar}
         composer={
           <CommentComposer onSend={send(null)} sending={post.isPending} />
         }
@@ -90,6 +93,7 @@ export function CommentSection({ slug, className }: CommentSectionProps) {
           )
         }
       />
+      {reactions.picker}
     </div>
   );
 }

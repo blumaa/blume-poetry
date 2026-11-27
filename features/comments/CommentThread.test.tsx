@@ -77,6 +77,29 @@ describe('CommentThread', () => {
     expect(onReply).toHaveBeenCalledWith('c1');
   });
 
+  it('draws the reactions row under each live comment, with that comment', () => {
+    render(
+      <CommentThread
+        comments={[HERS, HIS]}
+        reactions={({ id, author }) => <span>{`reactions ${id} ${author}`}</span>}
+      />
+    );
+
+    expect(bubble('The first line sits high.').getByText('reactions c1 Mai')).toBeInTheDocument();
+    expect(bubble('And the last one lands.').getByText('reactions c2 Jo')).toBeInTheDocument();
+  });
+
+  it('draws no reactions row on a removed comment', () => {
+    render(
+      <CommentThread
+        comments={[{ id: 'gone', removed: true }]}
+        reactions={({ id }) => <span>{`reactions ${id}`}</span>}
+      />
+    );
+
+    expect(screen.queryByText('reactions gone')).not.toBeInTheDocument();
+  });
+
   it('offers no Reply when nothing is wired to it', () => {
     render(<CommentThread comments={[HERS]} />);
 
