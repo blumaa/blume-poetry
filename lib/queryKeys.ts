@@ -26,11 +26,15 @@ export const queryKeys = {
   poem: {
     like: (slug: string) => ['poems', slug, 'like'] as const,
     comments: (slug: string) => ['poems', slug, 'comments'] as const,
+    reactions: (slug: string) => ['poems', slug, 'reactions'] as const,
     search: (collection: PoemCollection, query: string) => ['poems', 'search', collection, query] as const,
   },
   subscriber: {
     /** Keyed by the emailed token: it is the only identity the page has. */
     preference: (token: string) => ['subscriber', 'preference', token] as const,
+  },
+  emoji: {
+    catalogue: () => ['emoji', 'catalogue'] as const,
   },
   push: {
     subscription: () => ['push', 'subscription'] as const,

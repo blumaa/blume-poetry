@@ -80,6 +80,24 @@ const GLYPHS = {
   menu: { body: <path d="M3 6h18M3 12h18M3 18h18" /> },
   moon: { body: <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /> },
   pin: { filled: true, body: <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" /> },
+  search: {
+    body: (
+      <>
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </>
+    ),
+  },
+  'smile-plus': {
+    body: (
+      <>
+        <path d="M22 11v1a10 10 0 1 1-9-10" />
+        <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+        <path d="M9 9h.01M15 9h.01" />
+        <path d="M16 5h6M19 2v6" />
+      </>
+    ),
+  },
   sun: {
     body: (
       <>

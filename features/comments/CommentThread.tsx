@@ -17,6 +17,8 @@ export interface CommentThreadProps {
   replyComposer?: ReactNode;
   /** How deep the stepping goes before replies stack straight. */
   maxIndent?: number;
+  /** The reactions row under each live comment. */
+  reactions?: (comment: { id: string; author: string }) => ReactNode;
 }
 
 const plural = (count: number, one: string, many: string) =>
@@ -30,8 +32,9 @@ export function CommentThread({
   replyingTo = null,
   replyComposer,
   maxIndent = 2,
+  reactions,
 }: CommentThreadProps) {
-  const thread: Thread = { onReply, replyingTo, replyComposer, maxIndent };
+  const thread: Thread = { onReply, replyingTo, replyComposer, maxIndent, reactions };
 
   return (
     <section aria-label="Comments" className={styles.thread}>
@@ -50,7 +53,7 @@ export function CommentThread({
   );
 }
 
-type Thread = Pick<CommentThreadProps, 'onReply' | 'replyComposer'> & {
+type Thread = Pick<CommentThreadProps, 'onReply' | 'replyComposer' | 'reactions'> & {
   replyingTo: string | null;
   maxIndent: number;
 };
@@ -102,7 +105,7 @@ function CommentItem({
     );
   }
 
-  const { onReply } = thread;
+  const { onReply, reactions } = thread;
 
   return (
     <li className={styles.comment}>
@@ -119,6 +122,8 @@ function CommentItem({
       </span>
 
       <Text className={styles.body}>{comment.body}</Text>
+
+      {reactions?.({ id, author: comment.author })}
 
       <Inline gap="tight" wrap className={styles.actions}>
         {onReply !== undefined && (

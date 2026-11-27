@@ -1,0 +1,4 @@
+/* The emoji stands where a glyph would, so it takes a glyph's size. */
+.emoji {
+  font-size: var(--mds-icon-sm);
+}

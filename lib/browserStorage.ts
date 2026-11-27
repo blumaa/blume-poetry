@@ -12,6 +12,8 @@ export const STORAGE_KEYS = {
   commentName: { name: 'comment_name', area: 'local' },
   commentEmail: { name: 'comment_email', area: 'local' },
   visitorId: { name: 'visitor_id', area: 'local' },
+  recentEmoji: { name: 'recent_emoji', area: 'local' },
+  emojiTone: { name: 'emoji_tone', area: 'local' },
   flashToast: { name: 'toast', area: 'session' },
 } as const satisfies Record<string, { name: string; area: Area }>;
 

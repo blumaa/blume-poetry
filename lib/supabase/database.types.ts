@@ -58,6 +58,42 @@ export type Database = {
           },
         ]
       }
+      comment_reactions: {
+        Row: {
+          comment_id: string
+          created_at: string
+          emoji: string
+          visitor_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          emoji: string
+          visitor_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          emoji?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_reactions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comment_reactions_emoji_fkey"
+            columns: ["emoji"]
+            isOneToOne: false
+            referencedRelation: "emoji"
+            referencedColumns: ["char"]
+          },
+        ]
+      }
       comments: {
         Row: {
           author_name: string
@@ -138,6 +174,47 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "poems"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      emoji: {
+        Row: {
+          base: string | null
+          category: Database["public"]["Enums"]["emoji_category"]
+          char: string
+          name: string
+          quick: boolean
+          sort_order: number
+          tags: string[]
+          tone: number | null
+        }
+        Insert: {
+          base?: string | null
+          category: Database["public"]["Enums"]["emoji_category"]
+          char: string
+          name: string
+          quick?: boolean
+          sort_order: number
+          tags?: string[]
+          tone?: number | null
+        }
+        Update: {
+          base?: string | null
+          category?: Database["public"]["Enums"]["emoji_category"]
+          char?: string
+          name?: string
+          quick?: boolean
+          sort_order?: number
+          tags?: string[]
+          tone?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emoji_base_fkey"
+            columns: ["base"]
+            isOneToOne: false
+            referencedRelation: "emoji"
+            referencedColumns: ["char"]
           },
         ]
       }
@@ -371,7 +448,23 @@ export type Database = {
         Args: { p_key: string; p_limit: number; p_window_seconds: number }
         Returns: boolean
       }
+      comment_reaction_summary: {
+        Args: { p_comment_id: string }
+        Returns: Json
+      }
+      comment_reactions_mine: {
+        Args: { p_comment_id: string; p_visitor_id: string }
+        Returns: string[]
+      }
       is_admin: { Args: never; Returns: boolean }
+      poem_comment_reactions: {
+        Args: { p_poem_id: string; p_visitor_id: string }
+        Returns: {
+          comment_id: string
+          mine: string[]
+          reactions: Json
+        }[]
+      }
       search_poems: {
         Args: {
           p_collection?: Database["public"]["Enums"]["poem_collection"]
@@ -381,6 +474,14 @@ export type Database = {
           id: string
           slug: string
           title: string
+        }[]
+      }
+      toggle_comment_reaction: {
+        Args: { p_comment_id: string; p_emoji: string; p_visitor_id: string }
+        Returns: {
+          added: boolean
+          mine: string[]
+          reactions: Json
         }[]
       }
       toggle_like: {
@@ -400,6 +501,16 @@ export type Database = {
     }
     Enums: {
       email_log_status: "sending" | "sent" | "partial" | "failed"
+      emoji_category:
+        | "smileys"
+        | "people"
+        | "nature"
+        | "food"
+        | "travel"
+        | "activities"
+        | "objects"
+        | "symbols"
+        | "flags"
       poem_collection: "main" | "kinky"
       poem_status: "draft" | "published"
       subscriber_status: "active" | "unsubscribed"
@@ -531,6 +642,17 @@ export const Constants = {
   public: {
     Enums: {
       email_log_status: ["sending", "sent", "partial", "failed"],
+      emoji_category: [
+        "smileys",
+        "people",
+        "nature",
+        "food",
+        "travel",
+        "activities",
+        "objects",
+        "symbols",
+        "flags",
+      ],
       poem_collection: ["main", "kinky"],
       poem_status: ["draft", "published"],
       subscriber_status: ["active", "unsubscribed"],

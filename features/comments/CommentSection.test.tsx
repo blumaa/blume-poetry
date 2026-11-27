@@ -1,10 +1,17 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/__tests__/test-utils';
 import { CommentSection } from './CommentSection';
 
 jest.mock('@/lib/visitorId', () => ({
   getVisitorId: () => 'visitor-1',
+}));
+
+jest.mock('@/features/reactions/api/emoji', () => ({
+  fetchEmojiCatalogue: async () => [
+    { char: '🔥', name: 'Fire', tags: [], category: 'travel', base: null, tone: null, quick: true },
+    { char: '😂', name: 'Tears of joy', tags: [], category: 'smileys', base: null, tone: null, quick: true },
+  ],
 }));
 
 const comment = (id: string, content: string, parent_id: string | null = null) => ({
@@ -26,13 +33,23 @@ describe('CommentSection', () => {
     jest.spyOn(Date, 'now').mockReturnValue(0);
   });
 
-  function mockFetchSequence(responses: Array<{ ok: boolean; body: unknown }>) {
+  /* Comment calls answer in order; reaction calls (its own query) answer from
+     `reactions`, kept apart so each test counts only what it is about. */
+  function mockFetchSequence(
+    responses: Array<{ ok: boolean; body: unknown }>,
+    reactions: Array<{ ok: boolean; body: unknown }> = [{ ok: true, body: { reactions: {} } }]
+  ) {
     const fetchMock = jest.fn();
     responses.forEach(({ ok, body }) => {
       fetchMock.mockResolvedValueOnce({ ok, json: async () => body });
     });
-    global.fetch = fetchMock as unknown as typeof fetch;
-    return fetchMock;
+    const reactionsMock = jest.fn();
+    reactions.forEach(({ ok, body }) => {
+      reactionsMock.mockResolvedValueOnce({ ok, json: async () => body });
+    });
+    global.fetch = ((url: string, init?: RequestInit) =>
+      url.includes('/reactions') ? reactionsMock(url, init) : fetchMock(url, init)) as unknown as typeof fetch;
+    return Object.assign(fetchMock, { reactions: reactionsMock });
   }
 
   const sentBody = (fetchMock: jest.Mock, call: number) => JSON.parse(fetchMock.mock.calls[call][1].body);
@@ -173,5 +190,59 @@ describe('CommentSection', () => {
 
     expect(await screen.findByText('Please take your time')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Add a comment' })).toHaveValue('too fast');
+  });
+
+  describe('reactions', () => {
+    it('shows each comment’s reaction counts and marks the visitor’s own', async () => {
+      mockFetchSequence(
+        [{ ok: true, body: { comments: [comment(PARENT_ID, 'first')] } }],
+        [{ ok: true, body: { reactions: { [PARENT_ID]: { counts: [{ emoji: '🔥', count: 2 }], mine: ['🔥'] } } } }]
+      );
+      renderWithProviders(<CommentSection slug="gaps" />);
+
+      const fire = await screen.findByRole('button', { name: '🔥, 2 reactions' });
+      expect(fire).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('toggles a reaction and shows the server’s answer', async () => {
+      const fetchMock = mockFetchSequence(
+        [{ ok: true, body: { comments: [comment(PARENT_ID, 'first')] } }],
+        [
+          { ok: true, body: { reactions: { [PARENT_ID]: { counts: [{ emoji: '🔥', count: 2 }], mine: [] } } } },
+          { ok: true, body: { reactions: { counts: [{ emoji: '🔥', count: 3 }], mine: ['🔥'] } } },
+        ]
+      );
+      renderWithProviders(<CommentSection slug="gaps" />);
+      const user = userEvent.setup();
+
+      await user.click(await screen.findByRole('button', { name: '🔥, 2 reactions' }));
+
+      expect(await screen.findByRole('button', { name: '🔥, 3 reactions' })).toHaveAttribute('aria-pressed', 'true');
+      expect(JSON.parse(fetchMock.reactions.mock.calls[1][1].body)).toEqual({
+        visitorId: 'visitor-1',
+        commentId: PARENT_ID,
+        emoji: '🔥',
+      });
+    });
+
+    it('adds a new emoji from the picker, then closes it', async () => {
+      const fetchMock = mockFetchSequence(
+        [{ ok: true, body: { comments: [comment(PARENT_ID, 'first')] } }],
+        [
+          { ok: true, body: { reactions: {} } },
+          { ok: true, body: { reactions: { counts: [{ emoji: '😂', count: 1 }], mine: ['😂'] } } },
+        ]
+      );
+      renderWithProviders(<CommentSection slug="gaps" />);
+      const user = userEvent.setup();
+
+      await user.click(await screen.findByRole('button', { name: 'Add a reaction' }));
+      const quick = await screen.findByRole('group', { name: 'Quick reactions' });
+      await user.click(within(quick).getByRole('button', { name: 'Tears of joy' }));
+
+      expect(await screen.findByRole('button', { name: '😂, 1 reaction' })).toBeInTheDocument();
+      expect(JSON.parse(fetchMock.reactions.mock.calls[1][1].body)).toMatchObject({ emoji: '😂' });
+      await waitFor(() => expect(screen.queryByRole('group', { name: 'Quick reactions' })).not.toBeInTheDocument());
+    });
   });
 });

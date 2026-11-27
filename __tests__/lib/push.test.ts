@@ -36,7 +36,7 @@ jest.mock('@/lib/supabase/server', () => ({
   createAdminClient: () => ({ from: fromMock }),
 }));
 
-import { sendLikeNotification } from '@/lib/push';
+import { sendLikeNotification, sendReactionNotification } from '@/lib/push';
 
 describe('sendLikeNotification', () => {
   beforeEach(() => {
@@ -116,5 +116,30 @@ describe('sendLikeNotification', () => {
 
     expect(sendNotification).not.toHaveBeenCalled();
     expect(fromMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('sendReactionNotification', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY = 'test-public-key';
+    process.env.VAPID_PRIVATE_KEY = 'test-private-key';
+  });
+
+  it('names the emoji, the commenter and the poem, and links to the poem', async () => {
+    await sendReactionNotification({
+      emoji: '🔥',
+      commentAuthor: 'Ada',
+      poemTitle: 'Autumn Rain',
+      url: '/poem/autumn-rain',
+    });
+
+    expect(sendNotification).toHaveBeenCalledTimes(2);
+    const payload = (sendNotification.mock.calls[0] as unknown as [unknown, string])[1];
+    const body = JSON.parse(payload);
+    expect(body.title).toContain('🔥');
+    expect(body.title).toContain('Ada');
+    expect(body.body).toContain('Autumn Rain');
+    expect(body.url).toBe('/poem/autumn-rain');
   });
 });
